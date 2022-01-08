@@ -11,7 +11,11 @@ const port = process.env.PORT
 
 app.get('/', (req, res) => {
 	url = req.query.url;
-	read_url(url, res);
+	if (url) {
+		read_url(url, res);
+	} else {
+		res.send("Please specify url query parameter.");
+	}
 });
 
 app.listen(port, () => {	
