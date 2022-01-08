@@ -11,6 +11,7 @@ const port = process.env.PORT
 
 app.get('/', (req, res) => {
 	url = req.query.url;
+ 	res.header("Access-Control-Allow-Origin", '*');
 	if (url) {
 		read_url(url, res);
 	} else {
