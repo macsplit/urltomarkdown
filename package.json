@@ -1,0 +1,18 @@
+{
+  "name": "markdown",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "dependencies": {
+    "@mozilla/readability": "^0.3.0",
+    "express": "^4.17.1",
+    "jsdom": "^16.4.0",
+    "turndown": "^7.0.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC"
+}
