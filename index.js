@@ -5,9 +5,20 @@ const JSDOM = require('jsdom').JSDOM;
 
 service = new turndown();
 
+const rateLimit = require('express-rate-limit');
+
+const rateLimiter = rateLimit({
+	windowMs: 30 * 1000,
+	max: 5,
+	message: 'Rate limit exceeded',
+	headers: true
+});
+
 const express = require('express')
 const app = express()
 const port = process.env.PORT
+
+app.use(rateLimiter)
 
 app.get('/', (req, res) => {
 	url = req.query.url;
