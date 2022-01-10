@@ -4,9 +4,9 @@ Provides a web service that downloads a requested web page and outputs a markdow
 
 Example request:
 
-	https://urltomarkdown.herokuapp.com/?url=https%3A%2F%2Fwww.mozilla.org%2Fen-GB%2Ffirefox%2F
+	GET https://urltomarkdown.herokuapp.com/?url=https%3A%2F%2Fwww.mozilla.org%2Fen-GB%2Ffirefox%2F
 
-Returns:
+Response:
 
 	Meet our family of products
 	---------------------------
