@@ -6,7 +6,7 @@ module.exports = {
 		{
 			domain: /.*\.wikipedia\.org/,
 			remove: [
-				/\\\[\[edit\]\([^\s]+\s+"[^"]*"\)\\\]/i
+				/(?:\\\[)?\[edit\]\([^\s]+\s+"[^"]*"\)(?:\\\])?/i
 			]
 		}
 	], 
