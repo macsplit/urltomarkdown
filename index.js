@@ -2,6 +2,7 @@ const https = require('https');
 const turndown = require('turndown');
 const { Readability } = require('@mozilla/readability');
 const JSDOM = require('jsdom').JSDOM;
+const common_filters = require('./url_to_markdown_common_filters');
 
 service = new turndown();
 
@@ -37,7 +38,8 @@ function read_url(url, res) {
 	JSDOM.fromURL(url).then((document)=>{
 		let reader = new Readability(document.window.document);
 		let article = reader.parse();
-		let result = service.turndown(article.content);
+		let markdown = service.turndown(article.content);
+		let result = common_filters.filter(url, markdown);
 		res.send(result);
 	});
 }
