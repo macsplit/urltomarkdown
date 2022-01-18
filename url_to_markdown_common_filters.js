@@ -4,6 +4,12 @@ module.exports = {
 
 	list: [
 		{
+			domain: /.*/,
+			remove: [
+				/\[¶\]\(#[^\s]+\s+"[^"]+"\)/g
+			]
+		},
+		{
 			domain: /.*\.wikipedia\.org/,
 			remove: [
 				/(?:\\\[)?\[edit\]\([^\s]+\s+"[^"]+"\)(?:\\\])?/ig
@@ -12,7 +18,7 @@ module.exports = {
 	], 
 
   filter: function (url, data) {
-	  let domain = urlparser.parse(url).hostname
+  	  let domain = urlparser.parse(url).hostname  	  	
 	  for (let i=0;i<this.list.length;i++) {
 	  	if (domain.match(this.list[i].domain)) {
 	  		for (let j=0;j<this.list[i].remove.length; j++) {

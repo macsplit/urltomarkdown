@@ -3,6 +3,7 @@ const turndown = require('turndown');
 const { Readability } = require('@mozilla/readability');
 const JSDOM = require('jsdom').JSDOM;
 const common_filters = require('./url_to_markdown_common_filters');
+const validURL = require('@7c/validurl');
 
 service = new turndown();
 
@@ -24,10 +25,10 @@ app.use(rateLimiter)
 app.get('/', (req, res) => {
 	url = req.query.url;
  	res.header("Access-Control-Allow-Origin", '*');
-	if (url) {
+	if (url && validURL(url)) {
 		read_url(url, res);
 	} else {
-		res.send("Please specify url query parameter.");
+		res.status(400).send("Please specify a valid url query parameter");
 	}
 });
 
@@ -41,5 +42,7 @@ function read_url(url, res) {
 		let markdown = service.turndown(article.content);
 		let result = common_filters.filter(url, markdown);
 		res.send(result);
+	}).catch((error)=> {
+		res.status(400).send("Sorry, could not fetch and convert that URL");
 	});
 }
