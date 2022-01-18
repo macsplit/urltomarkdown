@@ -30,8 +30,10 @@ javascript:(
 		var request=new XMLHttpRequest();
 		var url="https://urltomarkdown.herokuapp.com/?url="+encodeURIComponent(location.href);
 		request.onreadystatechange=function()		{
-			if(request.readyState==4&&request.status==200)			{
-				location.href="simplenote://new?content="+encodeURIComponent(request.responseText);
+			if(request.readyState==4&&request.status==200) {
+				let text = '# ' + request.getResponseHeader('X-Title') +  '\n' + request.responseText;
+				location.href="simplenote://new?content="+encodeURIComponent(text);
+
 			}
 		};
 		request.open("GET",url, true);
