@@ -37,6 +37,9 @@ app.listen(port, () => {
 
 function read_url(url, res) {
 	JSDOM.fromURL(url).then((document)=>{
+		let title = document.window.document.querySelector('title');
+		if (title)
+			res.header("X-Title", title.textContent);
 		let reader = new Readability(document.window.document);
 		let article = reader.parse();
 		let markdown = service.turndown(article.content);
