@@ -25,7 +25,6 @@ app.use(rateLimiter)
 app.get('/', (req, res) => {
 	url = req.query.url;
  	res.header("Access-Control-Allow-Origin", '*');
- 	res.header("Content-Security-Policy", 'connect-src *');
  	res.header("Access-Control-Expose-Headers", 'X-Title');
 	if (url && validURL(url)) {
 		read_url(url, res);
