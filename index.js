@@ -27,7 +27,6 @@ app.get('/', (req, res) => {
  	res.header("Access-Control-Allow-Origin", '*');
  	res.header("Content-Security-Policy", 'connect-src *');
  	res.header("Access-Control-Expose-Headers", 'X-Title');
- 	res.header("Content-Type", 'text/markdown');
 	if (url && validURL(url)) {
 		read_url(url, res);
 	} else {
