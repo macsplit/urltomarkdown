@@ -28,9 +28,7 @@ app.get('/', (req, res) => {
 	url = req.query.url;
 	if (url && validURL(url)) {
 		send_headers(res);
-		let markdown = read_url(url, res);
-		let result = common_filters.filter(url, markdown);
-		res.send(result);
+		read_url(url, res);
 	} else {
 		res.status(400).send("Please specify a valid url query parameter");
 	}
@@ -77,7 +75,9 @@ function process_dom(document, res) {
 
 function read_url(url, res) {
 	JSDOM.fromURL(url).then((document)=>{
-		process_dom(document, res);
+		let markdown = process_dom(document, res);
+		let result = common_filters.filter(url, markdown);
+		res.send(result);
 	}).catch((error)=> {
 		res.status(400).send("Sorry, could not fetch and convert that URL");
 	});
