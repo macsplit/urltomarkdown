@@ -1,15 +1,20 @@
 const https = require('https');
 const turndown = require('turndown');
+const turndownPluginGfm = require('turndown-plugin-gfm')
 const { Readability } = require('@mozilla/readability');
 const JSDOM = require('jsdom').JSDOM;
 const common_filters = require('./url_to_markdown_common_filters');
 const validURL = require('@7c/validurl');
 const express = require('express');
-const app = express();
 const rateLimit = require('express-rate-limit');
-const service = new turndown();
 
 const port = process.env.PORT;
+
+const app = express();
+
+const service = new turndown();
+const tables = turndownPluginGfm.tables
+service.use(tables)
 
 const rateLimiter = rateLimit({
 	windowMs: 30 * 1000,
@@ -21,7 +26,8 @@ const rateLimiter = rateLimit({
 app.use(rateLimiter);
 
 app.use(express.urlencoded({
-  extended: true
+  extended: true,
+  limit: '10mb'
 }));
 
 app.get('/', (req, res) => {
@@ -35,21 +41,19 @@ app.get('/', (req, res) => {
 });
 
 app.post('/', function(req, res) {
-	let html;
-
-	if (req.body) {
-		html = req.body.html;
-	  if (!html) {
-	  	res.status(400).send("Please provide a POST parameter called html");
-	  } else {	  	
-		  try {
-		  	let document = new JSDOM(html);
-		  	let markdown = process_dom(document, res);
-		  	res.send(markdown);
-			} catch (error) {
-				res.status(400).send("Could not parse that document");
-			}
-		}
+	let html = req.body.html;
+	let url = req.body.url;
+	if (!html) {
+		res.status(400).send("Please provide a POST parameter called html");
+	} else {	  	
+		//try {
+		let document = new JSDOM(html);
+		let markdown = process_dom(url, document, res);
+		send_headers(res);
+		res.send(markdown);
+		//} catch (error) {
+		//	res.status(400).send("Could not parse that document");
+		//}
 	}
 
 });
@@ -63,21 +67,21 @@ function send_headers(res) {
  	res.header("Content-Type", 'text/markdown');
 }
 
-function process_dom(document, res) {
+function process_dom(url, document, res) {
 	let title = document.window.document.querySelector('title');
 	if (title)
 		res.header("X-Title", encodeURIComponent(title.textContent));
 	let reader = new Readability(document.window.document);
-	let article = reader.parse();
-	let markdown = service.turndown(article.content);
-	return markdown;
+	let readable = reader.parse();
+	let markdown = service.turndown(readable.content);
+	let result = (url) ? common_filters.filter(url, markdown) : markdown;
+	return result;
 }
 
 function read_url(url, res) {
 	JSDOM.fromURL(url).then((document)=>{
-		let markdown = process_dom(document, res);
-		let result = common_filters.filter(url, markdown);
-		res.send(result);
+		let markdown = process_dom(url, document, res);
+		res.send(markdown);
 	}).catch((error)=> {
 		res.status(400).send("Sorry, could not fetch and convert that URL");
 	});
