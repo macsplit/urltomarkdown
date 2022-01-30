@@ -44,14 +44,14 @@ app.post('/', function(req, res) {
 	if (!html) {
 		res.status(400).send("Please provide a POST parameter called html");
 	} else {	  	
-		//try {
+		try {
 		let document = new JSDOM(html);
 		let markdown = process_dom(url, document, res);
 		send_headers(res);
 		res.send(markdown);
-		/*} catch (error) {
+		} catch (error) {
 			res.status(400).send("Could not parse that document");
-		}*/
+		}
 	}
 
 });
