@@ -12,6 +12,7 @@ module.exports = {
 		{
 			domain: /.*\.wikipedia\.org/,
 			remove: [
+				/\*\*\[\^\]\(#cite_ref[^\)]+\)\*\*/g,
 				/(?:\\\[)?\[edit\]\([^\s]+\s+"[^"]+"\)(?:\\\])?/ig
 			]
 		}
