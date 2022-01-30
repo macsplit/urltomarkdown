@@ -6,12 +6,11 @@
   "dependencies": {
     "@7c/validurl": "^0.0.3",
     "@mozilla/readability": "^0.3.0",
-    "body-parser": "^1.19.1",
     "express": "^4.17.1",
     "express-rate-limit": "^6.0.5",
+    "html-entities": "^2.3.2",
     "jsdom": "^16.4.0",
     "turndown": "^7.0.0",
-    "turndown-plugin-gfm": "^1.0.2",
     "url": "^0.11.0"
   },
   "scripts": {
