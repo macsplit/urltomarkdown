@@ -92,13 +92,15 @@ function read_url(url, res) {
 
 function format_tables(html, replacements) {
 	const tables = html.match(/(<table[^>]*>(?:.|\n)*?<\/table>)/gi);
-	for (let t=0;t<tables.length;t++) {
-		let table = tables[t];
-		let markdown = table_to_markdown.convert(table);
-		let placeholder = "urltomarkdowntableplaceholder"+t+Math.random();
-		replacements.placeholders[t] = placeholder;
-		replacements.tables[t] = markdown;
-		html = html.replace(table, "<p>"+placeholder+"</p>");
+	if (tables) {
+		for (let t=0;t<tables.length;t++) {
+			let table = tables[t];
+			let markdown = table_to_markdown.convert(table);
+			let placeholder = "urltomarkdowntableplaceholder"+t+Math.random();
+			replacements.placeholders[t] = placeholder;
+			replacements.tables[t] = markdown;
+			html = html.replace(table, "<p>"+placeholder+"</p>");
+		}
 	}
 	return html;
 }
