@@ -7,6 +7,12 @@ module.exports = {
 			domain: /.*/,
 			remove: [
 				/\[¶\]\(#[^\s]+\s+"[^"]+"\)/g
+			],
+			replace: [
+				{
+					find: /\[([^\]]*)\]\(\/\/([^\)]*)\)/g,
+					replacement: '[$1](https$2)'
+				}
 			]
 		},
 		{
