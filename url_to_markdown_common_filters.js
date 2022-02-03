@@ -11,7 +11,7 @@ module.exports = {
 			replace: [
 				{
 					find: /\[([^\]]*)\]\(\/\/([^\)]*)\)/g,
-					replacement: '[$1](https$2)'
+					replacement: '[$1](https:$2)'
 				}
 			]
 		},
