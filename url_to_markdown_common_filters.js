@@ -1,5 +1,3 @@
-var urlparser = require('url');
-
 module.exports = {
 
 	list: [
@@ -11,7 +9,7 @@ module.exports = {
 			replace: [
 				{
 					find: /\[([^\]]*)\]\(\/\/([^\)]*)\)/g,
-					replacement: '[$1](https://$2)'
+				replacement: '[$1](https://$2)'
 				}
 			]
 		},
@@ -19,7 +17,9 @@ module.exports = {
 			domain: /.*\.wikipedia\.org/,
 			remove: [
 				/\*\*\[\^\]\(#cite_ref[^\)]+\)\*\*/g,
-				/(?:\\\[)?\[edit\]\([^\s]+\s+"[^"]+"\)(?:\\\])?/ig
+				/(?:\\\[)?\[edit\]\([^\s]+\s+"[^"]+"\)(?:\\\])?/ig,
+				/\^\s\[Jump up to[^\)]*\)/ig,
+				/\[[^]*\]\(#cite_ref[^\)]+\)/g
 			]
 		},
 		{
@@ -34,7 +34,16 @@ module.exports = {
 	], 
 
 	filter: function (url, data) {
-		let domain = urlparser.parse(url).hostname  	  	
+		let domain='';
+		let base_address='';
+		if (url) {
+			url = new URL(url);
+			if (url) {
+				base_address = url.protocol+"//"+url.hostname;
+				domain = url.hostname; 
+			}
+		}
+		
 		for (let i=0;i<this.list.length;i++) {
 			if (domain.match(this.list[i].domain)) {
 				if (this.list[i].remove) {
@@ -50,6 +59,14 @@ module.exports = {
 				}
 			}
 		}
+
+		// this filter needs to be defined here, to access the URL
+		data = data.replaceAll(/\[([^\]]*)\]\(\/([^\/][^\)]*)\)/g,
+ 			(match, title, address) => {
+				return "["+title+"]("+base_address+"/"+address+")";
+  			}
+		);
+
 		return data;
 	}
 
