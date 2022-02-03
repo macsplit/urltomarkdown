@@ -20,6 +20,12 @@ module.exports = {
 				/(?:\\\[)?\[edit\]\([^\s]+\s+"[^"]+"\)(?:\\\])?/ig,
 				/\^\s\[Jump up to[^\)]*\)/ig,
 				/\[[^\]]*\]\(#cite_ref[^\)]+\)/g
+			],
+			replace: [
+				{
+					find: /\(https:\/\/upload.wikimedia.org\/wikipedia\/([^\/]+)\/thumb\/([^\)]+\..{3,4})\/[^\)]+\)/ig,
+					replacement: '(https://upload.wikimedia.org/wikipedia/$1/$2)'
+				}
 			]
 		},
 		{
