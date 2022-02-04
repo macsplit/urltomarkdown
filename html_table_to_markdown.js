@@ -1,7 +1,9 @@
 const htmlEntities = require('html-entities');
+const justify = require('justify-text');
 
 module.exports = {
 
+	max_column_width: 20,
 	clean(str) {
 		str = str.replace(/<\/?[^>]+(>|$)/g, "");
 		str = str.replace(/(\r\n|\n|\r)/gm, "");
@@ -54,13 +56,20 @@ module.exports = {
 			for (let c=0;c<n_cols;c++) {
 				let l = items[r][c].length;
 				if (l>column_widths[c]) {
-					column_widths[c]=l;
+					if (l > this.max_column_width) {
+						column_widths[c] = this.max_column_width;
+					}
+					else {
+						column_widths[c] = l;
+					}
 				}
 			}
 		}
+
+		// justify
 		for (let r=0;r<n_rows;r++) {
 			for (let c=0;c<n_cols;c++) {
-				items[r][c] = items[r][c].padEnd(column_widths[c], " ");
+				items[r][c] = justify.ljust(items[r][c], column_widths[c], "");
 			}
 		}
 
