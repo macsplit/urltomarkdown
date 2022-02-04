@@ -30,9 +30,13 @@ app.use(express.urlencoded({
 
 app.get('/', (req, res) => {
 	url = req.query.url;
+	title = req.query.title;
+	let inline_title = false;
+	if (title)
+		inline_title = !!JSON.parse(title);
 	if (url && validURL(url)) {
 		send_headers(res);
-		read_url(url, res);
+		read_url(url, res, inline_title);
 	} else {
 		res.status(400).send("Please specify a valid url query parameter");
 	}
@@ -41,12 +45,16 @@ app.get('/', (req, res) => {
 app.post('/', function(req, res) {
 	let html = req.body.html;
 	let url = req.body.url;
+	let inline_title = false;
+	title = req.query.title;
+	if (title)
+		inline_title = !!JSON.parse(title);
 	if (!html) {
 		res.status(400).send("Please provide a POST parameter called html");
 	} else {	  	
 		try {
 		let document = new JSDOM(html);
-		let markdown = process_dom(url, document, res);
+		let markdown = process_dom(url, document, res, inline_title);
 		send_headers(res);
 		res.send(markdown);
 		} catch (error) {
@@ -65,7 +73,7 @@ function send_headers(res) {
  	res.header("Content-Type", 'text/markdown');
 }
 
-function process_dom(url, document, res) {
+function process_dom(url, document, res, inline_title) {
 	let title = document.window.document.querySelector('title');
 	if (title)
 		res.header("X-Title", encodeURIComponent(title.textContent));
@@ -78,12 +86,15 @@ function process_dom(url, document, res) {
 		markdown = markdown.replace(replacement.placeholders[i], replacement.tables[i]);
 	}
 	let result = (url) ? common_filters.filter(url, markdown) : markdown;
+	if (inline_title && title) {
+		result = "# " + title.textContent + "\n" + result;
+	}
 	return result;
 }
 
-function read_url(url, res) {
+function read_url(url, res, inline_title) {
 	JSDOM.fromURL(url).then((document)=>{
-		let markdown = process_dom(url, document, res);
+		let markdown = process_dom(url, document, res, inline_title);
 		res.send(markdown);
 	}).catch((error)=> {
 		res.status(400).send("Sorry, could not fetch and convert that URL");

@@ -66,10 +66,10 @@ module.exports = {
 			}
 		}
 
-		// justify
+		// pad
 		for (let r=0;r<n_rows;r++) {
 			for (let c=0;c<n_cols;c++) {
-				items[r][c] = justify.ljust(items[r][c], column_widths[c], "");
+				items[r][c] = justify.ljust(items[r][c], column_widths[c], " ");
 			}
 		}
 
