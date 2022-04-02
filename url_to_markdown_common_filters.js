@@ -10,6 +10,12 @@ module.exports = {
 				{
 					find: /\[([^\]]*)\]\(\/\/([^\)]*)\)/g,
 				replacement: '[$1](https://$2)'
+				},
+				{
+					find: /\n(.+)\n\-{64,}\n/ig,
+					replacement: (match, title) => {
+						return '\n'+title+'\n'+'-'.repeat(title.length)+'\n'
+					} 
 				}
 			]
 		},
@@ -26,14 +32,7 @@ module.exports = {
 				{
 					find: /\(https:\/\/upload.wikimedia.org\/wikipedia\/([^\/]+)\/thumb\/([^\)]+\..{3,4})\/[^\)]+\)/ig,
 					replacement: '(https://upload.wikimedia.org/wikipedia/$1/$2)'
-				},
-				{
-					find: /\n(.+)\n\-{64,}\n/ig,
-					replacement: (match, title) => {
-						return '\n'+title+'\n'+'-'.repeat(title.length)+'\n'
-					} 
 				}
-
 			]
 		},
 		{
