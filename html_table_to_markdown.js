@@ -2,14 +2,15 @@ const htmlEntities = require('html-entities');
 const justify = require('justify-text');
 
 module.exports = {
+	max_width: 96,
 
-	max_width: 100,
-	clean(str) {
+	clean: function (str) {
 		str = str.replace(/<\/?[^>]+(>|$)/g, "");
 		str = str.replace(/(\r\n|\n|\r)/gm, "");
 		str = htmlEntities.decode(str);
 		return str;
 	},
+
 	convert: function (table) {
 		let result = "\n";
 
@@ -29,6 +30,10 @@ module.exports = {
 				item_cols.push(this.clean(cols[c]));
 			items.push(item_cols);
 		}
+
+		// is this a proper table?
+		if (n_rows < 2)
+			return "";
 
 		// find number of columns
 		let n_cols=0;
@@ -61,18 +66,21 @@ module.exports = {
 			}
 		}
 
-		let total_width = column_widths.reduce((p, a) => p + a, 0);
+		// decide how to present
+		let total_width = 0;
+		for (let c=0;c<n_cols;c++)
+			total_width = total_width + column_widths[c];
 
 		if (total_width < this.max_width) {
+			// present as table
 
-			// pad
+			// pad cells
 			for (let r=0;r<n_rows;r++) {
 				for (let c=0;c<n_cols;c++) {
 					items[r][c] = justify.ljust(items[r][c], column_widths[c], " ");
 				}
 			}
 
-			// output table
 			if (n_rows >0 && n_cols > 0) {
 				if (n_rows > 1) {
 					result += "|";
@@ -98,7 +106,7 @@ module.exports = {
 			}
 		} else {
 
-			// too wide so output indented instead
+			// present as indented list
 
 			result += "\n";
 			for (let r=1;r<n_rows;r++) {
