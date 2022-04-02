@@ -82,7 +82,7 @@ module.exports = {
 
 		// removes inline links
 		if (!links) {
-			data = data.replaceAll(/([^!])\[([^\]]+)\]\([^\)]+\)/g,
+			data = data.replaceAll(/([^!])\[\[?([^\]]+\]?)\]\([^\)]+\)/g,
 				(match, prefix, title) => prefix+'*'+title+'*'
 			);
 		}
