@@ -39,7 +39,7 @@ module.exports = {
 		}
 	], 
 
-	filter: function (url, data) {
+	filter: function (url, data, links=true) {
 		let domain='';
 		let base_address='';
 		if (url) {
@@ -72,6 +72,13 @@ module.exports = {
 				return "["+title+"]("+base_address+"/"+address+")";
   			}
 		);
+
+		// removes inline links
+		if (!links) {
+			data = data.replaceAll(/([^!])\[([^\]]+)\]\(http[^\)]+\)/g,
+				(match, prefix, title) => prefix+'*'+title+'*'
+			);
+		}
 
 		return data;
 	}

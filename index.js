@@ -31,12 +31,15 @@ app.use(express.urlencoded({
 app.get('/', (req, res) => {
 	url = req.query.url;
 	title = req.query.title;
+	links = req.query.links;
 	let inline_title = false;
 	if (title)
 		inline_title = !!JSON.parse(title);
+	if (links)
+		links = !JSON.parse(links);
 	if (url && validURL(url)) {
 		send_headers(res);
-		read_url(url, res, inline_title);
+		read_url(url, res, inline_title, links);
 	} else {
 		res.status(400).send("Please specify a valid url query parameter");
 	}
@@ -85,16 +88,16 @@ function process_dom(url, document, res, inline_title) {
 	for (let i=0;i<replacement.placeholders.length;i++) {
 		markdown = markdown.replace(replacement.placeholders[i], replacement.tables[i]);
 	}
-	let result = (url) ? common_filters.filter(url, markdown) : markdown;
+	let result = (url) ? common_filters.filter(url, markdown, links) : markdown;
 	if (inline_title && title) {
 		result = "# " + title.textContent + "\n" + result;
 	}
 	return result;
 }
 
-function read_url(url, res, inline_title) {
+function read_url(url, res, inline_title, links) {
 	JSDOM.fromURL(url).then((document)=>{
-		let markdown = process_dom(url, document, res, inline_title);
+		let markdown = process_dom(url, document, res, inline_title, links);
 		res.send(markdown);
 	}).catch((error)=> {
 		res.status(400).send("Sorry, could not fetch and convert that URL");
