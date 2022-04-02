@@ -32,6 +32,7 @@ module.exports = {
 						return '\n\n'+title+'\n'+'-'.repeat(title.length)+'\n'
 					} 
 				}
+
 			]
 		},
 		{
@@ -81,7 +82,7 @@ module.exports = {
 
 		// removes inline links
 		if (!links) {
-			data = data.replaceAll(/([^!])\[([^\]]+)\]\(http[^\)]+\)/g,
+			data = data.replaceAll(/([^!])\[([^\]]+)\]\([^\)]+\)/g,
 				(match, prefix, title) => prefix+'*'+title+'*'
 			);
 		}
