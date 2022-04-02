@@ -3,7 +3,7 @@ const justify = require('justify-text');
 
 module.exports = {
 
-	max_column_width: 20,
+	max_width: 100,
 	clean(str) {
 		str = str.replace(/<\/?[^>]+(>|$)/g, "");
 		str = str.replace(/(\r\n|\n|\r)/gm, "");
@@ -56,46 +56,62 @@ module.exports = {
 			for (let c=0;c<n_cols;c++) {
 				let l = items[r][c].length;
 				if (l>column_widths[c]) {
-					if (l > this.max_column_width) {
-						column_widths[c] = this.max_column_width;
-					}
-					else {
-						column_widths[c] = l;
-					}
+					column_widths[c] = l;
 				}
 			}
 		}
 
-		// pad
-		for (let r=0;r<n_rows;r++) {
-			for (let c=0;c<n_cols;c++) {
-				items[r][c] = justify.ljust(items[r][c], column_widths[c], " ");
-			}
-		}
+		let total_width = column_widths.reduce((p, a) => p + a, 0);
 
-		// output table
-		if (n_rows >0 && n_cols > 0) {
-			if (n_rows > 1) {
-				result += "|";
+		if (total_width < this.max_width) {
+
+			// pad
+			for (let r=0;r<n_rows;r++) {
 				for (let c=0;c<n_cols;c++) {
-					result += items[0][c];
-					result += "|";
+					items[r][c] = justify.ljust(items[r][c], column_widths[c], " ");
 				}
 			}
-			result += "\n";
-			result += "|";
-			for (let c=0;c<n_cols;c++) {
-				result += "-".repeat(column_widths[c]) + "|";
-			}
-			result += "\n";
-			for (let r=1;r<n_rows;r++) {
-				result += "|";
-				for (let c=0;c<n_cols;c++) {
-					result += items[r][c];
+
+			// output table
+			if (n_rows >0 && n_cols > 0) {
+				if (n_rows > 1) {
 					result += "|";
+					for (let c=0;c<n_cols;c++) {
+						result += items[0][c];
+						result += "|";
+					}
 				}
 				result += "\n";
+				result += "|";
+				for (let c=0;c<n_cols;c++) {
+					result += "-".repeat(column_widths[c]) + "|";
+				}
+				result += "\n";
+				for (let r=1;r<n_rows;r++) {
+					result += "|";
+					for (let c=0;c<n_cols;c++) {
+						result += items[r][c];
+						result += "|";
+					}
+					result += "\n";
+				}
 			}
+		} else {
+
+			// too wide so output indented instead
+
+			result += "\n";
+			for (let r=0;r<n_rows;r++) {
+				result += "* ";
+				result += items[r][0];
+				result += "\n";
+				for (let c=1;c<n_cols;c++) {
+					result += "  * ";
+					result += items[r][c];
+					result += "\n";
+				}
+			}
+
 		}
 
 		return result;

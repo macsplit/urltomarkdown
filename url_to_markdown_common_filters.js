@@ -25,6 +25,12 @@ module.exports = {
 				{
 					find: /\(https:\/\/upload.wikimedia.org\/wikipedia\/([^\/]+)\/thumb\/([^\)]+\..{3,4})\/[^\)]+\)/ig,
 					replacement: '(https://upload.wikimedia.org/wikipedia/$1/$2)'
+				},
+				{
+					find: /\n\n([^\n]+)\n\-{40,}\n/ig,
+					replacement: (match, title) => {
+						return '\n\n'+title+'\n'+'-'.repeat(title.length)+'\n'
+					} 
 				}
 			]
 		},
