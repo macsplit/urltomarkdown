@@ -80,10 +80,13 @@ module.exports = {
   			}
 		);
 
-		// removes inline links
+		// removes inline links and refs
 		if (!links) {
 			data = data.replaceAll(/([^!])\[\[?([^\]]+\]?)\]\([^\)]+\)/g,
 				(match, prefix, title) => prefix+'*'+title+'*'
+			);
+			data = data.replaceAll(/\*\\\[([^\\]+)\\\]\*/g,
+				(match, ref) => '['+ref+']'
 			);
 		}
 
