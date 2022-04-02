@@ -101,17 +101,30 @@ module.exports = {
 			// too wide so output indented instead
 
 			result += "\n";
-			for (let r=0;r<n_rows;r++) {
-				result += "* ";
-				result += items[r][0];
-				result += "\n";
-				for (let c=1;c<n_cols;c++) {
-					result += "  * ";
-					result += items[r][c];
+			for (let r=1;r<n_rows;r++) {
+				if (items[0][0] || items[r][0])
+					result += "* ";
+				if (items[0][0]) {
+					result += items[0][0];
+					result += ": ";
+				}
+				if (items[r][0])
+					result += items[r][0];
+				if (items[0][0] || items[r][0])
 					result += "\n";
+				for (let c=1;c<n_cols;c++) {
+					if (items[0][c] || items[r][c])
+						result += "  * ";
+					if (items[0][c]) {
+						result += items[0][c];
+						result += ": ";
+					}
+					if (items[r][c])
+						result += items[r][c];
+					if (items[0][c] || items[r][c])
+						result += "\n";
 				}
 			}
-
 		}
 
 		return result;
