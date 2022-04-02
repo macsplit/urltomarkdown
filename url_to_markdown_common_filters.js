@@ -19,7 +19,8 @@ module.exports = {
 				/\*\*\[\^\]\(#cite_ref[^\)]+\)\*\*/g,
 				/(?:\\\[)?\[edit\]\([^\s]+\s+"[^"]+"\)(?:\\\])?/ig,
 				/\^\s\[Jump up to[^\)]*\)/ig,
-				/\[[^\]]*\]\(#cite_ref[^\)]+\)/g
+				/\[[^\]]*\]\(#cite_ref[^\)]+\)/g,
+				/\[\!\[Edit this at Wikidata\].*/g
 			],
 			replace: [
 				{
@@ -82,7 +83,7 @@ module.exports = {
 
 		// removes inline links and refs
 		if (!links) {
-			data = data.replaceAll(/([^!])\[\[?([^\]]+\]?)\]\([^\)]+\)/g, '$1$2');
+			data = data.replaceAll(/([^\!])\[\[?([^\]]+\]?)\]\([^\)]+\)/g, '$1$2');
 			data = data.replaceAll(/[\\\[]+([0-9]+)[\\\]]+/g, '[$1]');
 		}
 
