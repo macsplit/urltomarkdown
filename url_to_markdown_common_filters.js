@@ -83,7 +83,7 @@ module.exports = {
 
 		// remove inline links and refs
 		if (!links) {
-			data = data.replaceAll(/\[\[?([^\]]+\]?)\]\([^\)]+\)/g, '$2');
+			data = data.replaceAll(/\[\[?([^\]]+\]?)\]\([^\)]+\)/g, '$1');
 			data = data.replaceAll(/[\\\[]+([0-9]+)[\\\]]+/g, '[$1]');
 		}
 
