@@ -74,16 +74,16 @@ module.exports = {
 			}
 		}
 
-		// this filter needs to be defined here, to access the URL
+		// make relative URLs absolute
 		data = data.replaceAll(/\[([^\]]*)\]\(\/([^\/][^\)]*)\)/g,
  			(match, title, address) => {
 				return "["+title+"]("+base_address+"/"+address+")";
   			}
 		);
 
-		// removes inline links and refs
+		// remove inline links and refs
 		if (!links) {
-			data = data.replaceAll(/([^\!])\[\[?([^\]]+\]?)\]\([^\)]+\)/g, '$1$2');
+			data = data.replaceAll(/\[\[?([^\]]+\]?)\]\([^\)]+\)/g, '$2');
 			data = data.replaceAll(/[\\\[]+([0-9]+)[\\\]]+/g, '[$1]');
 		}
 
