@@ -29,35 +29,44 @@ app.use(express.urlencoded({
 }));
 
 app.get('/', (req, res) => {
-	url = req.query.url;
-	title = req.query.title;
-	links = req.query.links;
+	const url = req.query.url;
+	const title = req.query.title;
+	const links = req.query.links;
 	let inline_title = false;
-	if (title)
-		inline_title = !!JSON.parse(title);
-	if (links)
-		links = !JSON.parse(links);
+	let ignore_links = false;
+	if (title) {
+		inline_title = (title === 'true');
+	}
+	if (links) {
+		ignore_links = (links === 'false');
+	}
 	if (url && validURL(url)) {
 		send_headers(res);
-		read_url(url, res, inline_title, links);
+		read_url(url, res, inline_title, ignore_links);
 	} else {
 		res.status(400).send("Please specify a valid url query parameter");
 	}
 });
 
 app.post('/', function(req, res) {
-	let html = req.body.html;
-	let url = req.body.url;
+	const html = req.body.html;
+	const url = req.body.url;
+	const links = req.query.links;
+	const title = req.query.title;
+	let ignore_links = false;
 	let inline_title = false;
-	title = req.query.title;
-	if (title)
-		inline_title = !!JSON.parse(title);
+	if (title) {
+		inline_title = (title === 'true');
+	}
+	if (links) {
+		ignore_links = (links === 'false');
+	}
 	if (!html) {
 		res.status(400).send("Please provide a POST parameter called html");
 	} else {	  	
 		try {
 		let document = new JSDOM(html);
-		let markdown = process_dom(url, document, res, inline_title);
+		let markdown = process_dom(url, document, res, inline_title, ignore_links);
 		send_headers(res);
 		res.send(markdown);
 		} catch (error) {
@@ -76,7 +85,7 @@ function send_headers(res) {
  	res.header("Content-Type", 'text/markdown');
 }
 
-function process_dom(url, document, res, inline_title) {
+function process_dom(url, document, res, inline_title, ignore_links) {
 	let title = document.window.document.querySelector('title');
 	if (title)
 		res.header("X-Title", encodeURIComponent(title.textContent));
@@ -88,16 +97,16 @@ function process_dom(url, document, res, inline_title) {
 	for (let i=0;i<replacement.placeholders.length;i++) {
 		markdown = markdown.replace(replacement.placeholders[i], replacement.tables[i]);
 	}
-	let result = (url) ? common_filters.filter(url, markdown, links) : markdown;
+	let result = (url) ? common_filters.filter(url, markdown, ignore_links) : markdown;
 	if (inline_title && title) {
 		result = "# " + title.textContent + "\n" + result;
 	}
 	return result;
 }
 
-function read_url(url, res, inline_title, links) {
+function read_url(url, res, inline_title, ignore_links) {
 	JSDOM.fromURL(url).then((document)=>{
-		let markdown = process_dom(url, document, res, inline_title, links);
+		let markdown = process_dom(url, document, res, inline_title, ignore_links);
 		res.send(markdown);
 	}).catch((error)=> {
 		res.status(400).send("Sorry, could not fetch and convert that URL");

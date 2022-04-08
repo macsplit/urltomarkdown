@@ -47,7 +47,7 @@ module.exports = {
 		}
 	], 
 
-	filter: function (url, data, links=true) {
+	filter: function (url, data, ignore_links=false) {
 		let domain='';
 		let base_address='';
 		if (url) {
@@ -82,7 +82,7 @@ module.exports = {
 		);
 
 		// remove inline links and refs
-		if (!links) {
+		if (ignore_links) {
 			data = data.replaceAll(/\[\[?([^\]]+\]?)\]\([^\)]+\)/g, '$1');
 			data = data.replaceAll(/[\\\[]+([0-9]+)[\\\]]+/g, '[$1]');
 		}

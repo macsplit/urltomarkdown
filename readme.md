@@ -38,13 +38,18 @@ Title is also returned in HTTP header.
 X-Title: Firefox%20-%20Protect%20your%20life%20online%20with%20privacy-first%20products%20%E2%80%94%20Mozilla%20(UK)
 ```
 
-Alternative request, supply url and html:
+Optionally suppress links:
 
-	POST https://urltomarkdown.herokuapp.com/
+	GET https://urltomarkdown.herokuapp.com/?url=https%3A%2F%2Fwww.mozilla.org%2Fen-GB%2Ffirefox%2F&links=false
+
+Alternative POST request, supply url and html in POST body:
+
+	POST https://urltomarkdown.herokuapp.com/?title=true&links=false
 		
-	url=https%3A%2F%2Fwww.mozilla.org%2Fen-GB%2Ffirefox%2F
+		url=https%3A%2F%2Fwww.mozilla.org%2Fen-GB%2Ffirefox%2F
 		
-	html=%3C!doctype%20html%3E%3Chtml%20...
+		html=%3C!doctype%20html%3E%3Chtml%20...
+
 
 Inspired by [Heck Yeah Markdown](http://heckyesmarkdown.com)
 
@@ -76,7 +81,7 @@ javascript:(
 ### Safari Snippets
 
 Using [Safari Snippets](https://apps.apple.com/us/app/safari-snippets/id1126048257)
- with the following code solves the issue that some sites prevent javascript bookmarklets accessing a resource on a different domain
+ to inject the following code solves the issue that some sites prevent javascript bookmarklets accessing a resource on a different domain
 
 ```
 var request=new XMLHttpRequest();
