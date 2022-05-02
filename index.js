@@ -121,7 +121,7 @@ function read_url(url, res, inline_title, ignore_links) {
 }
 
 function read_apple_url(url, res, inline_title, ignore_links) {
-	//TODO: currently ignores the flags inline_title and ignore_links
+	//TODO: currently ignores the flag ignore_links
 	json_url = apple_dev_parser.dev_doc_url(url);
 	https.get(json_url,(apple_res) => {
 	    let body = "";
@@ -130,7 +130,7 @@ function read_apple_url(url, res, inline_title, ignore_links) {
 	    });
 	    apple_res.on("end", () => {
             let json = JSON.parse(body);
-            let markdown = apple_dev_parser.parse_dev_doc_json(json);
+            let markdown = apple_dev_parser.parse_dev_doc_json(json, inline_title);
             res.send(markdown);
 	    });
 	})

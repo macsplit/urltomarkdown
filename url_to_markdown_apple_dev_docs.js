@@ -26,8 +26,16 @@ module.exports = {
 
 	},
 
-	parse_dev_doc_json: function (json) {
+	parse_dev_doc_json: function (json, inline_title = true) {
 		let text = "";
+
+		if (inline_title) {
+			if (typeof json.metadata !== 'undefined') {
+				if (typeof json.metadata.title !== 'undefined') {
+					text += "# "+json.metadata.title + "\n\n";
+				}
+			}
+		}
 
 		if (typeof json.references !== 'undefined') {
 			this.dev_references = json.references;
