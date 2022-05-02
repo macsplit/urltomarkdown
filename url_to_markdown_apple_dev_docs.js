@@ -64,30 +64,7 @@ module.exports = {
 	                    text += "\n\n";
 	                }
 	            } else if (section.kind == 'content') {
-	                section.content.forEach((content, i) => {
-	                    if (typeof content.type != 'undefined') {
-	                        if (content.type == 'paragraph') {
-	                            if (typeof content.inlineContent !== 'undefined') {
-	                                inline_text = "";
-	                                content.inlineContent.forEach((inline, i) => {                                  
-	                                    if (typeof inline.type !== 'undefined') {
-	                                        if (inline.type == "text") {
-	                                            inline_text += inline.text;
-	                                        } else if (inline.type == "link") {
-	                                            inline_text += "["+inline.title+"]("+inline.destination+")";
-	                                        }
-	                                    }                                   
-	                                });
-	                                text += inline_text + "\n\n";
-	                            }
-	                        } else if (content.type == 'codeListing') {                         
-	                            code_text = "\n```\n";
-	                            code_text += content.code.join("\n");
-	                            code_text += "\n```\n\n";
-	                            text += code_text;
-	                        }
-	                    }
-	                });
+	            	text += this.process_content_section(section);
 	            }
 	        }
 
@@ -114,6 +91,54 @@ module.exports = {
 
 	return text;
 	
-	}
+	},
+	process_content_section(section) {
+		text = "";
+		section.content.forEach((content, i) => {
+			
+            if (typeof content.type != 'undefined') {
+                if (content.type == 'paragraph') {
+                    if (typeof content.inlineContent !== 'undefined') {
+                        inline_text = "";
+                        content.inlineContent.forEach((inline, i) => {                                  
+                            if (typeof inline.type !== 'undefined') {
+                                if (inline.type == "text") {
+                                    inline_text += inline.text;
+                                } else if (inline.type == "link") {
+                                    inline_text += "["+inline.title+"]("+inline.destination+")";
+                                } else if (inline.type == "reference") {
+			                		let ref = inline.identifier.split('/');
+			                		let name = ref[ref.length-1];
+			                		let parts = name.split('-');
+                					inline_text += parts[parts.length-1];
+                				}
+                            }                                   
+                        });
+                        text += inline_text + "\n\n";
+                    }
+                } else if (content.type == 'codeListing') {                         
+                    code_text = "\n```\n";
+                    code_text += content.code.join("\n");
+                    code_text += "\n```\n\n";
+                    text += code_text;
+                } else if (content.type == 'unorderedList') {
+                	if (typeof content.items !== 'undefined') {
+                		content.items.forEach((list_item, i) => {
+                			text += "* " + this.process_content_section(list_item);
+                		});
+                	}
+                } else if (content.type == 'orderedList') {
+                	if (typeof content.items !== 'undefined') {
+                		n=0;
+                		content.items.forEach((list_item, i) => {
+                			n = n + 1;
+                			text += n + " " + this.process_content_section(list_item);
+                		});
+                	}
+                }
+            }
+        });
 
+        return text;
+	}
 }
