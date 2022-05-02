@@ -131,7 +131,11 @@ module.exports = {
 				                			inline_text += this.dev_references[inline.identifier].title;
 				                		}
 			                		}
-                				}
+                				} else if (inline.type == 'codeVoice') {
+	            					if (typeof inline.code !== 'undefined') {
+	            						inline_text += "`"+inline.code+"`";
+	            					}
+	            				}
                             }                                   
                         });
                         text += inline_text + "\n\n";
@@ -155,7 +159,12 @@ module.exports = {
                 			text += n + " " + this.process_content_section(list_item);
                 		});
                 	}
-                }
+                } else if (content.type == 'heading') {
+	            	if (typeof content.level !== 'undefined' && typeof content.text !== 'undefined') {
+	            		text += "#".repeat(content.level);
+	            		text += " " + content.text + "\n\n";
+	            	}
+	            }
             }
         });
 
