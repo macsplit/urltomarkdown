@@ -3,6 +3,7 @@ const turndown = require('turndown');
 const { Readability } = require('@mozilla/readability');
 const JSDOM = require('jsdom').JSDOM;
 const common_filters = require('./url_to_markdown_common_filters');
+const apple_dev_parser = require('./url_to_markdown_apple_dev_docs.js');
 const table_to_markdown = require('./html_table_to_markdown.js');
 const validURL = require('@7c/validurl');
 const express = require('express');
@@ -13,6 +14,8 @@ const port = process.env.PORT;
 const app = express();
 
 const service = new turndown();
+
+const apple_dev_prefix = "https://developer.apple.com";
 
 const rateLimiter = rateLimit({
 	windowMs: 30 * 1000,
@@ -42,7 +45,11 @@ app.get('/', (req, res) => {
 	}
 	if (url && validURL(url)) {
 		send_headers(res);
-		read_url(url, res, inline_title, ignore_links);
+		if (url.startsWith(apple_dev_prefix)) {
+			read_apple_url(url, res, inline_title, ignore_links);
+		} else {
+			read_url(url, res, inline_title, ignore_links);
+		}
 	} else {
 		res.status(400).send("Please specify a valid url query parameter");
 	}
@@ -111,6 +118,22 @@ function read_url(url, res, inline_title, ignore_links) {
 	}).catch((error)=> {
 		res.status(400).send("Sorry, could not fetch and convert that URL");
 	});
+}
+
+function read_apple_url(url, res, inline_title, ignore_links) {
+	//TODO: currently ignores the flags inline_title and ignore_links
+	json_url = apple_dev_parser.dev_doc_url(url);
+	https.get(json_url,(apple_res) => {
+	    let body = "";
+	    apple_res.on("data", (chunk) => {
+	        body += chunk;
+	    });
+	    apple_res.on("end", () => {
+            let json = JSON.parse(body);
+            let markdown = apple_dev_parser.parse_dev_doc_json(json);
+            res.send(markdown);
+	    });
+	})
 }
 
 function format_tables(html, replacements) {
