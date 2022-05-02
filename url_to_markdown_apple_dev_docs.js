@@ -59,7 +59,7 @@ module.exports = {
 	                    section.declarations.forEach((declaration, i) => {
 
 	                        if (typeof declaration.tokens !== undefined) {
-	                            token_text = "# ";
+	                            token_text = "";
 	                            declaration.tokens.forEach((token, i) => {                          
 	                                token_text += token.text;
 	                            });
