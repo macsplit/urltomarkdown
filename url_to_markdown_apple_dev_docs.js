@@ -2,11 +2,15 @@ module.exports = {
 
 	dev_doc_url: function (url) {
 
-		if (url.endsWith('/')) {
-		    url = url.slice(0, -1)
+		let query_parts = url.split('?');
+
+		let queryless = query_parts[0];
+
+		if (queryless.endsWith('/')) {
+		    queryless = queryless.slice(0, -1)
 		}
 
-		let parts = url.split("/");
+		let parts = queryless.split("/");
 
 		let json_url = "https://developer.apple.com/tutorials/data";
 
