@@ -1,4 +1,7 @@
 module.exports = {
+	
+	dev_references: [],
+
 
 	dev_doc_url: function (url) {
 
@@ -25,12 +28,16 @@ module.exports = {
 
 	parse_dev_doc_json: function (json) {
 		let text = "";
-		    if (typeof json.primaryContentSections !== 'undefined') {
-        		text += this.process_sections(json.primaryContentSections);
-    		} else if (typeof json.sections !== 'undefined') {
-        		text += this.process_sections(json.sections);
-    		}
-		return text;
+
+		if (typeof json.references !== 'undefined') {
+			this.dev_references = json.references;
+		}	
+	    if (typeof json.primaryContentSections !== 'undefined') {
+    		text += this.process_sections(json.primaryContentSections);
+		} else if (typeof json.sections !== 'undefined') {
+    		text += this.process_sections(json.sections);
+		}
+	return text;
 	},
 
 	process_sections: function (sections) {
@@ -111,10 +118,11 @@ module.exports = {
                                 } else if (inline.type == "link") {
                                     inline_text += "["+inline.title+"]("+inline.destination+")";
                                 } else if (inline.type == "reference") {
-			                		let ref = inline.identifier.split('/');
-			                		let name = ref[ref.length-1];
-			                		let parts = name.split('-');
-                					inline_text += parts[parts.length-1];
+                                	if (typeof inline.identifier !== 'undefined') {
+	                                	if (typeof this.dev_references[inline.identifier] !== 'undefined') {
+				                			inline_text += this.dev_references[inline.identifier].title;
+				                		}
+			                		}
                 				}
                             }                                   
                         });
