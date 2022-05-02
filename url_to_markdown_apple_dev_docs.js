@@ -26,7 +26,7 @@ module.exports = {
 
 	},
 
-	parse_dev_doc_json: function (json, inline_title = true) {
+	parse_dev_doc_json: function (json, inline_title = true, ignore_links = false) {
 		let text = "";
 
 		if (inline_title) {
@@ -41,14 +41,14 @@ module.exports = {
 			this.dev_references = json.references;
 		}	
 	    if (typeof json.primaryContentSections !== 'undefined') {
-    		text += this.process_sections(json.primaryContentSections);
+    		text += this.process_sections(json.primaryContentSections, ignore_links);
 		} else if (typeof json.sections !== 'undefined') {
-    		text += this.process_sections(json.sections);
+    		text += this.process_sections(json.sections, ignore_links);
 		}
 	return text;
 	},
 
-	process_sections: function (sections) {
+	process_sections: function (sections, ignore_links) {
 		let text = "";
 
 		sections.forEach((section, i) => {
@@ -83,7 +83,7 @@ module.exports = {
 	                    text += "\n\n";
 	                }
 	            } else if (section.kind == 'content') {
-	            	text += this.process_content_section(section);
+	            	text += this.process_content_section(section, ignore_links);
 	            }
 	        }
 
@@ -111,7 +111,7 @@ module.exports = {
 	return text;
 	
 	},
-	process_content_section(section) {
+	process_content_section(section, ignore_links) {
 		text = "";
 		section.content.forEach((content, i) => {
 			
@@ -124,7 +124,11 @@ module.exports = {
                                 if (inline.type == "text") {
                                     inline_text += inline.text;
                                 } else if (inline.type == "link") {
-                                    inline_text += "["+inline.title+"]("+inline.destination+")";
+                                	if (ignore_links) {
+                                		inline_text += inline.title;
+                                	} else {
+ 	                                   inline_text += "["+inline.title+"]("+inline.destination+")";
+                                	}
                                 } else if (inline.type == "reference") {
                                 	if (typeof inline.identifier !== 'undefined') {
 	                                	if (typeof this.dev_references[inline.identifier] !== 'undefined') {
@@ -148,7 +152,7 @@ module.exports = {
                 } else if (content.type == 'unorderedList') {
                 	if (typeof content.items !== 'undefined') {
                 		content.items.forEach((list_item, i) => {
-                			text += "* " + this.process_content_section(list_item);
+                			text += "* " + this.process_content_section(list_item, ignore_links);
                 		});
                 	}
                 } else if (content.type == 'orderedList') {
@@ -156,7 +160,7 @@ module.exports = {
                 		n=0;
                 		content.items.forEach((list_item, i) => {
                 			n = n + 1;
-                			text += n + " " + this.process_content_section(list_item);
+                			text += n + " " + this.process_content_section(list_item, ignore_links);
                 		});
                 	}
                 } else if (content.type == 'heading') {
