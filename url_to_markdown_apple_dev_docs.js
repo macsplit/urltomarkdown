@@ -160,7 +160,7 @@ module.exports = {
                 		n=0;
                 		content.items.forEach((list_item, i) => {
                 			n = n + 1;
-                			text += n + " " + this.process_content_section(list_item, ignore_links);
+                			text += n + ". " + this.process_content_section(list_item, ignore_links);
                 		});
                 	}
                 } else if (content.type == 'heading') {
