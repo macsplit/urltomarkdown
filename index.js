@@ -175,6 +175,7 @@ function code_block_to_markdown (html) {
 		inner_html = match_code[1];
 	inner_html = inner_html.replace(/(<([^>]+)>)/ig, "");
 	inner_html = htmlentities.decode(inner_html);
+	inner_html = inner_html.replace("\n","\r\n");
 	const markdown = "```\n"+inner_html+"\n```\n";
 	return markdown;
 }
