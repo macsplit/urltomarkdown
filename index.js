@@ -8,6 +8,7 @@ const table_to_markdown = require('./html_table_to_markdown.js');
 const validURL = require('@7c/validurl');
 const express = require('express');
 const rateLimit = require('express-rate-limit');
+const htmlentities = require('html-entities');
 
 const port = process.env.PORT;
 
@@ -71,14 +72,14 @@ app.post('/', function(req, res) {
 	if (!html) {
 		res.status(400).send("Please provide a POST parameter called html");
 	} else {	  	
-		try {
+		//try {
 			let document = new JSDOM(html);
 			let markdown = process_dom(url, document, res, inline_title, ignore_links);
 			send_headers(res);
 			res.send(markdown);
-		 } catch (error) {
-			res.status(400).send("Could not parse that document");
-		}
+		 //} catch (error) {
+		//	res.status(400).send("Could not parse that document");
+		//}
 	}
 
 });
@@ -172,6 +173,8 @@ function code_block_to_markdown (html) {
 	const match_code = /^\s*<code[^>]*>[\r\n]*([\s\S]*)<\/code>\s*$/ig.exec(inner_html);
 	if (match_code && match_code[1])
 		inner_html = match_code[1];
+	inner_html = inner_html.replace(/(<([^>]+)>)/ig, "");
+	inner_html = htmlentities.decode(inner_html);
 	const markdown = "```\n"+inner_html+"\n```\n";
 	return markdown;
 }
