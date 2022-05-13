@@ -173,7 +173,7 @@ function code_block_to_markdown (html) {
 	const match_code = /^\s*<code[^>]*>[\r\n]*([\s\S]*)<\/code>\s*$/ig.exec(inner_html);
 	if (match_code && match_code[1])
 		inner_html = match_code[1];
-	inner_html = inner_html.replaceAll(/<br[^>]*>/ig,"&nbsp;\n");
+	inner_html = inner_html.replaceAll(/<br[^>]*>/ig,"\n");
 	inner_html = inner_html.replaceAll(/<[^>]+>/ig, "");
 	inner_html = htmlentities.decode(inner_html);
 	const markdown = "```\n"+inner_html+"\n```\n";
