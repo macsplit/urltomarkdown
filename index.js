@@ -8,7 +8,6 @@ const table_to_markdown = require('./html_table_to_markdown.js');
 const validURL = require('@7c/validurl');
 const express = require('express');
 const rateLimit = require('express-rate-limit');
-const htmlentities = require('html-entities');
 
 const port = process.env.PORT;
 
@@ -72,14 +71,14 @@ app.post('/', function(req, res) {
 	if (!html) {
 		res.status(400).send("Please provide a POST parameter called html");
 	} else {	  	
-		//try {
+		try {
 			let document = new JSDOM(html);
 			let markdown = process_dom(url, document, res, inline_title, ignore_links);
 			send_headers(res);
 			res.send(markdown);
-		 //} catch (error) {
-		//	res.status(400).send("Could not parse that document");
-		//}
+		 } catch (error) {
+			res.status(400).send("Could not parse that document");
+		}
 	}
 
 });
@@ -100,8 +99,7 @@ function process_dom(url, document, res, inline_title, ignore_links) {
 	let reader = new Readability(document.window.document);
 	let readable = reader.parse().content;
 	let replacements = []
-	readable = format_tables(readable, replacements);
-	readable = format_code_blocks(readable, replacements);
+	readable = format_tables(readable, replacements);	
 	let markdown = service.turndown(readable);
 	for (let i=0;i<replacements.length;i++) {
 		markdown = markdown.replace(replacements[i].placeholder, replacements[i].replacement);
@@ -152,30 +150,3 @@ function format_tables(html, replacements) {
 	return html;
 }
 
-function format_code_blocks(html, replacements) {
-	const start = replacements.length;
-	const code_blocks = html.match(/(<pre[^>]*>(?:.|\n)*?<\/pre>)/gi);
-	if (code_blocks) {
-		for (let cb=0;cb<code_blocks.length;cb++) {
-			let code_block = code_blocks[cb];
-			let markdown = code_block_to_markdown(code_block);
-			let placeholder = "urltomarkdowncodeblockplaceholder"+cb+Math.random();
-			replacements[start+cb] = { placeholder: placeholder, replacement: markdown};
-			html = html.replace(code_block, "<p>"+placeholder+"</p>");
-		}
-	}
-	return html;
-}
-
-function code_block_to_markdown (html) {
-	const match_pre = /^<pre[^>]*>([\s\S]*)<\/pre>$/ig.exec(html);
-	let inner_html = match_pre[1];
-	const match_code = /^\s*<code[^>]*>[\r\n]*([\s\S]*)<\/code>\s*$/ig.exec(inner_html);
-	if (match_code && match_code[1])
-		inner_html = match_code[1];
-	inner_html = inner_html.replaceAll(/<br[^>]*>/ig,"\n");
-	inner_html = inner_html.replaceAll(/<[^>]+>/ig, "");
-	inner_html = htmlentities.decode(inner_html);
-	const markdown = "```\n"+inner_html+"\n```\n";
-	return markdown;
-}
