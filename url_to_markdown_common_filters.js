@@ -41,12 +41,12 @@ module.exports = {
 			replace: [
 				{
 					find: '(https://miro.medium.com/max/60/',
-		lsquo			replacement: '(https://miro.medium.com/max/600/'
+					replacement: '(https://miro.medium.com/max/600/'
 				}
 			]
 		},
 		{
-			domain: /stackoverflow\.com/,
+			domain: /(?:.*\.)?stackoverflow\.com/,
 			remove: [
 				/\*\s+Links.*Three\s+\|/g
 			]
