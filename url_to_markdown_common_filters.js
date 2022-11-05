@@ -44,6 +44,15 @@ module.exports = {
 					replacement: '(https://miro.medium.com/max/600/'
 				}
 			]
+		},
+		{
+			domain: /(?:.*\.)?stackoverflow\.com/,
+			replace: [
+				{
+					find: /\*   Links.*Three \|/ig,
+					replacement: ''
+				}
+			]
 		}
 	], 
 
