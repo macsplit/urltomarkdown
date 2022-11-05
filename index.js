@@ -17,6 +17,8 @@ const service = new turndown();
 
 const apple_dev_prefix = "https://developer.apple.com";
 
+const stackoverflow_prefix = "https://stackoverflow.com";
+
 const rateLimiter = rateLimit({
 	windowMs: 30 * 1000,
 	max: 5,
@@ -68,7 +70,8 @@ app.post('/', function(req, res) {
 	if (links) {
 		ignore_links = (links === 'false');
 	}
-	if (url && url.startsWith('https://stackoverflow.com/')) {
+	if (url && validURL(url) && url.startsWith(stackoverflow_prefix)) {
+		send_headers(res);
 		read_url(url, res, inline_title, ignore_links);
 		return;
 	}
