@@ -48,7 +48,7 @@ module.exports = {
 		{
 			domain: /(?:.*\.)?stackoverflow\.com/,
 			remove: [
-				/\* +Links.*Three +\|/s
+				/\* +Links(.|\r|\n)*Three +\|/g
 			]
 		}
 	], 
