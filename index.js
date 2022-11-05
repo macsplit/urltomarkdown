@@ -68,6 +68,10 @@ app.post('/', function(req, res) {
 	if (links) {
 		ignore_links = (links === 'false');
 	}
+	if (url && url.startsWith('https://stackoverflow.com/')) {
+		read_url(url, res, inline_title, ignore_links);
+		return;
+	}
 	if (!html) {
 		res.status(400).send("Please provide a POST parameter called html");
 	} else {	  	
