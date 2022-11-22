@@ -18,7 +18,7 @@ const service = new turndown();
 
 const apple_dev_prefix = "https://developer.apple.com";
 
-const stackoverflow_prefix = "https://stackoverflow.com";
+const stackoverflow_prefix = "https://stackoverflow.com/questions";
 
 const rateLimiter = rateLimit({
 	windowMs: 30 * 1000,
@@ -50,6 +50,8 @@ app.get('/', (req, res) => {
 		send_headers(res);
 		if (url.startsWith(apple_dev_prefix)) {
 			read_apple_url(url, res, inline_title, ignore_links);
+		} else if (url.startsWith(stackoverflow_prefix)) {		
+			read_stack_url(url, res, inline_title, ignore_links);		
 		} else {
 			read_url(url, res, inline_title, ignore_links);
 		}
@@ -73,7 +75,7 @@ app.post('/', function(req, res) {
 	}
 	if (url && validURL(url) && url.startsWith(stackoverflow_prefix)) {
 		send_headers(res);
-		read_url(url, res, inline_title, ignore_links);
+		read_stack_url(url, res, inline_title, ignore_links);
 		return;
 	}
 	if (!html) {
@@ -100,10 +102,13 @@ function send_headers(res) {
  	res.header("Content-Type", 'text/markdown');
 }
 
-function process_dom(url, document, res, inline_title, ignore_links) {
+function process_dom(url, document, res, inline_title, ignore_links, id="") {
 	let title = document.window.document.querySelector('title');
 	if (title)
 		res.header("X-Title", encodeURIComponent(title.textContent));
+	if (id) {		
+		document = new JSDOM('<!DOCTYPE html>'+ document.window.document.querySelector("#"+id).innerHTML);	
+	}
 	let reader = new Readability(document.window.document);
 	let readable = reader.parse().content;
 	let replacements = []
@@ -124,6 +129,21 @@ function read_url(url, res, inline_title, ignore_links) {
 	JSDOM.fromURL(url).then((document)=>{
 		let markdown = process_dom(url, document, res, inline_title, ignore_links);
 		res.send(markdown);
+	}).catch((error)=> {
+		res.status(400).send("Sorry, could not fetch and convert that URL");
+	});
+}
+
+function read_stack_url(url, res, inline_title, ignore_links) {
+	JSDOM.fromURL(url).then((document)=>{
+		let markdown_q = process_dom(url, document, res, inline_title, ignore_links, 'question');
+		let markdown_a = process_dom(url, document, res, false, ignore_links, 'answers');
+		if (markdown_a.startsWith('Your Answer')) {
+			res.send(markdown_q);
+		}
+		else {
+			res.send(markdown_q + "\n\n## Answer\n"+ markdown_a);
+		}
 	}).catch((error)=> {
 		res.status(400).send("Sorry, could not fetch and convert that URL");
 	});
