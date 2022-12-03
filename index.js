@@ -111,9 +111,9 @@ function process_dom(url, document, res, inline_title, ignore_links, id="") {
 	}
 	let reader = new Readability(document.window.document);
 	let readable = reader.parse().content;
-	let replacements = []
-	readable = format_tables(readable, replacements);	
+	let replacements = [];
 	readable = format_codeblocks(readable, replacements);
+	readable = format_tables(readable, replacements);		
 	let markdown = service.turndown(readable);
 	for (let i=0;i<replacements.length;i++) {
 		markdown = markdown.replace(replacements[i].placeholder, replacements[i].replacement);
