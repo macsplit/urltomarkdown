@@ -13,8 +13,8 @@ class html_reader {
 		JSDOM.fromURL(url).then((document)=>{
 			let markdown = processor.process_dom(url, document, res, inline_title, ignore_links);
 			res.send(markdown);
-		//}).catch((error)=> {
-		//	res.status(400).send(failure_message);
+		}).catch((error)=> {
+			res.status(400).send(failure_message);
 		});
 	}
 }
@@ -47,8 +47,8 @@ class stack_reader {
 			else {
 				res.send(markdown_q + "\n\n## Answer\n"+ markdown_a);
 			}
-		//}).catch((error)=> {
-		//	res.status(400).send(failure_message);
+		}).catch((error)=> {
+			res.status(400).send(failure_message);
 		});
 	}
 }
