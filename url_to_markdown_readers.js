@@ -21,7 +21,7 @@ class html_reader {
 
 class apple_reader {
 	read_url(url, res, inline_title, ignore_links) {
-		json_url = apple_dev_parser.dev_doc_url(url);
+		let json_url = apple_dev_parser.dev_doc_url(url);
 		https.get(json_url,(apple_res) => {
 		    let body = "";
 		    apple_res.on("data", (chunk) => {
