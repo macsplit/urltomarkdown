@@ -12,12 +12,7 @@
     "jsdom": "^16.4.0",
     "justify-text": "^1.1.3",
     "turndown": "^7.0.0",
-    "url": "^0.11.0",
-    "url_to_markdown_apple_dev_docs": "file:./url_to_markdown_apple_dev_docs.js",
-    "url_to_markdown_common_filters": "file:./url_to_markdown_common_filters.js",
-    "url_to_markdown_formatters": "file:./url_to_markdown_formatters.js",
-    "url_to_markdown_processor": "file:./url_to_markdown_processor.js",
-    "url_to_markdown_readers": "file://./url_to_markdown_readers.js"
+    "url": "^0.11.0"
   },
   "scripts": {
     "start": "node index.js"

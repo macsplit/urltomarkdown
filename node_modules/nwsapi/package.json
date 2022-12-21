@@ -1,6 +1,6 @@
 {
   "name": "nwsapi",
-  "version": "2.2.0",
+  "version": "2.2.2",
   "description": "Fast CSS Selectors API Engine",
   "homepage": "http://javascript.nwbox.com/nwsapi/",
   "main": "./src/nwsapi",
@@ -18,9 +18,17 @@
     }
   ],
   "license": "MIT",
-  "author": "Diego Perini <diego.perini@gmail.com> (http://www.iport.it/)",
+  "author": {
+    "name": "Diego Perini",
+    "email": "diego.perini@gmail.com",
+    "web": "http://www.iport.it/"
+  },
   "maintainers": [
-    "Diego Perini <diego.perini@gmail.com> (http://www.iport.it/)"
+    {
+      "name": "Diego Perini",
+      "email": "diego.perini@gmail.com",
+      "web": "http://www.iport.it/"
+    }
   ],
   "bugs": {
     "url": "http://github.com/dperini/nwsapi/issues"
@@ -31,8 +39,5 @@
   },
   "scripts": {
     "lint": "eslint ./src/nwsapi.js"
-  },
-  "directories": {
-    "test": "test"
   }
 }
