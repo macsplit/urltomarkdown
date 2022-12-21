@@ -54,8 +54,8 @@ class stack_reader {
 }
 
 module.exports = {
-	reader_for_url: function (url, options = []) {
-		if (!ignore_apple && url.startsWith(apple_dev_prefix)) {
+	reader_for_url: function (url) {
+		if (url.startsWith(apple_dev_prefix)) {
 			return new apple_reader;
 		} else if (url.startsWith(stackoverflow_prefix)) {		
 			return new stack_reader;
