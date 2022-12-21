@@ -67,6 +67,7 @@ app.post('/', function(req, res) {
 	}
 	if (readers.ignore_post(url)) {
 		read_url(url, res, inline_title, ignore_links);
+		return;
 	}
 	if (!html) {
 		res.status(400).send("Please provide a POST parameter called html");
