@@ -15,8 +15,12 @@
     "url": "^0.11.0"
   },
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "test": "jest"
   },
   "author": "Lee Hanken",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "jest": "^29.3.1"
+  }
 }

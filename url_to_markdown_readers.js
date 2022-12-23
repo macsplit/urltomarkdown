@@ -54,6 +54,9 @@ class stack_reader {
 }
 
 module.exports = {
+	html_reader,
+	stack_reader,
+	apple_reader,
 	reader_for_url: function (url) {
 		if (url.startsWith(apple_dev_prefix)) {
 			return new apple_reader;
