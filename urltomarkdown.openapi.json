@@ -47,7 +47,7 @@
             "description": "Successful operation.",
             "content": {
               "text/markdown": {
-                "schema": ""
+                "schema": false
               }
             },
             "headers": {
@@ -117,7 +117,7 @@
             "description": "Successful operation.",
             "content": {
               "text/markdown": {
-                "schema": ""
+                "schema": false
               }
             },
             "headers": {
