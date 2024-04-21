@@ -1,0 +1,139 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "urltomarkdown - OpenAPI 3.1",
+    "description": "Provides a web service that accesses a requested web page and outputs a markdown version.\n\nSource code for the web service is available at [the urltomarkdown repository](https://github.com/macsplit/urltomarkdown)",
+    "version": "1.0"
+  },
+  "servers": [
+    {
+      "url": "https://urltomarkdown.herokuapp.com"
+    }
+  ],
+  "paths": {
+    "/": {
+      "get": {
+        "summary": "Convert a web page",
+        "description": "Outputs a markdown version of the page.",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "url",
+            "description": "The address of the web page.",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "query",
+            "name": "title",
+            "description": "Whether to prepend an inline title. This parameter expects the values \"true\" or \"false\" only.",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "links",
+            "description": "Whether to mark up links. This parameter expects the values \"true\" or \"false\" only.",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation.",
+            "content": {
+              "text/markdown": {
+                "schema": ""
+              }
+            },
+            "headers": {
+              "X-Title": {
+                "description": "The title of the web page.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Could not access or convert web page."
+          }
+        }
+      },
+      "post": {
+        "summary": "Convert a web page with HTML supplied",
+        "description": "Outputs a markdown version of the page.",
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "url": {
+                    "type": "string",
+                    "description": "The original URL of the web page, which is expected in either the request body or the query string."
+                  },
+                  "html": {
+                    "type": "string",
+                    "description": "The HTML source of the web page."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "in": "query",
+            "name": "url",
+            "description": "The original URL of the web page, which is expected in either the request body or the query string.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "title",
+            "description": "Whether to prepend an inline title. This parameter expects the values \"true\" or \"false\" only.",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "links",
+            "description": "Whether to mark up links. This parameter expects the values \"true\" or \"false\" only.",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation.",
+            "content": {
+              "text/markdown": {
+                "schema": ""
+              }
+            },
+            "headers": {
+              "X-Title": {
+                "description": "The title of the web page.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Could not access or convert web page."
+          }
+        }
+      }
+    }
+  }
+}
