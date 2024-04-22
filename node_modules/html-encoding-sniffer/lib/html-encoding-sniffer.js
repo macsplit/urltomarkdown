@@ -2,15 +2,15 @@
 const whatwgEncoding = require("whatwg-encoding");
 
 // https://html.spec.whatwg.org/#encoding-sniffing-algorithm
-module.exports = (buffer, { transportLayerEncodingLabel, defaultEncoding = "windows-1252" } = {}) => {
-  let encoding = whatwgEncoding.getBOMEncoding(buffer); // see https://github.com/whatwg/html/issues/1910
+module.exports = (uint8Array, { transportLayerEncodingLabel, defaultEncoding = "windows-1252" } = {}) => {
+  let encoding = whatwgEncoding.getBOMEncoding(uint8Array);
 
   if (encoding === null && transportLayerEncodingLabel !== undefined) {
     encoding = whatwgEncoding.labelToName(transportLayerEncodingLabel);
   }
 
   if (encoding === null) {
-    encoding = prescanMetaCharset(buffer);
+    encoding = prescanMetaCharset(uint8Array);
   }
 
   if (encoding === null) {
@@ -21,24 +21,24 @@ module.exports = (buffer, { transportLayerEncodingLabel, defaultEncoding = "wind
 };
 
 // https://html.spec.whatwg.org/multipage/syntax.html#prescan-a-byte-stream-to-determine-its-encoding
-function prescanMetaCharset(buffer) {
-  const l = Math.min(buffer.length, 1024);
+function prescanMetaCharset(uint8Array) {
+  const l = Math.min(uint8Array.byteLength, 1024);
   for (let i = 0; i < l; i++) {
-    let c = buffer[i];
+    let c = uint8Array[i];
     if (c === 0x3C) {
       // "<"
-      const c1 = buffer[i + 1];
-      const c2 = buffer[i + 2];
-      const c3 = buffer[i + 3];
-      const c4 = buffer[i + 4];
-      const c5 = buffer[i + 5];
+      const c1 = uint8Array[i + 1];
+      const c2 = uint8Array[i + 2];
+      const c3 = uint8Array[i + 3];
+      const c4 = uint8Array[i + 4];
+      const c5 = uint8Array[i + 5];
       // !-- (comment start)
       if (c1 === 0x21 && c2 === 0x2D && c3 === 0x2D) {
         i += 4;
         for (; i < l; i++) {
-          c = buffer[i];
-          const cMinus1 = buffer[i - 1];
-          const cMinus2 = buffer[i - 2];
+          c = uint8Array[i];
+          const cMinus1 = uint8Array[i - 1];
+          const cMinus2 = uint8Array[i - 2];
           // --> (comment end)
           if (c === 0x3E && cMinus1 === 0x2D && cMinus2 === 0x2D) {
             break;
@@ -58,7 +58,7 @@ function prescanMetaCharset(buffer) {
 
         let attrRes;
         do {
-          attrRes = getAttribute(buffer, i, l);
+          attrRes = getAttribute(uint8Array, i, l);
           if (attrRes.attr && !attributeList.has(attrRes.attr.name)) {
             attributeList.add(attrRes.attr.name);
             if (attrRes.attr.name === "http-equiv") {
@@ -97,7 +97,7 @@ function prescanMetaCharset(buffer) {
       } else if ((c1 >= 0x41 && c1 <= 0x5A) || (c1 >= 0x61 && c1 <= 0x7A)) {
         // a-z or A-Z
         for (i += 2; i < l; i++) {
-          c = buffer[i];
+          c = uint8Array[i];
           // space or >
           if (isSpaceCharacter(c) || c === 0x3E) {
             break;
@@ -105,13 +105,13 @@ function prescanMetaCharset(buffer) {
         }
         let attrRes;
         do {
-          attrRes = getAttribute(buffer, i, l);
+          attrRes = getAttribute(uint8Array, i, l);
           i = attrRes.i;
         } while (attrRes.attr);
       } else if (c1 === 0x21 || c1 === 0x2F || c1 === 0x3F) {
         // ! or / or ?
         for (i += 2; i < l; i++) {
-          c = buffer[i];
+          c = uint8Array[i];
           // >
           if (c === 0x3E) {
             break;
@@ -124,9 +124,9 @@ function prescanMetaCharset(buffer) {
 }
 
 // https://html.spec.whatwg.org/multipage/syntax.html#concept-get-attributes-when-sniffing
-function getAttribute(buffer, i, l) {
+function getAttribute(uint8Array, i, l) {
   for (; i < l; i++) {
-    let c = buffer[i];
+    let c = uint8Array[i];
     // space or /
     if (isSpaceCharacter(c) || c === 0x2F) {
       continue;
@@ -138,7 +138,7 @@ function getAttribute(buffer, i, l) {
     let name = "";
     let value = "";
     nameLoop:for (; i < l; i++) {
-      c = buffer[i];
+      c = uint8Array[i];
       // "="
       if (c === 0x3D && name !== "") {
         i++;
@@ -147,7 +147,7 @@ function getAttribute(buffer, i, l) {
       // space
       if (isSpaceCharacter(c)) {
         for (i++; i < l; i++) {
-          c = buffer[i];
+          c = uint8Array[i];
           // space
           if (isSpaceCharacter(c)) {
             continue;
@@ -173,11 +173,11 @@ function getAttribute(buffer, i, l) {
         name += String.fromCharCode(c);
       }
     }
-    c = buffer[i];
+    c = uint8Array[i];
     // space
     if (isSpaceCharacter(c)) {
       for (i++; i < l; i++) {
-        c = buffer[i];
+        c = uint8Array[i];
         // space
         if (isSpaceCharacter(c)) {
           continue;
@@ -190,7 +190,7 @@ function getAttribute(buffer, i, l) {
     if (c === 0x22 || c === 0x27) {
       const quote = c;
       for (i++; i < l; i++) {
-        c = buffer[i];
+        c = uint8Array[i];
 
         if (c === quote) {
           i++;
@@ -219,7 +219,7 @@ function getAttribute(buffer, i, l) {
     }
 
     for (i++; i < l; i++) {
-      c = buffer[i];
+      c = uint8Array[i];
 
       // space or >
       if (isSpaceCharacter(c) || c === 0x3E) {
@@ -241,7 +241,7 @@ function extractCharacterEncodingFromMeta(string) {
   let position = 0;
 
   while (true) {
-    const indexOfCharset = string.substring(position).search(/charset/i);
+    const indexOfCharset = string.substring(position).search(/charset/ui);
 
     if (indexOfCharset === -1) {
       return null;
@@ -282,7 +282,7 @@ function extractCharacterEncodingFromMeta(string) {
     return null;
   }
 
-  const indexOfASCIIWhitespaceOrSemicolon = string.substring(position + 1).search(/\x09|\x0A|\x0C|\x0D|\x20|;/);
+  const indexOfASCIIWhitespaceOrSemicolon = string.substring(position + 1).search(/\x09|\x0A|\x0C|\x0D|\x20|;/u);
   const end = indexOfASCIIWhitespaceOrSemicolon === -1 ?
     string.length :
     position + indexOfASCIIWhitespaceOrSemicolon + 1;

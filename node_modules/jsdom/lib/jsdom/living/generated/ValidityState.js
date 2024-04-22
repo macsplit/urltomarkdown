@@ -14,24 +14,24 @@ exports.is = value => {
 exports.isImpl = value => {
   return utils.isObject(value) && value instanceof Impl.implementation;
 };
-exports.convert = (value, { context = "The provided value" } = {}) => {
+exports.convert = (globalObject, value, { context = "The provided value" } = {}) => {
   if (exports.is(value)) {
     return utils.implForWrapper(value);
   }
-  throw new TypeError(`${context} is not of type 'ValidityState'.`);
+  throw new globalObject.TypeError(`${context} is not of type 'ValidityState'.`);
 };
 
-function makeWrapper(globalObject) {
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    throw new Error("Internal error: invalid global object");
+function makeWrapper(globalObject, newTarget) {
+  let proto;
+  if (newTarget !== undefined) {
+    proto = newTarget.prototype;
   }
 
-  const ctor = globalObject[ctorRegistrySymbol]["ValidityState"];
-  if (ctor === undefined) {
-    throw new Error("Internal error: constructor ValidityState is not installed on the passed global object");
+  if (!utils.isObject(proto)) {
+    proto = globalObject[ctorRegistrySymbol]["ValidityState"].prototype;
   }
 
-  return Object.create(ctor.prototype);
+  return Object.create(proto);
 }
 
 exports.create = (globalObject, constructorArgs, privateData) => {
@@ -62,8 +62,8 @@ exports.setup = (wrapper, globalObject, constructorArgs = [], privateData = {}) 
   return wrapper;
 };
 
-exports.new = globalObject => {
-  const wrapper = makeWrapper(globalObject);
+exports.new = (globalObject, newTarget) => {
+  const wrapper = makeWrapper(globalObject, newTarget);
 
   exports._internalSetup(wrapper, globalObject);
   Object.defineProperty(wrapper, implSymbol, {
@@ -84,16 +84,20 @@ exports.install = (globalObject, globalNames) => {
   if (!globalNames.some(globalName => exposed.has(globalName))) {
     return;
   }
+
+  const ctorRegistry = utils.initCtorRegistry(globalObject);
   class ValidityState {
     constructor() {
-      throw new TypeError("Illegal constructor");
+      throw new globalObject.TypeError("Illegal constructor");
     }
 
     get valueMissing() {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get valueMissing' called on an object that is not a valid instance of ValidityState.");
+        throw new globalObject.TypeError(
+          "'get valueMissing' called on an object that is not a valid instance of ValidityState."
+        );
       }
 
       return esValue[implSymbol]["valueMissing"];
@@ -103,7 +107,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get typeMismatch' called on an object that is not a valid instance of ValidityState.");
+        throw new globalObject.TypeError(
+          "'get typeMismatch' called on an object that is not a valid instance of ValidityState."
+        );
       }
 
       return esValue[implSymbol]["typeMismatch"];
@@ -113,7 +119,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get patternMismatch' called on an object that is not a valid instance of ValidityState.");
+        throw new globalObject.TypeError(
+          "'get patternMismatch' called on an object that is not a valid instance of ValidityState."
+        );
       }
 
       return esValue[implSymbol]["patternMismatch"];
@@ -123,7 +131,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get tooLong' called on an object that is not a valid instance of ValidityState.");
+        throw new globalObject.TypeError(
+          "'get tooLong' called on an object that is not a valid instance of ValidityState."
+        );
       }
 
       return esValue[implSymbol]["tooLong"];
@@ -133,7 +143,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get tooShort' called on an object that is not a valid instance of ValidityState.");
+        throw new globalObject.TypeError(
+          "'get tooShort' called on an object that is not a valid instance of ValidityState."
+        );
       }
 
       return esValue[implSymbol]["tooShort"];
@@ -143,7 +155,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get rangeUnderflow' called on an object that is not a valid instance of ValidityState.");
+        throw new globalObject.TypeError(
+          "'get rangeUnderflow' called on an object that is not a valid instance of ValidityState."
+        );
       }
 
       return esValue[implSymbol]["rangeUnderflow"];
@@ -153,7 +167,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get rangeOverflow' called on an object that is not a valid instance of ValidityState.");
+        throw new globalObject.TypeError(
+          "'get rangeOverflow' called on an object that is not a valid instance of ValidityState."
+        );
       }
 
       return esValue[implSymbol]["rangeOverflow"];
@@ -163,7 +179,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get stepMismatch' called on an object that is not a valid instance of ValidityState.");
+        throw new globalObject.TypeError(
+          "'get stepMismatch' called on an object that is not a valid instance of ValidityState."
+        );
       }
 
       return esValue[implSymbol]["stepMismatch"];
@@ -173,7 +191,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get badInput' called on an object that is not a valid instance of ValidityState.");
+        throw new globalObject.TypeError(
+          "'get badInput' called on an object that is not a valid instance of ValidityState."
+        );
       }
 
       return esValue[implSymbol]["badInput"];
@@ -183,7 +203,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get customError' called on an object that is not a valid instance of ValidityState.");
+        throw new globalObject.TypeError(
+          "'get customError' called on an object that is not a valid instance of ValidityState."
+        );
       }
 
       return esValue[implSymbol]["customError"];
@@ -193,7 +215,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get valid' called on an object that is not a valid instance of ValidityState.");
+        throw new globalObject.TypeError(
+          "'get valid' called on an object that is not a valid instance of ValidityState."
+        );
       }
 
       return esValue[implSymbol]["valid"];
@@ -213,10 +237,7 @@ exports.install = (globalObject, globalNames) => {
     valid: { enumerable: true },
     [Symbol.toStringTag]: { value: "ValidityState", configurable: true }
   });
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    globalObject[ctorRegistrySymbol] = Object.create(null);
-  }
-  globalObject[ctorRegistrySymbol][interfaceName] = ValidityState;
+  ctorRegistry[interfaceName] = ValidityState;
 
   Object.defineProperty(globalObject, interfaceName, {
     configurable: true,

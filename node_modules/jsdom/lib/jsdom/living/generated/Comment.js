@@ -15,24 +15,24 @@ exports.is = value => {
 exports.isImpl = value => {
   return utils.isObject(value) && value instanceof Impl.implementation;
 };
-exports.convert = (value, { context = "The provided value" } = {}) => {
+exports.convert = (globalObject, value, { context = "The provided value" } = {}) => {
   if (exports.is(value)) {
     return utils.implForWrapper(value);
   }
-  throw new TypeError(`${context} is not of type 'Comment'.`);
+  throw new globalObject.TypeError(`${context} is not of type 'Comment'.`);
 };
 
-function makeWrapper(globalObject) {
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    throw new Error("Internal error: invalid global object");
+function makeWrapper(globalObject, newTarget) {
+  let proto;
+  if (newTarget !== undefined) {
+    proto = newTarget.prototype;
   }
 
-  const ctor = globalObject[ctorRegistrySymbol]["Comment"];
-  if (ctor === undefined) {
-    throw new Error("Internal error: constructor Comment is not installed on the passed global object");
+  if (!utils.isObject(proto)) {
+    proto = globalObject[ctorRegistrySymbol]["Comment"].prototype;
   }
 
-  return Object.create(ctor.prototype);
+  return Object.create(proto);
 }
 
 exports.create = (globalObject, constructorArgs, privateData) => {
@@ -65,8 +65,8 @@ exports.setup = (wrapper, globalObject, constructorArgs = [], privateData = {}) 
   return wrapper;
 };
 
-exports.new = globalObject => {
-  const wrapper = makeWrapper(globalObject);
+exports.new = (globalObject, newTarget) => {
+  const wrapper = makeWrapper(globalObject, newTarget);
 
   exports._internalSetup(wrapper, globalObject);
   Object.defineProperty(wrapper, implSymbol, {
@@ -88,16 +88,17 @@ exports.install = (globalObject, globalNames) => {
     return;
   }
 
-  if (globalObject.CharacterData === undefined) {
-    throw new Error("Internal error: attempting to evaluate Comment before CharacterData");
-  }
+  const ctorRegistry = utils.initCtorRegistry(globalObject);
   class Comment extends globalObject.CharacterData {
     constructor() {
       const args = [];
       {
         let curArg = arguments[0];
         if (curArg !== undefined) {
-          curArg = conversions["DOMString"](curArg, { context: "Failed to construct 'Comment': parameter 1" });
+          curArg = conversions["DOMString"](curArg, {
+            context: "Failed to construct 'Comment': parameter 1",
+            globals: globalObject
+          });
         } else {
           curArg = "";
         }
@@ -107,10 +108,7 @@ exports.install = (globalObject, globalNames) => {
     }
   }
   Object.defineProperties(Comment.prototype, { [Symbol.toStringTag]: { value: "Comment", configurable: true } });
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    globalObject[ctorRegistrySymbol] = Object.create(null);
-  }
-  globalObject[ctorRegistrySymbol][interfaceName] = Comment;
+  ctorRegistry[interfaceName] = Comment;
 
   Object.defineProperty(globalObject, interfaceName, {
     configurable: true,

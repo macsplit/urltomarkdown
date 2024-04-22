@@ -15,24 +15,24 @@ exports.is = value => {
 exports.isImpl = value => {
   return utils.isObject(value) && value instanceof Impl.implementation;
 };
-exports.convert = (value, { context = "The provided value" } = {}) => {
+exports.convert = (globalObject, value, { context = "The provided value" } = {}) => {
   if (exports.is(value)) {
     return utils.implForWrapper(value);
   }
-  throw new TypeError(`${context} is not of type 'Event'.`);
+  throw new globalObject.TypeError(`${context} is not of type 'Event'.`);
 };
 
-function makeWrapper(globalObject) {
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    throw new Error("Internal error: invalid global object");
+function makeWrapper(globalObject, newTarget) {
+  let proto;
+  if (newTarget !== undefined) {
+    proto = newTarget.prototype;
   }
 
-  const ctor = globalObject[ctorRegistrySymbol]["Event"];
-  if (ctor === undefined) {
-    throw new Error("Internal error: constructor Event is not installed on the passed global object");
+  if (!utils.isObject(proto)) {
+    proto = globalObject[ctorRegistrySymbol]["Event"].prototype;
   }
 
-  return Object.create(ctor.prototype);
+  return Object.create(proto);
 }
 
 exports.create = (globalObject, constructorArgs, privateData) => {
@@ -45,23 +45,33 @@ exports.createImpl = (globalObject, constructorArgs, privateData) => {
   return utils.implForWrapper(wrapper);
 };
 
-exports._internalSetup = (wrapper, globalObject) => {
-  Object.defineProperties(
-    wrapper,
-    Object.getOwnPropertyDescriptors({
+function getUnforgeables(globalObject) {
+  let unforgeables = unforgeablesMap.get(globalObject);
+  if (unforgeables === undefined) {
+    unforgeables = Object.create(null);
+    utils.define(unforgeables, {
       get isTrusted() {
         const esValue = this !== null && this !== undefined ? this : globalObject;
 
         if (!exports.is(esValue)) {
-          throw new TypeError("'get isTrusted' called on an object that is not a valid instance of Event.");
+          throw new globalObject.TypeError(
+            "'get isTrusted' called on an object that is not a valid instance of Event."
+          );
         }
 
         return esValue[implSymbol]["isTrusted"];
       }
-    })
-  );
+    });
+    Object.defineProperties(unforgeables, {
+      isTrusted: { configurable: false }
+    });
+    unforgeablesMap.set(globalObject, unforgeables);
+  }
+  return unforgeables;
+}
 
-  Object.defineProperties(wrapper, { isTrusted: { configurable: false } });
+exports._internalSetup = (wrapper, globalObject) => {
+  utils.define(wrapper, getUnforgeables(globalObject));
 };
 
 exports.setup = (wrapper, globalObject, constructorArgs = [], privateData = {}) => {
@@ -80,8 +90,8 @@ exports.setup = (wrapper, globalObject, constructorArgs = [], privateData = {}) 
   return wrapper;
 };
 
-exports.new = globalObject => {
-  const wrapper = makeWrapper(globalObject);
+exports.new = (globalObject, newTarget) => {
+  const wrapper = makeWrapper(globalObject, newTarget);
 
   exports._internalSetup(wrapper, globalObject);
   Object.defineProperty(wrapper, implSymbol, {
@@ -96,28 +106,34 @@ exports.new = globalObject => {
   return wrapper[implSymbol];
 };
 
+const unforgeablesMap = new WeakMap();
 const exposed = new Set(["Window", "Worker", "AudioWorklet"]);
 
 exports.install = (globalObject, globalNames) => {
   if (!globalNames.some(globalName => exposed.has(globalName))) {
     return;
   }
+
+  const ctorRegistry = utils.initCtorRegistry(globalObject);
   class Event {
     constructor(type) {
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to construct 'Event': 1 argument required, but only " + arguments.length + " present."
+        throw new globalObject.TypeError(
+          `Failed to construct 'Event': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
-        curArg = conversions["DOMString"](curArg, { context: "Failed to construct 'Event': parameter 1" });
+        curArg = conversions["DOMString"](curArg, {
+          context: "Failed to construct 'Event': parameter 1",
+          globals: globalObject
+        });
         args.push(curArg);
       }
       {
         let curArg = arguments[1];
-        curArg = EventInit.convert(curArg, { context: "Failed to construct 'Event': parameter 2" });
+        curArg = EventInit.convert(globalObject, curArg, { context: "Failed to construct 'Event': parameter 2" });
         args.push(curArg);
       }
       return exports.setup(Object.create(new.target.prototype), globalObject, args);
@@ -126,7 +142,7 @@ exports.install = (globalObject, globalNames) => {
     composedPath() {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'composedPath' called on an object that is not a valid instance of Event.");
+        throw new globalObject.TypeError("'composedPath' called on an object that is not a valid instance of Event.");
       }
 
       return utils.tryWrapperForImpl(esValue[implSymbol].composedPath());
@@ -135,7 +151,9 @@ exports.install = (globalObject, globalNames) => {
     stopPropagation() {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'stopPropagation' called on an object that is not a valid instance of Event.");
+        throw new globalObject.TypeError(
+          "'stopPropagation' called on an object that is not a valid instance of Event."
+        );
       }
 
       return esValue[implSymbol].stopPropagation();
@@ -144,7 +162,9 @@ exports.install = (globalObject, globalNames) => {
     stopImmediatePropagation() {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'stopImmediatePropagation' called on an object that is not a valid instance of Event.");
+        throw new globalObject.TypeError(
+          "'stopImmediatePropagation' called on an object that is not a valid instance of Event."
+        );
       }
 
       return esValue[implSymbol].stopImmediatePropagation();
@@ -153,7 +173,7 @@ exports.install = (globalObject, globalNames) => {
     preventDefault() {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'preventDefault' called on an object that is not a valid instance of Event.");
+        throw new globalObject.TypeError("'preventDefault' called on an object that is not a valid instance of Event.");
       }
 
       return esValue[implSymbol].preventDefault();
@@ -162,24 +182,30 @@ exports.install = (globalObject, globalNames) => {
     initEvent(type) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'initEvent' called on an object that is not a valid instance of Event.");
+        throw new globalObject.TypeError("'initEvent' called on an object that is not a valid instance of Event.");
       }
 
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to execute 'initEvent' on 'Event': 1 argument required, but only " + arguments.length + " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'initEvent' on 'Event': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
-        curArg = conversions["DOMString"](curArg, { context: "Failed to execute 'initEvent' on 'Event': parameter 1" });
+        curArg = conversions["DOMString"](curArg, {
+          context: "Failed to execute 'initEvent' on 'Event': parameter 1",
+          globals: globalObject
+        });
         args.push(curArg);
       }
       {
         let curArg = arguments[1];
         if (curArg !== undefined) {
-          curArg = conversions["boolean"](curArg, { context: "Failed to execute 'initEvent' on 'Event': parameter 2" });
+          curArg = conversions["boolean"](curArg, {
+            context: "Failed to execute 'initEvent' on 'Event': parameter 2",
+            globals: globalObject
+          });
         } else {
           curArg = false;
         }
@@ -188,7 +214,10 @@ exports.install = (globalObject, globalNames) => {
       {
         let curArg = arguments[2];
         if (curArg !== undefined) {
-          curArg = conversions["boolean"](curArg, { context: "Failed to execute 'initEvent' on 'Event': parameter 3" });
+          curArg = conversions["boolean"](curArg, {
+            context: "Failed to execute 'initEvent' on 'Event': parameter 3",
+            globals: globalObject
+          });
         } else {
           curArg = false;
         }
@@ -201,7 +230,7 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get type' called on an object that is not a valid instance of Event.");
+        throw new globalObject.TypeError("'get type' called on an object that is not a valid instance of Event.");
       }
 
       return esValue[implSymbol]["type"];
@@ -211,7 +240,7 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get target' called on an object that is not a valid instance of Event.");
+        throw new globalObject.TypeError("'get target' called on an object that is not a valid instance of Event.");
       }
 
       return utils.tryWrapperForImpl(esValue[implSymbol]["target"]);
@@ -221,7 +250,7 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get srcElement' called on an object that is not a valid instance of Event.");
+        throw new globalObject.TypeError("'get srcElement' called on an object that is not a valid instance of Event.");
       }
 
       return utils.tryWrapperForImpl(esValue[implSymbol]["srcElement"]);
@@ -231,7 +260,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get currentTarget' called on an object that is not a valid instance of Event.");
+        throw new globalObject.TypeError(
+          "'get currentTarget' called on an object that is not a valid instance of Event."
+        );
       }
 
       return utils.tryWrapperForImpl(esValue[implSymbol]["currentTarget"]);
@@ -241,7 +272,7 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get eventPhase' called on an object that is not a valid instance of Event.");
+        throw new globalObject.TypeError("'get eventPhase' called on an object that is not a valid instance of Event.");
       }
 
       return esValue[implSymbol]["eventPhase"];
@@ -251,7 +282,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get cancelBubble' called on an object that is not a valid instance of Event.");
+        throw new globalObject.TypeError(
+          "'get cancelBubble' called on an object that is not a valid instance of Event."
+        );
       }
 
       return esValue[implSymbol]["cancelBubble"];
@@ -261,11 +294,14 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'set cancelBubble' called on an object that is not a valid instance of Event.");
+        throw new globalObject.TypeError(
+          "'set cancelBubble' called on an object that is not a valid instance of Event."
+        );
       }
 
       V = conversions["boolean"](V, {
-        context: "Failed to set the 'cancelBubble' property on 'Event': The provided value"
+        context: "Failed to set the 'cancelBubble' property on 'Event': The provided value",
+        globals: globalObject
       });
 
       esValue[implSymbol]["cancelBubble"] = V;
@@ -275,7 +311,7 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get bubbles' called on an object that is not a valid instance of Event.");
+        throw new globalObject.TypeError("'get bubbles' called on an object that is not a valid instance of Event.");
       }
 
       return esValue[implSymbol]["bubbles"];
@@ -285,7 +321,7 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get cancelable' called on an object that is not a valid instance of Event.");
+        throw new globalObject.TypeError("'get cancelable' called on an object that is not a valid instance of Event.");
       }
 
       return esValue[implSymbol]["cancelable"];
@@ -295,7 +331,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get returnValue' called on an object that is not a valid instance of Event.");
+        throw new globalObject.TypeError(
+          "'get returnValue' called on an object that is not a valid instance of Event."
+        );
       }
 
       return esValue[implSymbol]["returnValue"];
@@ -305,11 +343,14 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'set returnValue' called on an object that is not a valid instance of Event.");
+        throw new globalObject.TypeError(
+          "'set returnValue' called on an object that is not a valid instance of Event."
+        );
       }
 
       V = conversions["boolean"](V, {
-        context: "Failed to set the 'returnValue' property on 'Event': The provided value"
+        context: "Failed to set the 'returnValue' property on 'Event': The provided value",
+        globals: globalObject
       });
 
       esValue[implSymbol]["returnValue"] = V;
@@ -319,7 +360,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get defaultPrevented' called on an object that is not a valid instance of Event.");
+        throw new globalObject.TypeError(
+          "'get defaultPrevented' called on an object that is not a valid instance of Event."
+        );
       }
 
       return esValue[implSymbol]["defaultPrevented"];
@@ -329,7 +372,7 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get composed' called on an object that is not a valid instance of Event.");
+        throw new globalObject.TypeError("'get composed' called on an object that is not a valid instance of Event.");
       }
 
       return esValue[implSymbol]["composed"];
@@ -339,7 +382,7 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get timeStamp' called on an object that is not a valid instance of Event.");
+        throw new globalObject.TypeError("'get timeStamp' called on an object that is not a valid instance of Event.");
       }
 
       return esValue[implSymbol]["timeStamp"];
@@ -375,10 +418,7 @@ exports.install = (globalObject, globalNames) => {
     AT_TARGET: { value: 2, enumerable: true },
     BUBBLING_PHASE: { value: 3, enumerable: true }
   });
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    globalObject[ctorRegistrySymbol] = Object.create(null);
-  }
-  globalObject[ctorRegistrySymbol][interfaceName] = Event;
+  ctorRegistry[interfaceName] = Event;
 
   Object.defineProperty(globalObject, interfaceName, {
     configurable: true,

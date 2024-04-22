@@ -5,7 +5,8 @@ const {
   isHTTPWhitespaceChar,
   solelyContainsHTTPTokenCodePoints,
   soleyContainsHTTPQuotedStringTokenCodePoints,
-  asciiLowercase
+  asciiLowercase,
+  collectAnHTTPQuotedString
 } = require("./utils.js");
 
 module.exports = input => {
@@ -71,35 +72,15 @@ module.exports = input => {
       ++position;
     }
 
-    let parameterValue = "";
+    let parameterValue = null;
     if (input[position] === "\"") {
-      ++position;
-
-      while (true) {
-        while (position < input.length && input[position] !== "\"" && input[position] !== "\\") {
-          parameterValue += input[position];
-          ++position;
-        }
-
-        if (position < input.length && input[position] === "\\") {
-          ++position;
-          if (position < input.length) {
-            parameterValue += input[position];
-            ++position;
-            continue;
-          } else {
-            parameterValue += "\\";
-            break;
-          }
-        } else {
-          break;
-        }
-      }
+      [parameterValue, position] = collectAnHTTPQuotedString(input, position);
 
       while (position < input.length && input[position] !== ";") {
         ++position;
       }
     } else {
+      parameterValue = "";
       while (position < input.length && input[position] !== ";") {
         parameterValue += input[position];
         ++position;

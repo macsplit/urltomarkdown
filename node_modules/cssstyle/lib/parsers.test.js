@@ -107,7 +107,14 @@ describe('parseColor', () => {
 
     expect(output).toEqual('rgba(5, 5, 5, 0.5)');
   });
-
+  it.each([
+    [120, 'rgb(0, 255, 0)'],
+    [240, 'rgb(0, 0, 255)'],
+  ])('should convert not zero hsl with non zero hue %s to %s', (hue, rgbValue) => {
+    let input = 'hsl(' + hue + ', 100%, 50%)';
+    let output = parsers.parseColor(input);
+    expect(output).toEqual(rgbValue);
+  });
   it.todo('Add more tests');
 });
 describe('parseAngle', () => {

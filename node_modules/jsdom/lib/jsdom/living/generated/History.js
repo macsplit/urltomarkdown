@@ -14,24 +14,24 @@ exports.is = value => {
 exports.isImpl = value => {
   return utils.isObject(value) && value instanceof Impl.implementation;
 };
-exports.convert = (value, { context = "The provided value" } = {}) => {
+exports.convert = (globalObject, value, { context = "The provided value" } = {}) => {
   if (exports.is(value)) {
     return utils.implForWrapper(value);
   }
-  throw new TypeError(`${context} is not of type 'History'.`);
+  throw new globalObject.TypeError(`${context} is not of type 'History'.`);
 };
 
-function makeWrapper(globalObject) {
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    throw new Error("Internal error: invalid global object");
+function makeWrapper(globalObject, newTarget) {
+  let proto;
+  if (newTarget !== undefined) {
+    proto = newTarget.prototype;
   }
 
-  const ctor = globalObject[ctorRegistrySymbol]["History"];
-  if (ctor === undefined) {
-    throw new Error("Internal error: constructor History is not installed on the passed global object");
+  if (!utils.isObject(proto)) {
+    proto = globalObject[ctorRegistrySymbol]["History"].prototype;
   }
 
-  return Object.create(ctor.prototype);
+  return Object.create(proto);
 }
 
 exports.create = (globalObject, constructorArgs, privateData) => {
@@ -62,8 +62,8 @@ exports.setup = (wrapper, globalObject, constructorArgs = [], privateData = {}) 
   return wrapper;
 };
 
-exports.new = globalObject => {
-  const wrapper = makeWrapper(globalObject);
+exports.new = (globalObject, newTarget) => {
+  const wrapper = makeWrapper(globalObject, newTarget);
 
   exports._internalSetup(wrapper, globalObject);
   Object.defineProperty(wrapper, implSymbol, {
@@ -84,21 +84,26 @@ exports.install = (globalObject, globalNames) => {
   if (!globalNames.some(globalName => exposed.has(globalName))) {
     return;
   }
+
+  const ctorRegistry = utils.initCtorRegistry(globalObject);
   class History {
     constructor() {
-      throw new TypeError("Illegal constructor");
+      throw new globalObject.TypeError("Illegal constructor");
     }
 
     go() {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'go' called on an object that is not a valid instance of History.");
+        throw new globalObject.TypeError("'go' called on an object that is not a valid instance of History.");
       }
       const args = [];
       {
         let curArg = arguments[0];
         if (curArg !== undefined) {
-          curArg = conversions["long"](curArg, { context: "Failed to execute 'go' on 'History': parameter 1" });
+          curArg = conversions["long"](curArg, {
+            context: "Failed to execute 'go' on 'History': parameter 1",
+            globals: globalObject
+          });
         } else {
           curArg = 0;
         }
@@ -110,7 +115,7 @@ exports.install = (globalObject, globalNames) => {
     back() {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'back' called on an object that is not a valid instance of History.");
+        throw new globalObject.TypeError("'back' called on an object that is not a valid instance of History.");
       }
 
       return esValue[implSymbol].back();
@@ -119,7 +124,7 @@ exports.install = (globalObject, globalNames) => {
     forward() {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'forward' called on an object that is not a valid instance of History.");
+        throw new globalObject.TypeError("'forward' called on an object that is not a valid instance of History.");
       }
 
       return esValue[implSymbol].forward();
@@ -128,24 +133,28 @@ exports.install = (globalObject, globalNames) => {
     pushState(data, title) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'pushState' called on an object that is not a valid instance of History.");
+        throw new globalObject.TypeError("'pushState' called on an object that is not a valid instance of History.");
       }
 
       if (arguments.length < 2) {
-        throw new TypeError(
-          "Failed to execute 'pushState' on 'History': 2 arguments required, but only " + arguments.length + " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'pushState' on 'History': 2 arguments required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
-        curArg = conversions["any"](curArg, { context: "Failed to execute 'pushState' on 'History': parameter 1" });
+        curArg = conversions["any"](curArg, {
+          context: "Failed to execute 'pushState' on 'History': parameter 1",
+          globals: globalObject
+        });
         args.push(curArg);
       }
       {
         let curArg = arguments[1];
         curArg = conversions["DOMString"](curArg, {
-          context: "Failed to execute 'pushState' on 'History': parameter 2"
+          context: "Failed to execute 'pushState' on 'History': parameter 2",
+          globals: globalObject
         });
         args.push(curArg);
       }
@@ -156,7 +165,8 @@ exports.install = (globalObject, globalNames) => {
             curArg = null;
           } else {
             curArg = conversions["USVString"](curArg, {
-              context: "Failed to execute 'pushState' on 'History': parameter 3"
+              context: "Failed to execute 'pushState' on 'History': parameter 3",
+              globals: globalObject
             });
           }
         } else {
@@ -170,26 +180,28 @@ exports.install = (globalObject, globalNames) => {
     replaceState(data, title) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'replaceState' called on an object that is not a valid instance of History.");
+        throw new globalObject.TypeError("'replaceState' called on an object that is not a valid instance of History.");
       }
 
       if (arguments.length < 2) {
-        throw new TypeError(
-          "Failed to execute 'replaceState' on 'History': 2 arguments required, but only " +
-            arguments.length +
-            " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'replaceState' on 'History': 2 arguments required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
-        curArg = conversions["any"](curArg, { context: "Failed to execute 'replaceState' on 'History': parameter 1" });
+        curArg = conversions["any"](curArg, {
+          context: "Failed to execute 'replaceState' on 'History': parameter 1",
+          globals: globalObject
+        });
         args.push(curArg);
       }
       {
         let curArg = arguments[1];
         curArg = conversions["DOMString"](curArg, {
-          context: "Failed to execute 'replaceState' on 'History': parameter 2"
+          context: "Failed to execute 'replaceState' on 'History': parameter 2",
+          globals: globalObject
         });
         args.push(curArg);
       }
@@ -200,7 +212,8 @@ exports.install = (globalObject, globalNames) => {
             curArg = null;
           } else {
             curArg = conversions["USVString"](curArg, {
-              context: "Failed to execute 'replaceState' on 'History': parameter 3"
+              context: "Failed to execute 'replaceState' on 'History': parameter 3",
+              globals: globalObject
             });
           }
         } else {
@@ -215,7 +228,7 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get length' called on an object that is not a valid instance of History.");
+        throw new globalObject.TypeError("'get length' called on an object that is not a valid instance of History.");
       }
 
       return esValue[implSymbol]["length"];
@@ -225,7 +238,7 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get state' called on an object that is not a valid instance of History.");
+        throw new globalObject.TypeError("'get state' called on an object that is not a valid instance of History.");
       }
 
       return esValue[implSymbol]["state"];
@@ -241,10 +254,7 @@ exports.install = (globalObject, globalNames) => {
     state: { enumerable: true },
     [Symbol.toStringTag]: { value: "History", configurable: true }
   });
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    globalObject[ctorRegistrySymbol] = Object.create(null);
-  }
-  globalObject[ctorRegistrySymbol][interfaceName] = History;
+  ctorRegistry[interfaceName] = History;
 
   Object.defineProperty(globalObject, interfaceName, {
     configurable: true,

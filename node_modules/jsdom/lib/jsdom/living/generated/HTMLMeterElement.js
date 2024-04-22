@@ -18,24 +18,24 @@ exports.is = value => {
 exports.isImpl = value => {
   return utils.isObject(value) && value instanceof Impl.implementation;
 };
-exports.convert = (value, { context = "The provided value" } = {}) => {
+exports.convert = (globalObject, value, { context = "The provided value" } = {}) => {
   if (exports.is(value)) {
     return utils.implForWrapper(value);
   }
-  throw new TypeError(`${context} is not of type 'HTMLMeterElement'.`);
+  throw new globalObject.TypeError(`${context} is not of type 'HTMLMeterElement'.`);
 };
 
-function makeWrapper(globalObject) {
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    throw new Error("Internal error: invalid global object");
+function makeWrapper(globalObject, newTarget) {
+  let proto;
+  if (newTarget !== undefined) {
+    proto = newTarget.prototype;
   }
 
-  const ctor = globalObject[ctorRegistrySymbol]["HTMLMeterElement"];
-  if (ctor === undefined) {
-    throw new Error("Internal error: constructor HTMLMeterElement is not installed on the passed global object");
+  if (!utils.isObject(proto)) {
+    proto = globalObject[ctorRegistrySymbol]["HTMLMeterElement"].prototype;
   }
 
-  return Object.create(ctor.prototype);
+  return Object.create(proto);
 }
 
 exports.create = (globalObject, constructorArgs, privateData) => {
@@ -68,8 +68,8 @@ exports.setup = (wrapper, globalObject, constructorArgs = [], privateData = {}) 
   return wrapper;
 };
 
-exports.new = globalObject => {
-  const wrapper = makeWrapper(globalObject);
+exports.new = (globalObject, newTarget) => {
+  const wrapper = makeWrapper(globalObject, newTarget);
 
   exports._internalSetup(wrapper, globalObject);
   Object.defineProperty(wrapper, implSymbol, {
@@ -91,9 +91,7 @@ exports.install = (globalObject, globalNames) => {
     return;
   }
 
-  if (globalObject.HTMLElement === undefined) {
-    throw new Error("Internal error: attempting to evaluate HTMLMeterElement before HTMLElement");
-  }
+  const ctorRegistry = utils.initCtorRegistry(globalObject);
   class HTMLMeterElement extends globalObject.HTMLElement {
     constructor() {
       return HTMLConstructor_helpers_html_constructor(globalObject, interfaceName, new.target);
@@ -103,7 +101,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get value' called on an object that is not a valid instance of HTMLMeterElement.");
+        throw new globalObject.TypeError(
+          "'get value' called on an object that is not a valid instance of HTMLMeterElement."
+        );
       }
 
       ceReactionsPreSteps_helpers_custom_elements(globalObject);
@@ -118,11 +118,14 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'set value' called on an object that is not a valid instance of HTMLMeterElement.");
+        throw new globalObject.TypeError(
+          "'set value' called on an object that is not a valid instance of HTMLMeterElement."
+        );
       }
 
       V = conversions["double"](V, {
-        context: "Failed to set the 'value' property on 'HTMLMeterElement': The provided value"
+        context: "Failed to set the 'value' property on 'HTMLMeterElement': The provided value",
+        globals: globalObject
       });
 
       ceReactionsPreSteps_helpers_custom_elements(globalObject);
@@ -137,7 +140,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get min' called on an object that is not a valid instance of HTMLMeterElement.");
+        throw new globalObject.TypeError(
+          "'get min' called on an object that is not a valid instance of HTMLMeterElement."
+        );
       }
 
       ceReactionsPreSteps_helpers_custom_elements(globalObject);
@@ -152,11 +157,14 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'set min' called on an object that is not a valid instance of HTMLMeterElement.");
+        throw new globalObject.TypeError(
+          "'set min' called on an object that is not a valid instance of HTMLMeterElement."
+        );
       }
 
       V = conversions["double"](V, {
-        context: "Failed to set the 'min' property on 'HTMLMeterElement': The provided value"
+        context: "Failed to set the 'min' property on 'HTMLMeterElement': The provided value",
+        globals: globalObject
       });
 
       ceReactionsPreSteps_helpers_custom_elements(globalObject);
@@ -171,7 +179,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get max' called on an object that is not a valid instance of HTMLMeterElement.");
+        throw new globalObject.TypeError(
+          "'get max' called on an object that is not a valid instance of HTMLMeterElement."
+        );
       }
 
       ceReactionsPreSteps_helpers_custom_elements(globalObject);
@@ -186,11 +196,14 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'set max' called on an object that is not a valid instance of HTMLMeterElement.");
+        throw new globalObject.TypeError(
+          "'set max' called on an object that is not a valid instance of HTMLMeterElement."
+        );
       }
 
       V = conversions["double"](V, {
-        context: "Failed to set the 'max' property on 'HTMLMeterElement': The provided value"
+        context: "Failed to set the 'max' property on 'HTMLMeterElement': The provided value",
+        globals: globalObject
       });
 
       ceReactionsPreSteps_helpers_custom_elements(globalObject);
@@ -205,7 +218,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get low' called on an object that is not a valid instance of HTMLMeterElement.");
+        throw new globalObject.TypeError(
+          "'get low' called on an object that is not a valid instance of HTMLMeterElement."
+        );
       }
 
       ceReactionsPreSteps_helpers_custom_elements(globalObject);
@@ -220,11 +235,14 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'set low' called on an object that is not a valid instance of HTMLMeterElement.");
+        throw new globalObject.TypeError(
+          "'set low' called on an object that is not a valid instance of HTMLMeterElement."
+        );
       }
 
       V = conversions["double"](V, {
-        context: "Failed to set the 'low' property on 'HTMLMeterElement': The provided value"
+        context: "Failed to set the 'low' property on 'HTMLMeterElement': The provided value",
+        globals: globalObject
       });
 
       ceReactionsPreSteps_helpers_custom_elements(globalObject);
@@ -239,7 +257,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get high' called on an object that is not a valid instance of HTMLMeterElement.");
+        throw new globalObject.TypeError(
+          "'get high' called on an object that is not a valid instance of HTMLMeterElement."
+        );
       }
 
       ceReactionsPreSteps_helpers_custom_elements(globalObject);
@@ -254,11 +274,14 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'set high' called on an object that is not a valid instance of HTMLMeterElement.");
+        throw new globalObject.TypeError(
+          "'set high' called on an object that is not a valid instance of HTMLMeterElement."
+        );
       }
 
       V = conversions["double"](V, {
-        context: "Failed to set the 'high' property on 'HTMLMeterElement': The provided value"
+        context: "Failed to set the 'high' property on 'HTMLMeterElement': The provided value",
+        globals: globalObject
       });
 
       ceReactionsPreSteps_helpers_custom_elements(globalObject);
@@ -273,7 +296,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get optimum' called on an object that is not a valid instance of HTMLMeterElement.");
+        throw new globalObject.TypeError(
+          "'get optimum' called on an object that is not a valid instance of HTMLMeterElement."
+        );
       }
 
       ceReactionsPreSteps_helpers_custom_elements(globalObject);
@@ -288,11 +313,14 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'set optimum' called on an object that is not a valid instance of HTMLMeterElement.");
+        throw new globalObject.TypeError(
+          "'set optimum' called on an object that is not a valid instance of HTMLMeterElement."
+        );
       }
 
       V = conversions["double"](V, {
-        context: "Failed to set the 'optimum' property on 'HTMLMeterElement': The provided value"
+        context: "Failed to set the 'optimum' property on 'HTMLMeterElement': The provided value",
+        globals: globalObject
       });
 
       ceReactionsPreSteps_helpers_custom_elements(globalObject);
@@ -307,7 +335,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get labels' called on an object that is not a valid instance of HTMLMeterElement.");
+        throw new globalObject.TypeError(
+          "'get labels' called on an object that is not a valid instance of HTMLMeterElement."
+        );
       }
 
       return utils.tryWrapperForImpl(esValue[implSymbol]["labels"]);
@@ -323,10 +353,7 @@ exports.install = (globalObject, globalNames) => {
     labels: { enumerable: true },
     [Symbol.toStringTag]: { value: "HTMLMeterElement", configurable: true }
   });
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    globalObject[ctorRegistrySymbol] = Object.create(null);
-  }
-  globalObject[ctorRegistrySymbol][interfaceName] = HTMLMeterElement;
+  ctorRegistry[interfaceName] = HTMLMeterElement;
 
   Object.defineProperty(globalObject, interfaceName, {
     configurable: true,

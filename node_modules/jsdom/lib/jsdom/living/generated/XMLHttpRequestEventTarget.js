@@ -16,26 +16,24 @@ exports.is = value => {
 exports.isImpl = value => {
   return utils.isObject(value) && value instanceof Impl.implementation;
 };
-exports.convert = (value, { context = "The provided value" } = {}) => {
+exports.convert = (globalObject, value, { context = "The provided value" } = {}) => {
   if (exports.is(value)) {
     return utils.implForWrapper(value);
   }
-  throw new TypeError(`${context} is not of type 'XMLHttpRequestEventTarget'.`);
+  throw new globalObject.TypeError(`${context} is not of type 'XMLHttpRequestEventTarget'.`);
 };
 
-function makeWrapper(globalObject) {
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    throw new Error("Internal error: invalid global object");
+function makeWrapper(globalObject, newTarget) {
+  let proto;
+  if (newTarget !== undefined) {
+    proto = newTarget.prototype;
   }
 
-  const ctor = globalObject[ctorRegistrySymbol]["XMLHttpRequestEventTarget"];
-  if (ctor === undefined) {
-    throw new Error(
-      "Internal error: constructor XMLHttpRequestEventTarget is not installed on the passed global object"
-    );
+  if (!utils.isObject(proto)) {
+    proto = globalObject[ctorRegistrySymbol]["XMLHttpRequestEventTarget"].prototype;
   }
 
-  return Object.create(ctor.prototype);
+  return Object.create(proto);
 }
 
 exports.create = (globalObject, constructorArgs, privateData) => {
@@ -68,8 +66,8 @@ exports.setup = (wrapper, globalObject, constructorArgs = [], privateData = {}) 
   return wrapper;
 };
 
-exports.new = globalObject => {
-  const wrapper = makeWrapper(globalObject);
+exports.new = (globalObject, newTarget) => {
+  const wrapper = makeWrapper(globalObject, newTarget);
 
   exports._internalSetup(wrapper, globalObject);
   Object.defineProperty(wrapper, implSymbol, {
@@ -91,19 +89,17 @@ exports.install = (globalObject, globalNames) => {
     return;
   }
 
-  if (globalObject.EventTarget === undefined) {
-    throw new Error("Internal error: attempting to evaluate XMLHttpRequestEventTarget before EventTarget");
-  }
+  const ctorRegistry = utils.initCtorRegistry(globalObject);
   class XMLHttpRequestEventTarget extends globalObject.EventTarget {
     constructor() {
-      throw new TypeError("Illegal constructor");
+      throw new globalObject.TypeError("Illegal constructor");
     }
 
     get onloadstart() {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError(
+        throw new globalObject.TypeError(
           "'get onloadstart' called on an object that is not a valid instance of XMLHttpRequestEventTarget."
         );
       }
@@ -115,7 +111,7 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError(
+        throw new globalObject.TypeError(
           "'set onloadstart' called on an object that is not a valid instance of XMLHttpRequestEventTarget."
         );
       }
@@ -123,7 +119,7 @@ exports.install = (globalObject, globalNames) => {
       if (!utils.isObject(V)) {
         V = null;
       } else {
-        V = EventHandlerNonNull.convert(V, {
+        V = EventHandlerNonNull.convert(globalObject, V, {
           context: "Failed to set the 'onloadstart' property on 'XMLHttpRequestEventTarget': The provided value"
         });
       }
@@ -134,7 +130,7 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError(
+        throw new globalObject.TypeError(
           "'get onprogress' called on an object that is not a valid instance of XMLHttpRequestEventTarget."
         );
       }
@@ -146,7 +142,7 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError(
+        throw new globalObject.TypeError(
           "'set onprogress' called on an object that is not a valid instance of XMLHttpRequestEventTarget."
         );
       }
@@ -154,7 +150,7 @@ exports.install = (globalObject, globalNames) => {
       if (!utils.isObject(V)) {
         V = null;
       } else {
-        V = EventHandlerNonNull.convert(V, {
+        V = EventHandlerNonNull.convert(globalObject, V, {
           context: "Failed to set the 'onprogress' property on 'XMLHttpRequestEventTarget': The provided value"
         });
       }
@@ -165,7 +161,7 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError(
+        throw new globalObject.TypeError(
           "'get onabort' called on an object that is not a valid instance of XMLHttpRequestEventTarget."
         );
       }
@@ -177,7 +173,7 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError(
+        throw new globalObject.TypeError(
           "'set onabort' called on an object that is not a valid instance of XMLHttpRequestEventTarget."
         );
       }
@@ -185,7 +181,7 @@ exports.install = (globalObject, globalNames) => {
       if (!utils.isObject(V)) {
         V = null;
       } else {
-        V = EventHandlerNonNull.convert(V, {
+        V = EventHandlerNonNull.convert(globalObject, V, {
           context: "Failed to set the 'onabort' property on 'XMLHttpRequestEventTarget': The provided value"
         });
       }
@@ -196,7 +192,7 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError(
+        throw new globalObject.TypeError(
           "'get onerror' called on an object that is not a valid instance of XMLHttpRequestEventTarget."
         );
       }
@@ -208,7 +204,7 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError(
+        throw new globalObject.TypeError(
           "'set onerror' called on an object that is not a valid instance of XMLHttpRequestEventTarget."
         );
       }
@@ -216,7 +212,7 @@ exports.install = (globalObject, globalNames) => {
       if (!utils.isObject(V)) {
         V = null;
       } else {
-        V = EventHandlerNonNull.convert(V, {
+        V = EventHandlerNonNull.convert(globalObject, V, {
           context: "Failed to set the 'onerror' property on 'XMLHttpRequestEventTarget': The provided value"
         });
       }
@@ -227,7 +223,7 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError(
+        throw new globalObject.TypeError(
           "'get onload' called on an object that is not a valid instance of XMLHttpRequestEventTarget."
         );
       }
@@ -239,7 +235,7 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError(
+        throw new globalObject.TypeError(
           "'set onload' called on an object that is not a valid instance of XMLHttpRequestEventTarget."
         );
       }
@@ -247,7 +243,7 @@ exports.install = (globalObject, globalNames) => {
       if (!utils.isObject(V)) {
         V = null;
       } else {
-        V = EventHandlerNonNull.convert(V, {
+        V = EventHandlerNonNull.convert(globalObject, V, {
           context: "Failed to set the 'onload' property on 'XMLHttpRequestEventTarget': The provided value"
         });
       }
@@ -258,7 +254,7 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError(
+        throw new globalObject.TypeError(
           "'get ontimeout' called on an object that is not a valid instance of XMLHttpRequestEventTarget."
         );
       }
@@ -270,7 +266,7 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError(
+        throw new globalObject.TypeError(
           "'set ontimeout' called on an object that is not a valid instance of XMLHttpRequestEventTarget."
         );
       }
@@ -278,7 +274,7 @@ exports.install = (globalObject, globalNames) => {
       if (!utils.isObject(V)) {
         V = null;
       } else {
-        V = EventHandlerNonNull.convert(V, {
+        V = EventHandlerNonNull.convert(globalObject, V, {
           context: "Failed to set the 'ontimeout' property on 'XMLHttpRequestEventTarget': The provided value"
         });
       }
@@ -289,7 +285,7 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError(
+        throw new globalObject.TypeError(
           "'get onloadend' called on an object that is not a valid instance of XMLHttpRequestEventTarget."
         );
       }
@@ -301,7 +297,7 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError(
+        throw new globalObject.TypeError(
           "'set onloadend' called on an object that is not a valid instance of XMLHttpRequestEventTarget."
         );
       }
@@ -309,7 +305,7 @@ exports.install = (globalObject, globalNames) => {
       if (!utils.isObject(V)) {
         V = null;
       } else {
-        V = EventHandlerNonNull.convert(V, {
+        V = EventHandlerNonNull.convert(globalObject, V, {
           context: "Failed to set the 'onloadend' property on 'XMLHttpRequestEventTarget': The provided value"
         });
       }
@@ -326,10 +322,7 @@ exports.install = (globalObject, globalNames) => {
     onloadend: { enumerable: true },
     [Symbol.toStringTag]: { value: "XMLHttpRequestEventTarget", configurable: true }
   });
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    globalObject[ctorRegistrySymbol] = Object.create(null);
-  }
-  globalObject[ctorRegistrySymbol][interfaceName] = XMLHttpRequestEventTarget;
+  ctorRegistry[interfaceName] = XMLHttpRequestEventTarget;
 
   Object.defineProperty(globalObject, interfaceName, {
     configurable: true,

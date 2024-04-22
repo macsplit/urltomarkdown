@@ -6,8 +6,8 @@ const utils = require("./utils.js");
 const Storage = require("./Storage.js");
 const EventInit = require("./EventInit.js");
 
-exports._convertInherit = (obj, ret, { context = "The provided value" } = {}) => {
-  EventInit._convertInherit(obj, ret, { context });
+exports._convertInherit = (globalObject, obj, ret, { context = "The provided value" } = {}) => {
+  EventInit._convertInherit(globalObject, obj, ret, { context });
 
   {
     const key = "key";
@@ -16,7 +16,7 @@ exports._convertInherit = (obj, ret, { context = "The provided value" } = {}) =>
       if (value === null || value === undefined) {
         value = null;
       } else {
-        value = conversions["DOMString"](value, { context: context + " has member 'key' that" });
+        value = conversions["DOMString"](value, { context: context + " has member 'key' that", globals: globalObject });
       }
       ret[key] = value;
     } else {
@@ -31,7 +31,10 @@ exports._convertInherit = (obj, ret, { context = "The provided value" } = {}) =>
       if (value === null || value === undefined) {
         value = null;
       } else {
-        value = conversions["DOMString"](value, { context: context + " has member 'newValue' that" });
+        value = conversions["DOMString"](value, {
+          context: context + " has member 'newValue' that",
+          globals: globalObject
+        });
       }
       ret[key] = value;
     } else {
@@ -46,7 +49,10 @@ exports._convertInherit = (obj, ret, { context = "The provided value" } = {}) =>
       if (value === null || value === undefined) {
         value = null;
       } else {
-        value = conversions["DOMString"](value, { context: context + " has member 'oldValue' that" });
+        value = conversions["DOMString"](value, {
+          context: context + " has member 'oldValue' that",
+          globals: globalObject
+        });
       }
       ret[key] = value;
     } else {
@@ -61,7 +67,7 @@ exports._convertInherit = (obj, ret, { context = "The provided value" } = {}) =>
       if (value === null || value === undefined) {
         value = null;
       } else {
-        value = Storage.convert(value, { context: context + " has member 'storageArea' that" });
+        value = Storage.convert(globalObject, value, { context: context + " has member 'storageArea' that" });
       }
       ret[key] = value;
     } else {
@@ -73,7 +79,7 @@ exports._convertInherit = (obj, ret, { context = "The provided value" } = {}) =>
     const key = "url";
     let value = obj === undefined || obj === null ? undefined : obj[key];
     if (value !== undefined) {
-      value = conversions["USVString"](value, { context: context + " has member 'url' that" });
+      value = conversions["USVString"](value, { context: context + " has member 'url' that", globals: globalObject });
 
       ret[key] = value;
     } else {
@@ -82,12 +88,12 @@ exports._convertInherit = (obj, ret, { context = "The provided value" } = {}) =>
   }
 };
 
-exports.convert = function convert(obj, { context = "The provided value" } = {}) {
+exports.convert = (globalObject, obj, { context = "The provided value" } = {}) => {
   if (obj !== undefined && typeof obj !== "object" && typeof obj !== "function") {
-    throw new TypeError(`${context} is not an object.`);
+    throw new globalObject.TypeError(`${context} is not an object.`);
   }
 
   const ret = Object.create(null);
-  exports._convertInherit(obj, ret, { context });
+  exports._convertInherit(globalObject, obj, ret, { context });
   return ret;
 };

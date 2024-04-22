@@ -1,10 +1,10 @@
 "use strict";
+const MIMETypeParameters = require("./mime-type-parameters.js");
 const parse = require("./parser.js");
 const serialize = require("./serializer.js");
 const {
   asciiLowercase,
-  solelyContainsHTTPTokenCodePoints,
-  soleyContainsHTTPQuotedStringTokenCodePoints
+  solelyContainsHTTPTokenCodePoints
 } = require("./utils.js");
 
 module.exports = class MIMEType {
@@ -76,7 +76,7 @@ module.exports = class MIMEType {
     return serialize(this);
   }
 
-  isJavaScript({ allowParameters = false } = {}) {
+  isJavaScript({ prohibitParameters = false } = {}) {
     switch (this._type) {
       case "text": {
         switch (this._subtype) {
@@ -92,7 +92,7 @@ module.exports = class MIMEType {
           case "livescript":
           case "x-ecmascript":
           case "x-javascript": {
-            return allowParameters || this._parameters.size === 0;
+            return !prohibitParameters || this._parameters.size === 0;
           }
           default: {
             return false;
@@ -105,7 +105,7 @@ module.exports = class MIMEType {
           case "javascript":
           case "x-ecmascript":
           case "x-javascript": {
-            return allowParameters || this._parameters.size === 0;
+            return !prohibitParameters || this._parameters.size === 0;
           }
           default: {
             return false;
@@ -125,67 +125,3 @@ module.exports = class MIMEType {
     return this._subtype === "html" && this._type === "text";
   }
 };
-
-class MIMETypeParameters {
-  constructor(map) {
-    this._map = map;
-  }
-
-  get size() {
-    return this._map.size;
-  }
-
-  get(name) {
-    name = asciiLowercase(String(name));
-    return this._map.get(name);
-  }
-
-  has(name) {
-    name = asciiLowercase(String(name));
-    return this._map.has(name);
-  }
-
-  set(name, value) {
-    name = asciiLowercase(String(name));
-    value = String(value);
-
-    if (!solelyContainsHTTPTokenCodePoints(name)) {
-      throw new Error(`Invalid MIME type parameter name "${name}": only HTTP token code points are valid.`);
-    }
-    if (!soleyContainsHTTPQuotedStringTokenCodePoints(value)) {
-      throw new Error(`Invalid MIME type parameter value "${value}": only HTTP quoted-string token code points are ` +
-                      `valid.`);
-    }
-
-    return this._map.set(name, value);
-  }
-
-  clear() {
-    this._map.clear();
-  }
-
-  delete(name) {
-    name = asciiLowercase(String(name));
-    return this._map.delete(name);
-  }
-
-  forEach(callbackFn, thisArg) {
-    this._map.forEach(callbackFn, thisArg);
-  }
-
-  keys() {
-    return this._map.keys();
-  }
-
-  values() {
-    return this._map.values();
-  }
-
-  entries() {
-    return this._map.entries();
-  }
-
-  [Symbol.iterator]() {
-    return this._map[Symbol.iterator]();
-  }
-}

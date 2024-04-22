@@ -16,24 +16,24 @@ exports.is = value => {
 exports.isImpl = value => {
   return utils.isObject(value) && value instanceof Impl.implementation;
 };
-exports.convert = (value, { context = "The provided value" } = {}) => {
+exports.convert = (globalObject, value, { context = "The provided value" } = {}) => {
   if (exports.is(value)) {
     return utils.implForWrapper(value);
   }
-  throw new TypeError(`${context} is not of type 'InputEvent'.`);
+  throw new globalObject.TypeError(`${context} is not of type 'InputEvent'.`);
 };
 
-function makeWrapper(globalObject) {
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    throw new Error("Internal error: invalid global object");
+function makeWrapper(globalObject, newTarget) {
+  let proto;
+  if (newTarget !== undefined) {
+    proto = newTarget.prototype;
   }
 
-  const ctor = globalObject[ctorRegistrySymbol]["InputEvent"];
-  if (ctor === undefined) {
-    throw new Error("Internal error: constructor InputEvent is not installed on the passed global object");
+  if (!utils.isObject(proto)) {
+    proto = globalObject[ctorRegistrySymbol]["InputEvent"].prototype;
   }
 
-  return Object.create(ctor.prototype);
+  return Object.create(proto);
 }
 
 exports.create = (globalObject, constructorArgs, privateData) => {
@@ -66,8 +66,8 @@ exports.setup = (wrapper, globalObject, constructorArgs = [], privateData = {}) 
   return wrapper;
 };
 
-exports.new = globalObject => {
-  const wrapper = makeWrapper(globalObject);
+exports.new = (globalObject, newTarget) => {
+  const wrapper = makeWrapper(globalObject, newTarget);
 
   exports._internalSetup(wrapper, globalObject);
   Object.defineProperty(wrapper, implSymbol, {
@@ -89,25 +89,28 @@ exports.install = (globalObject, globalNames) => {
     return;
   }
 
-  if (globalObject.UIEvent === undefined) {
-    throw new Error("Internal error: attempting to evaluate InputEvent before UIEvent");
-  }
+  const ctorRegistry = utils.initCtorRegistry(globalObject);
   class InputEvent extends globalObject.UIEvent {
     constructor(type) {
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to construct 'InputEvent': 1 argument required, but only " + arguments.length + " present."
+        throw new globalObject.TypeError(
+          `Failed to construct 'InputEvent': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
-        curArg = conversions["DOMString"](curArg, { context: "Failed to construct 'InputEvent': parameter 1" });
+        curArg = conversions["DOMString"](curArg, {
+          context: "Failed to construct 'InputEvent': parameter 1",
+          globals: globalObject
+        });
         args.push(curArg);
       }
       {
         let curArg = arguments[1];
-        curArg = InputEventInit.convert(curArg, { context: "Failed to construct 'InputEvent': parameter 2" });
+        curArg = InputEventInit.convert(globalObject, curArg, {
+          context: "Failed to construct 'InputEvent': parameter 2"
+        });
         args.push(curArg);
       }
       return exports.setup(Object.create(new.target.prototype), globalObject, args);
@@ -117,7 +120,7 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get data' called on an object that is not a valid instance of InputEvent.");
+        throw new globalObject.TypeError("'get data' called on an object that is not a valid instance of InputEvent.");
       }
 
       return esValue[implSymbol]["data"];
@@ -127,7 +130,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get isComposing' called on an object that is not a valid instance of InputEvent.");
+        throw new globalObject.TypeError(
+          "'get isComposing' called on an object that is not a valid instance of InputEvent."
+        );
       }
 
       return esValue[implSymbol]["isComposing"];
@@ -137,7 +142,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get inputType' called on an object that is not a valid instance of InputEvent.");
+        throw new globalObject.TypeError(
+          "'get inputType' called on an object that is not a valid instance of InputEvent."
+        );
       }
 
       return esValue[implSymbol]["inputType"];
@@ -149,10 +156,7 @@ exports.install = (globalObject, globalNames) => {
     inputType: { enumerable: true },
     [Symbol.toStringTag]: { value: "InputEvent", configurable: true }
   });
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    globalObject[ctorRegistrySymbol] = Object.create(null);
-  }
-  globalObject[ctorRegistrySymbol][interfaceName] = InputEvent;
+  ctorRegistry[interfaceName] = InputEvent;
 
   Object.defineProperty(globalObject, interfaceName, {
     configurable: true,

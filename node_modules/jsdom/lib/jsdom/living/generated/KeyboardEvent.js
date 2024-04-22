@@ -16,24 +16,24 @@ exports.is = value => {
 exports.isImpl = value => {
   return utils.isObject(value) && value instanceof Impl.implementation;
 };
-exports.convert = (value, { context = "The provided value" } = {}) => {
+exports.convert = (globalObject, value, { context = "The provided value" } = {}) => {
   if (exports.is(value)) {
     return utils.implForWrapper(value);
   }
-  throw new TypeError(`${context} is not of type 'KeyboardEvent'.`);
+  throw new globalObject.TypeError(`${context} is not of type 'KeyboardEvent'.`);
 };
 
-function makeWrapper(globalObject) {
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    throw new Error("Internal error: invalid global object");
+function makeWrapper(globalObject, newTarget) {
+  let proto;
+  if (newTarget !== undefined) {
+    proto = newTarget.prototype;
   }
 
-  const ctor = globalObject[ctorRegistrySymbol]["KeyboardEvent"];
-  if (ctor === undefined) {
-    throw new Error("Internal error: constructor KeyboardEvent is not installed on the passed global object");
+  if (!utils.isObject(proto)) {
+    proto = globalObject[ctorRegistrySymbol]["KeyboardEvent"].prototype;
   }
 
-  return Object.create(ctor.prototype);
+  return Object.create(proto);
 }
 
 exports.create = (globalObject, constructorArgs, privateData) => {
@@ -66,8 +66,8 @@ exports.setup = (wrapper, globalObject, constructorArgs = [], privateData = {}) 
   return wrapper;
 };
 
-exports.new = globalObject => {
-  const wrapper = makeWrapper(globalObject);
+exports.new = (globalObject, newTarget) => {
+  const wrapper = makeWrapper(globalObject, newTarget);
 
   exports._internalSetup(wrapper, globalObject);
   Object.defineProperty(wrapper, implSymbol, {
@@ -89,25 +89,28 @@ exports.install = (globalObject, globalNames) => {
     return;
   }
 
-  if (globalObject.UIEvent === undefined) {
-    throw new Error("Internal error: attempting to evaluate KeyboardEvent before UIEvent");
-  }
+  const ctorRegistry = utils.initCtorRegistry(globalObject);
   class KeyboardEvent extends globalObject.UIEvent {
     constructor(type) {
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to construct 'KeyboardEvent': 1 argument required, but only " + arguments.length + " present."
+        throw new globalObject.TypeError(
+          `Failed to construct 'KeyboardEvent': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
-        curArg = conversions["DOMString"](curArg, { context: "Failed to construct 'KeyboardEvent': parameter 1" });
+        curArg = conversions["DOMString"](curArg, {
+          context: "Failed to construct 'KeyboardEvent': parameter 1",
+          globals: globalObject
+        });
         args.push(curArg);
       }
       {
         let curArg = arguments[1];
-        curArg = KeyboardEventInit.convert(curArg, { context: "Failed to construct 'KeyboardEvent': parameter 2" });
+        curArg = KeyboardEventInit.convert(globalObject, curArg, {
+          context: "Failed to construct 'KeyboardEvent': parameter 2"
+        });
         args.push(curArg);
       }
       return exports.setup(Object.create(new.target.prototype), globalObject, args);
@@ -116,21 +119,22 @@ exports.install = (globalObject, globalNames) => {
     getModifierState(keyArg) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'getModifierState' called on an object that is not a valid instance of KeyboardEvent.");
+        throw new globalObject.TypeError(
+          "'getModifierState' called on an object that is not a valid instance of KeyboardEvent."
+        );
       }
 
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to execute 'getModifierState' on 'KeyboardEvent': 1 argument required, but only " +
-            arguments.length +
-            " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'getModifierState' on 'KeyboardEvent': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
         curArg = conversions["DOMString"](curArg, {
-          context: "Failed to execute 'getModifierState' on 'KeyboardEvent': parameter 1"
+          context: "Failed to execute 'getModifierState' on 'KeyboardEvent': parameter 1",
+          globals: globalObject
         });
         args.push(curArg);
       }
@@ -140,21 +144,22 @@ exports.install = (globalObject, globalNames) => {
     initKeyboardEvent(typeArg) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'initKeyboardEvent' called on an object that is not a valid instance of KeyboardEvent.");
+        throw new globalObject.TypeError(
+          "'initKeyboardEvent' called on an object that is not a valid instance of KeyboardEvent."
+        );
       }
 
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to execute 'initKeyboardEvent' on 'KeyboardEvent': 1 argument required, but only " +
-            arguments.length +
-            " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'initKeyboardEvent' on 'KeyboardEvent': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
         curArg = conversions["DOMString"](curArg, {
-          context: "Failed to execute 'initKeyboardEvent' on 'KeyboardEvent': parameter 1"
+          context: "Failed to execute 'initKeyboardEvent' on 'KeyboardEvent': parameter 1",
+          globals: globalObject
         });
         args.push(curArg);
       }
@@ -162,7 +167,8 @@ exports.install = (globalObject, globalNames) => {
         let curArg = arguments[1];
         if (curArg !== undefined) {
           curArg = conversions["boolean"](curArg, {
-            context: "Failed to execute 'initKeyboardEvent' on 'KeyboardEvent': parameter 2"
+            context: "Failed to execute 'initKeyboardEvent' on 'KeyboardEvent': parameter 2",
+            globals: globalObject
           });
         } else {
           curArg = false;
@@ -173,7 +179,8 @@ exports.install = (globalObject, globalNames) => {
         let curArg = arguments[2];
         if (curArg !== undefined) {
           curArg = conversions["boolean"](curArg, {
-            context: "Failed to execute 'initKeyboardEvent' on 'KeyboardEvent': parameter 3"
+            context: "Failed to execute 'initKeyboardEvent' on 'KeyboardEvent': parameter 3",
+            globals: globalObject
           });
         } else {
           curArg = false;
@@ -197,7 +204,8 @@ exports.install = (globalObject, globalNames) => {
         let curArg = arguments[4];
         if (curArg !== undefined) {
           curArg = conversions["DOMString"](curArg, {
-            context: "Failed to execute 'initKeyboardEvent' on 'KeyboardEvent': parameter 5"
+            context: "Failed to execute 'initKeyboardEvent' on 'KeyboardEvent': parameter 5",
+            globals: globalObject
           });
         } else {
           curArg = "";
@@ -208,7 +216,8 @@ exports.install = (globalObject, globalNames) => {
         let curArg = arguments[5];
         if (curArg !== undefined) {
           curArg = conversions["unsigned long"](curArg, {
-            context: "Failed to execute 'initKeyboardEvent' on 'KeyboardEvent': parameter 6"
+            context: "Failed to execute 'initKeyboardEvent' on 'KeyboardEvent': parameter 6",
+            globals: globalObject
           });
         } else {
           curArg = 0;
@@ -219,7 +228,8 @@ exports.install = (globalObject, globalNames) => {
         let curArg = arguments[6];
         if (curArg !== undefined) {
           curArg = conversions["boolean"](curArg, {
-            context: "Failed to execute 'initKeyboardEvent' on 'KeyboardEvent': parameter 7"
+            context: "Failed to execute 'initKeyboardEvent' on 'KeyboardEvent': parameter 7",
+            globals: globalObject
           });
         } else {
           curArg = false;
@@ -230,7 +240,8 @@ exports.install = (globalObject, globalNames) => {
         let curArg = arguments[7];
         if (curArg !== undefined) {
           curArg = conversions["boolean"](curArg, {
-            context: "Failed to execute 'initKeyboardEvent' on 'KeyboardEvent': parameter 8"
+            context: "Failed to execute 'initKeyboardEvent' on 'KeyboardEvent': parameter 8",
+            globals: globalObject
           });
         } else {
           curArg = false;
@@ -241,7 +252,8 @@ exports.install = (globalObject, globalNames) => {
         let curArg = arguments[8];
         if (curArg !== undefined) {
           curArg = conversions["boolean"](curArg, {
-            context: "Failed to execute 'initKeyboardEvent' on 'KeyboardEvent': parameter 9"
+            context: "Failed to execute 'initKeyboardEvent' on 'KeyboardEvent': parameter 9",
+            globals: globalObject
           });
         } else {
           curArg = false;
@@ -252,7 +264,8 @@ exports.install = (globalObject, globalNames) => {
         let curArg = arguments[9];
         if (curArg !== undefined) {
           curArg = conversions["boolean"](curArg, {
-            context: "Failed to execute 'initKeyboardEvent' on 'KeyboardEvent': parameter 10"
+            context: "Failed to execute 'initKeyboardEvent' on 'KeyboardEvent': parameter 10",
+            globals: globalObject
           });
         } else {
           curArg = false;
@@ -266,7 +279,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get key' called on an object that is not a valid instance of KeyboardEvent.");
+        throw new globalObject.TypeError(
+          "'get key' called on an object that is not a valid instance of KeyboardEvent."
+        );
       }
 
       return esValue[implSymbol]["key"];
@@ -276,7 +291,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get code' called on an object that is not a valid instance of KeyboardEvent.");
+        throw new globalObject.TypeError(
+          "'get code' called on an object that is not a valid instance of KeyboardEvent."
+        );
       }
 
       return esValue[implSymbol]["code"];
@@ -286,7 +303,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get location' called on an object that is not a valid instance of KeyboardEvent.");
+        throw new globalObject.TypeError(
+          "'get location' called on an object that is not a valid instance of KeyboardEvent."
+        );
       }
 
       return esValue[implSymbol]["location"];
@@ -296,7 +315,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get ctrlKey' called on an object that is not a valid instance of KeyboardEvent.");
+        throw new globalObject.TypeError(
+          "'get ctrlKey' called on an object that is not a valid instance of KeyboardEvent."
+        );
       }
 
       return esValue[implSymbol]["ctrlKey"];
@@ -306,7 +327,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get shiftKey' called on an object that is not a valid instance of KeyboardEvent.");
+        throw new globalObject.TypeError(
+          "'get shiftKey' called on an object that is not a valid instance of KeyboardEvent."
+        );
       }
 
       return esValue[implSymbol]["shiftKey"];
@@ -316,7 +339,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get altKey' called on an object that is not a valid instance of KeyboardEvent.");
+        throw new globalObject.TypeError(
+          "'get altKey' called on an object that is not a valid instance of KeyboardEvent."
+        );
       }
 
       return esValue[implSymbol]["altKey"];
@@ -326,7 +351,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get metaKey' called on an object that is not a valid instance of KeyboardEvent.");
+        throw new globalObject.TypeError(
+          "'get metaKey' called on an object that is not a valid instance of KeyboardEvent."
+        );
       }
 
       return esValue[implSymbol]["metaKey"];
@@ -336,7 +363,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get repeat' called on an object that is not a valid instance of KeyboardEvent.");
+        throw new globalObject.TypeError(
+          "'get repeat' called on an object that is not a valid instance of KeyboardEvent."
+        );
       }
 
       return esValue[implSymbol]["repeat"];
@@ -346,7 +375,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get isComposing' called on an object that is not a valid instance of KeyboardEvent.");
+        throw new globalObject.TypeError(
+          "'get isComposing' called on an object that is not a valid instance of KeyboardEvent."
+        );
       }
 
       return esValue[implSymbol]["isComposing"];
@@ -356,7 +387,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get charCode' called on an object that is not a valid instance of KeyboardEvent.");
+        throw new globalObject.TypeError(
+          "'get charCode' called on an object that is not a valid instance of KeyboardEvent."
+        );
       }
 
       return esValue[implSymbol]["charCode"];
@@ -366,7 +399,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get keyCode' called on an object that is not a valid instance of KeyboardEvent.");
+        throw new globalObject.TypeError(
+          "'get keyCode' called on an object that is not a valid instance of KeyboardEvent."
+        );
       }
 
       return esValue[implSymbol]["keyCode"];
@@ -398,10 +433,7 @@ exports.install = (globalObject, globalNames) => {
     DOM_KEY_LOCATION_RIGHT: { value: 0x02, enumerable: true },
     DOM_KEY_LOCATION_NUMPAD: { value: 0x03, enumerable: true }
   });
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    globalObject[ctorRegistrySymbol] = Object.create(null);
-  }
-  globalObject[ctorRegistrySymbol][interfaceName] = KeyboardEvent;
+  ctorRegistry[interfaceName] = KeyboardEvent;
 
   Object.defineProperty(globalObject, interfaceName, {
     configurable: true,

@@ -17,24 +17,24 @@ exports.is = value => {
 exports.isImpl = value => {
   return utils.isObject(value) && value instanceof Impl.implementation;
 };
-exports.convert = (value, { context = "The provided value" } = {}) => {
+exports.convert = (globalObject, value, { context = "The provided value" } = {}) => {
   if (exports.is(value)) {
     return utils.implForWrapper(value);
   }
-  throw new TypeError(`${context} is not of type 'DocumentFragment'.`);
+  throw new globalObject.TypeError(`${context} is not of type 'DocumentFragment'.`);
 };
 
-function makeWrapper(globalObject) {
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    throw new Error("Internal error: invalid global object");
+function makeWrapper(globalObject, newTarget) {
+  let proto;
+  if (newTarget !== undefined) {
+    proto = newTarget.prototype;
   }
 
-  const ctor = globalObject[ctorRegistrySymbol]["DocumentFragment"];
-  if (ctor === undefined) {
-    throw new Error("Internal error: constructor DocumentFragment is not installed on the passed global object");
+  if (!utils.isObject(proto)) {
+    proto = globalObject[ctorRegistrySymbol]["DocumentFragment"].prototype;
   }
 
-  return Object.create(ctor.prototype);
+  return Object.create(proto);
 }
 
 exports.create = (globalObject, constructorArgs, privateData) => {
@@ -67,8 +67,8 @@ exports.setup = (wrapper, globalObject, constructorArgs = [], privateData = {}) 
   return wrapper;
 };
 
-exports.new = globalObject => {
-  const wrapper = makeWrapper(globalObject);
+exports.new = (globalObject, newTarget) => {
+  const wrapper = makeWrapper(globalObject, newTarget);
 
   exports._internalSetup(wrapper, globalObject);
   Object.defineProperty(wrapper, implSymbol, {
@@ -90,9 +90,7 @@ exports.install = (globalObject, globalNames) => {
     return;
   }
 
-  if (globalObject.Node === undefined) {
-    throw new Error("Internal error: attempting to evaluate DocumentFragment before Node");
-  }
+  const ctorRegistry = utils.initCtorRegistry(globalObject);
   class DocumentFragment extends globalObject.Node {
     constructor() {
       return exports.setup(Object.create(new.target.prototype), globalObject, undefined);
@@ -101,21 +99,22 @@ exports.install = (globalObject, globalNames) => {
     getElementById(elementId) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'getElementById' called on an object that is not a valid instance of DocumentFragment.");
+        throw new globalObject.TypeError(
+          "'getElementById' called on an object that is not a valid instance of DocumentFragment."
+        );
       }
 
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to execute 'getElementById' on 'DocumentFragment': 1 argument required, but only " +
-            arguments.length +
-            " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'getElementById' on 'DocumentFragment': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
         curArg = conversions["DOMString"](curArg, {
-          context: "Failed to execute 'getElementById' on 'DocumentFragment': parameter 1"
+          context: "Failed to execute 'getElementById' on 'DocumentFragment': parameter 1",
+          globals: globalObject
         });
         args.push(curArg);
       }
@@ -125,7 +124,9 @@ exports.install = (globalObject, globalNames) => {
     prepend() {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'prepend' called on an object that is not a valid instance of DocumentFragment.");
+        throw new globalObject.TypeError(
+          "'prepend' called on an object that is not a valid instance of DocumentFragment."
+        );
       }
       const args = [];
       for (let i = 0; i < arguments.length; i++) {
@@ -134,7 +135,8 @@ exports.install = (globalObject, globalNames) => {
           curArg = utils.implForWrapper(curArg);
         } else {
           curArg = conversions["DOMString"](curArg, {
-            context: "Failed to execute 'prepend' on 'DocumentFragment': parameter " + (i + 1)
+            context: "Failed to execute 'prepend' on 'DocumentFragment': parameter " + (i + 1),
+            globals: globalObject
           });
         }
         args.push(curArg);
@@ -150,7 +152,9 @@ exports.install = (globalObject, globalNames) => {
     append() {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'append' called on an object that is not a valid instance of DocumentFragment.");
+        throw new globalObject.TypeError(
+          "'append' called on an object that is not a valid instance of DocumentFragment."
+        );
       }
       const args = [];
       for (let i = 0; i < arguments.length; i++) {
@@ -159,7 +163,8 @@ exports.install = (globalObject, globalNames) => {
           curArg = utils.implForWrapper(curArg);
         } else {
           curArg = conversions["DOMString"](curArg, {
-            context: "Failed to execute 'append' on 'DocumentFragment': parameter " + (i + 1)
+            context: "Failed to execute 'append' on 'DocumentFragment': parameter " + (i + 1),
+            globals: globalObject
           });
         }
         args.push(curArg);
@@ -175,7 +180,9 @@ exports.install = (globalObject, globalNames) => {
     replaceChildren() {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'replaceChildren' called on an object that is not a valid instance of DocumentFragment.");
+        throw new globalObject.TypeError(
+          "'replaceChildren' called on an object that is not a valid instance of DocumentFragment."
+        );
       }
       const args = [];
       for (let i = 0; i < arguments.length; i++) {
@@ -184,14 +191,15 @@ exports.install = (globalObject, globalNames) => {
           curArg = utils.implForWrapper(curArg);
         } else {
           curArg = conversions["DOMString"](curArg, {
-            context: "Failed to execute 'replaceChildren' on 'DocumentFragment': parameter " + (i + 1)
+            context: "Failed to execute 'replaceChildren' on 'DocumentFragment': parameter " + (i + 1),
+            globals: globalObject
           });
         }
         args.push(curArg);
       }
       ceReactionsPreSteps_helpers_custom_elements(globalObject);
       try {
-        return utils.tryWrapperForImpl(esValue[implSymbol].replaceChildren(...args));
+        return esValue[implSymbol].replaceChildren(...args);
       } finally {
         ceReactionsPostSteps_helpers_custom_elements(globalObject);
       }
@@ -200,21 +208,22 @@ exports.install = (globalObject, globalNames) => {
     querySelector(selectors) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'querySelector' called on an object that is not a valid instance of DocumentFragment.");
+        throw new globalObject.TypeError(
+          "'querySelector' called on an object that is not a valid instance of DocumentFragment."
+        );
       }
 
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to execute 'querySelector' on 'DocumentFragment': 1 argument required, but only " +
-            arguments.length +
-            " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'querySelector' on 'DocumentFragment': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
         curArg = conversions["DOMString"](curArg, {
-          context: "Failed to execute 'querySelector' on 'DocumentFragment': parameter 1"
+          context: "Failed to execute 'querySelector' on 'DocumentFragment': parameter 1",
+          globals: globalObject
         });
         args.push(curArg);
       }
@@ -224,21 +233,22 @@ exports.install = (globalObject, globalNames) => {
     querySelectorAll(selectors) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'querySelectorAll' called on an object that is not a valid instance of DocumentFragment.");
+        throw new globalObject.TypeError(
+          "'querySelectorAll' called on an object that is not a valid instance of DocumentFragment."
+        );
       }
 
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to execute 'querySelectorAll' on 'DocumentFragment': 1 argument required, but only " +
-            arguments.length +
-            " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'querySelectorAll' on 'DocumentFragment': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
         curArg = conversions["DOMString"](curArg, {
-          context: "Failed to execute 'querySelectorAll' on 'DocumentFragment': parameter 1"
+          context: "Failed to execute 'querySelectorAll' on 'DocumentFragment': parameter 1",
+          globals: globalObject
         });
         args.push(curArg);
       }
@@ -249,7 +259,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get children' called on an object that is not a valid instance of DocumentFragment.");
+        throw new globalObject.TypeError(
+          "'get children' called on an object that is not a valid instance of DocumentFragment."
+        );
       }
 
       return utils.getSameObject(this, "children", () => {
@@ -261,7 +273,7 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError(
+        throw new globalObject.TypeError(
           "'get firstElementChild' called on an object that is not a valid instance of DocumentFragment."
         );
       }
@@ -273,7 +285,7 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError(
+        throw new globalObject.TypeError(
           "'get lastElementChild' called on an object that is not a valid instance of DocumentFragment."
         );
       }
@@ -285,7 +297,7 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError(
+        throw new globalObject.TypeError(
           "'get childElementCount' called on an object that is not a valid instance of DocumentFragment."
         );
       }
@@ -310,10 +322,7 @@ exports.install = (globalObject, globalNames) => {
       configurable: true
     }
   });
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    globalObject[ctorRegistrySymbol] = Object.create(null);
-  }
-  globalObject[ctorRegistrySymbol][interfaceName] = DocumentFragment;
+  ctorRegistry[interfaceName] = DocumentFragment;
 
   Object.defineProperty(globalObject, interfaceName, {
     configurable: true,

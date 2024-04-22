@@ -15,24 +15,24 @@ exports.is = value => {
 exports.isImpl = value => {
   return utils.isObject(value) && value instanceof Impl.implementation;
 };
-exports.convert = (value, { context = "The provided value" } = {}) => {
+exports.convert = (globalObject, value, { context = "The provided value" } = {}) => {
   if (exports.is(value)) {
     return utils.implForWrapper(value);
   }
-  throw new TypeError(`${context} is not of type 'HTMLUnknownElement'.`);
+  throw new globalObject.TypeError(`${context} is not of type 'HTMLUnknownElement'.`);
 };
 
-function makeWrapper(globalObject) {
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    throw new Error("Internal error: invalid global object");
+function makeWrapper(globalObject, newTarget) {
+  let proto;
+  if (newTarget !== undefined) {
+    proto = newTarget.prototype;
   }
 
-  const ctor = globalObject[ctorRegistrySymbol]["HTMLUnknownElement"];
-  if (ctor === undefined) {
-    throw new Error("Internal error: constructor HTMLUnknownElement is not installed on the passed global object");
+  if (!utils.isObject(proto)) {
+    proto = globalObject[ctorRegistrySymbol]["HTMLUnknownElement"].prototype;
   }
 
-  return Object.create(ctor.prototype);
+  return Object.create(proto);
 }
 
 exports.create = (globalObject, constructorArgs, privateData) => {
@@ -65,8 +65,8 @@ exports.setup = (wrapper, globalObject, constructorArgs = [], privateData = {}) 
   return wrapper;
 };
 
-exports.new = globalObject => {
-  const wrapper = makeWrapper(globalObject);
+exports.new = (globalObject, newTarget) => {
+  const wrapper = makeWrapper(globalObject, newTarget);
 
   exports._internalSetup(wrapper, globalObject);
   Object.defineProperty(wrapper, implSymbol, {
@@ -88,21 +88,16 @@ exports.install = (globalObject, globalNames) => {
     return;
   }
 
-  if (globalObject.HTMLElement === undefined) {
-    throw new Error("Internal error: attempting to evaluate HTMLUnknownElement before HTMLElement");
-  }
+  const ctorRegistry = utils.initCtorRegistry(globalObject);
   class HTMLUnknownElement extends globalObject.HTMLElement {
     constructor() {
-      throw new TypeError("Illegal constructor");
+      throw new globalObject.TypeError("Illegal constructor");
     }
   }
   Object.defineProperties(HTMLUnknownElement.prototype, {
     [Symbol.toStringTag]: { value: "HTMLUnknownElement", configurable: true }
   });
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    globalObject[ctorRegistrySymbol] = Object.create(null);
-  }
-  globalObject[ctorRegistrySymbol][interfaceName] = HTMLUnknownElement;
+  ctorRegistry[interfaceName] = HTMLUnknownElement;
 
   Object.defineProperty(globalObject, interfaceName, {
     configurable: true,

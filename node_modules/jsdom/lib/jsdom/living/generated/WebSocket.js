@@ -18,24 +18,24 @@ exports.is = value => {
 exports.isImpl = value => {
   return utils.isObject(value) && value instanceof Impl.implementation;
 };
-exports.convert = (value, { context = "The provided value" } = {}) => {
+exports.convert = (globalObject, value, { context = "The provided value" } = {}) => {
   if (exports.is(value)) {
     return utils.implForWrapper(value);
   }
-  throw new TypeError(`${context} is not of type 'WebSocket'.`);
+  throw new globalObject.TypeError(`${context} is not of type 'WebSocket'.`);
 };
 
-function makeWrapper(globalObject) {
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    throw new Error("Internal error: invalid global object");
+function makeWrapper(globalObject, newTarget) {
+  let proto;
+  if (newTarget !== undefined) {
+    proto = newTarget.prototype;
   }
 
-  const ctor = globalObject[ctorRegistrySymbol]["WebSocket"];
-  if (ctor === undefined) {
-    throw new Error("Internal error: constructor WebSocket is not installed on the passed global object");
+  if (!utils.isObject(proto)) {
+    proto = globalObject[ctorRegistrySymbol]["WebSocket"].prototype;
   }
 
-  return Object.create(ctor.prototype);
+  return Object.create(proto);
 }
 
 exports.create = (globalObject, constructorArgs, privateData) => {
@@ -68,8 +68,8 @@ exports.setup = (wrapper, globalObject, constructorArgs = [], privateData = {}) 
   return wrapper;
 };
 
-exports.new = globalObject => {
-  const wrapper = makeWrapper(globalObject);
+exports.new = (globalObject, newTarget) => {
+  const wrapper = makeWrapper(globalObject, newTarget);
 
   exports._internalSetup(wrapper, globalObject);
   Object.defineProperty(wrapper, implSymbol, {
@@ -91,20 +91,21 @@ exports.install = (globalObject, globalNames) => {
     return;
   }
 
-  if (globalObject.EventTarget === undefined) {
-    throw new Error("Internal error: attempting to evaluate WebSocket before EventTarget");
-  }
+  const ctorRegistry = utils.initCtorRegistry(globalObject);
   class WebSocket extends globalObject.EventTarget {
     constructor(url) {
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to construct 'WebSocket': 1 argument required, but only " + arguments.length + " present."
+        throw new globalObject.TypeError(
+          `Failed to construct 'WebSocket': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
-        curArg = conversions["USVString"](curArg, { context: "Failed to construct 'WebSocket': parameter 1" });
+        curArg = conversions["USVString"](curArg, {
+          context: "Failed to construct 'WebSocket': parameter 1",
+          globals: globalObject
+        });
         args.push(curArg);
       }
       {
@@ -113,7 +114,7 @@ exports.install = (globalObject, globalNames) => {
           if (utils.isObject(curArg)) {
             if (curArg[Symbol.iterator] !== undefined) {
               if (!utils.isObject(curArg)) {
-                throw new TypeError(
+                throw new globalObject.TypeError(
                   "Failed to construct 'WebSocket': parameter 2" + " sequence" + " is not an iterable object."
                 );
               } else {
@@ -121,7 +122,8 @@ exports.install = (globalObject, globalNames) => {
                 const tmp = curArg;
                 for (let nextItem of tmp) {
                   nextItem = conversions["DOMString"](nextItem, {
-                    context: "Failed to construct 'WebSocket': parameter 2" + " sequence" + "'s element"
+                    context: "Failed to construct 'WebSocket': parameter 2" + " sequence" + "'s element",
+                    globals: globalObject
                   });
 
                   V.push(nextItem);
@@ -131,7 +133,10 @@ exports.install = (globalObject, globalNames) => {
             } else {
             }
           } else {
-            curArg = conversions["DOMString"](curArg, { context: "Failed to construct 'WebSocket': parameter 2" });
+            curArg = conversions["DOMString"](curArg, {
+              context: "Failed to construct 'WebSocket': parameter 2",
+              globals: globalObject
+            });
           }
         } else {
           curArg = [];
@@ -144,7 +149,7 @@ exports.install = (globalObject, globalNames) => {
     close() {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'close' called on an object that is not a valid instance of WebSocket.");
+        throw new globalObject.TypeError("'close' called on an object that is not a valid instance of WebSocket.");
       }
       const args = [];
       {
@@ -152,6 +157,7 @@ exports.install = (globalObject, globalNames) => {
         if (curArg !== undefined) {
           curArg = conversions["unsigned short"](curArg, {
             context: "Failed to execute 'close' on 'WebSocket': parameter 1",
+            globals: globalObject,
             clamp: true
           });
         }
@@ -161,7 +167,8 @@ exports.install = (globalObject, globalNames) => {
         let curArg = arguments[1];
         if (curArg !== undefined) {
           curArg = conversions["USVString"](curArg, {
-            context: "Failed to execute 'close' on 'WebSocket': parameter 2"
+            context: "Failed to execute 'close' on 'WebSocket': parameter 2",
+            globals: globalObject
           });
         }
         args.push(curArg);
@@ -172,12 +179,12 @@ exports.install = (globalObject, globalNames) => {
     send(data) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'send' called on an object that is not a valid instance of WebSocket.");
+        throw new globalObject.TypeError("'send' called on an object that is not a valid instance of WebSocket.");
       }
 
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to execute 'send' on 'WebSocket': 1 argument required, but only " + arguments.length + " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'send' on 'WebSocket': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
@@ -186,14 +193,17 @@ exports.install = (globalObject, globalNames) => {
         if (Blob.is(curArg)) {
           {
             let curArg = arguments[0];
-            curArg = Blob.convert(curArg, { context: "Failed to execute 'send' on 'WebSocket': parameter 1" });
+            curArg = Blob.convert(globalObject, curArg, {
+              context: "Failed to execute 'send' on 'WebSocket': parameter 1"
+            });
             args.push(curArg);
           }
         } else if (utils.isArrayBuffer(curArg)) {
           {
             let curArg = arguments[0];
             curArg = conversions["ArrayBuffer"](curArg, {
-              context: "Failed to execute 'send' on 'WebSocket': parameter 1"
+              context: "Failed to execute 'send' on 'WebSocket': parameter 1",
+              globals: globalObject
             });
             args.push(curArg);
           }
@@ -202,7 +212,7 @@ exports.install = (globalObject, globalNames) => {
             let curArg = arguments[0];
             if (ArrayBuffer.isView(curArg)) {
             } else {
-              throw new TypeError(
+              throw new globalObject.TypeError(
                 "Failed to execute 'send' on 'WebSocket': parameter 1" + " is not of any supported type."
               );
             }
@@ -212,7 +222,8 @@ exports.install = (globalObject, globalNames) => {
           {
             let curArg = arguments[0];
             curArg = conversions["USVString"](curArg, {
-              context: "Failed to execute 'send' on 'WebSocket': parameter 1"
+              context: "Failed to execute 'send' on 'WebSocket': parameter 1",
+              globals: globalObject
             });
             args.push(curArg);
           }
@@ -225,7 +236,7 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get url' called on an object that is not a valid instance of WebSocket.");
+        throw new globalObject.TypeError("'get url' called on an object that is not a valid instance of WebSocket.");
       }
 
       return esValue[implSymbol]["url"];
@@ -235,7 +246,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get readyState' called on an object that is not a valid instance of WebSocket.");
+        throw new globalObject.TypeError(
+          "'get readyState' called on an object that is not a valid instance of WebSocket."
+        );
       }
 
       return esValue[implSymbol]["readyState"];
@@ -245,7 +258,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get bufferedAmount' called on an object that is not a valid instance of WebSocket.");
+        throw new globalObject.TypeError(
+          "'get bufferedAmount' called on an object that is not a valid instance of WebSocket."
+        );
       }
 
       return esValue[implSymbol]["bufferedAmount"];
@@ -255,7 +270,7 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get onopen' called on an object that is not a valid instance of WebSocket.");
+        throw new globalObject.TypeError("'get onopen' called on an object that is not a valid instance of WebSocket.");
       }
 
       return utils.tryWrapperForImpl(esValue[implSymbol]["onopen"]);
@@ -265,13 +280,13 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'set onopen' called on an object that is not a valid instance of WebSocket.");
+        throw new globalObject.TypeError("'set onopen' called on an object that is not a valid instance of WebSocket.");
       }
 
       if (!utils.isObject(V)) {
         V = null;
       } else {
-        V = EventHandlerNonNull.convert(V, {
+        V = EventHandlerNonNull.convert(globalObject, V, {
           context: "Failed to set the 'onopen' property on 'WebSocket': The provided value"
         });
       }
@@ -282,7 +297,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get onerror' called on an object that is not a valid instance of WebSocket.");
+        throw new globalObject.TypeError(
+          "'get onerror' called on an object that is not a valid instance of WebSocket."
+        );
       }
 
       return utils.tryWrapperForImpl(esValue[implSymbol]["onerror"]);
@@ -292,13 +309,15 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'set onerror' called on an object that is not a valid instance of WebSocket.");
+        throw new globalObject.TypeError(
+          "'set onerror' called on an object that is not a valid instance of WebSocket."
+        );
       }
 
       if (!utils.isObject(V)) {
         V = null;
       } else {
-        V = EventHandlerNonNull.convert(V, {
+        V = EventHandlerNonNull.convert(globalObject, V, {
           context: "Failed to set the 'onerror' property on 'WebSocket': The provided value"
         });
       }
@@ -309,7 +328,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get onclose' called on an object that is not a valid instance of WebSocket.");
+        throw new globalObject.TypeError(
+          "'get onclose' called on an object that is not a valid instance of WebSocket."
+        );
       }
 
       return utils.tryWrapperForImpl(esValue[implSymbol]["onclose"]);
@@ -319,13 +340,15 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'set onclose' called on an object that is not a valid instance of WebSocket.");
+        throw new globalObject.TypeError(
+          "'set onclose' called on an object that is not a valid instance of WebSocket."
+        );
       }
 
       if (!utils.isObject(V)) {
         V = null;
       } else {
-        V = EventHandlerNonNull.convert(V, {
+        V = EventHandlerNonNull.convert(globalObject, V, {
           context: "Failed to set the 'onclose' property on 'WebSocket': The provided value"
         });
       }
@@ -336,7 +359,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get extensions' called on an object that is not a valid instance of WebSocket.");
+        throw new globalObject.TypeError(
+          "'get extensions' called on an object that is not a valid instance of WebSocket."
+        );
       }
 
       return esValue[implSymbol]["extensions"];
@@ -346,7 +371,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get protocol' called on an object that is not a valid instance of WebSocket.");
+        throw new globalObject.TypeError(
+          "'get protocol' called on an object that is not a valid instance of WebSocket."
+        );
       }
 
       return esValue[implSymbol]["protocol"];
@@ -356,7 +383,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get onmessage' called on an object that is not a valid instance of WebSocket.");
+        throw new globalObject.TypeError(
+          "'get onmessage' called on an object that is not a valid instance of WebSocket."
+        );
       }
 
       return utils.tryWrapperForImpl(esValue[implSymbol]["onmessage"]);
@@ -366,13 +395,15 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'set onmessage' called on an object that is not a valid instance of WebSocket.");
+        throw new globalObject.TypeError(
+          "'set onmessage' called on an object that is not a valid instance of WebSocket."
+        );
       }
 
       if (!utils.isObject(V)) {
         V = null;
       } else {
-        V = EventHandlerNonNull.convert(V, {
+        V = EventHandlerNonNull.convert(globalObject, V, {
           context: "Failed to set the 'onmessage' property on 'WebSocket': The provided value"
         });
       }
@@ -383,7 +414,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get binaryType' called on an object that is not a valid instance of WebSocket.");
+        throw new globalObject.TypeError(
+          "'get binaryType' called on an object that is not a valid instance of WebSocket."
+        );
       }
 
       return utils.tryWrapperForImpl(esValue[implSymbol]["binaryType"]);
@@ -393,7 +426,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'set binaryType' called on an object that is not a valid instance of WebSocket.");
+        throw new globalObject.TypeError(
+          "'set binaryType' called on an object that is not a valid instance of WebSocket."
+        );
       }
 
       V = `${V}`;
@@ -429,10 +464,7 @@ exports.install = (globalObject, globalNames) => {
     CLOSING: { value: 2, enumerable: true },
     CLOSED: { value: 3, enumerable: true }
   });
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    globalObject[ctorRegistrySymbol] = Object.create(null);
-  }
-  globalObject[ctorRegistrySymbol][interfaceName] = WebSocket;
+  ctorRegistry[interfaceName] = WebSocket;
 
   Object.defineProperty(globalObject, interfaceName, {
     configurable: true,

@@ -17,24 +17,33 @@ exports.is = value => {
 exports.isImpl = value => {
   return utils.isObject(value) && value instanceof Impl.implementation;
 };
-exports.convert = (value, { context = "The provided value" } = {}) => {
+exports.convert = (globalObject, value, { context = "The provided value" } = {}) => {
   if (exports.is(value)) {
     return utils.implForWrapper(value);
   }
-  throw new TypeError(`${context} is not of type 'NamedNodeMap'.`);
+  throw new globalObject.TypeError(`${context} is not of type 'NamedNodeMap'.`);
 };
 
-function makeWrapper(globalObject) {
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    throw new Error("Internal error: invalid global object");
+function makeWrapper(globalObject, newTarget) {
+  let proto;
+  if (newTarget !== undefined) {
+    proto = newTarget.prototype;
   }
 
-  const ctor = globalObject[ctorRegistrySymbol]["NamedNodeMap"];
-  if (ctor === undefined) {
-    throw new Error("Internal error: constructor NamedNodeMap is not installed on the passed global object");
+  if (!utils.isObject(proto)) {
+    proto = globalObject[ctorRegistrySymbol]["NamedNodeMap"].prototype;
   }
 
-  return Object.create(ctor.prototype);
+  return Object.create(proto);
+}
+
+function makeProxy(wrapper, globalObject) {
+  let proxyHandler = proxyHandlerCache.get(globalObject);
+  if (proxyHandler === undefined) {
+    proxyHandler = new ProxyHandler(globalObject);
+    proxyHandlerCache.set(globalObject, proxyHandler);
+  }
+  return new Proxy(wrapper, proxyHandler);
 }
 
 exports.create = (globalObject, constructorArgs, privateData) => {
@@ -58,7 +67,7 @@ exports.setup = (wrapper, globalObject, constructorArgs = [], privateData = {}) 
     configurable: true
   });
 
-  wrapper = new Proxy(wrapper, proxyHandler);
+  wrapper = makeProxy(wrapper, globalObject);
 
   wrapper[implSymbol][utils.wrapperSymbol] = wrapper;
   if (Impl.init) {
@@ -67,8 +76,8 @@ exports.setup = (wrapper, globalObject, constructorArgs = [], privateData = {}) 
   return wrapper;
 };
 
-exports.new = globalObject => {
-  let wrapper = makeWrapper(globalObject);
+exports.new = (globalObject, newTarget) => {
+  let wrapper = makeWrapper(globalObject, newTarget);
 
   exports._internalSetup(wrapper, globalObject);
   Object.defineProperty(wrapper, implSymbol, {
@@ -76,7 +85,7 @@ exports.new = globalObject => {
     configurable: true
   });
 
-  wrapper = new Proxy(wrapper, proxyHandler);
+  wrapper = makeProxy(wrapper, globalObject);
 
   wrapper[implSymbol][utils.wrapperSymbol] = wrapper;
   if (Impl.init) {
@@ -91,27 +100,30 @@ exports.install = (globalObject, globalNames) => {
   if (!globalNames.some(globalName => exposed.has(globalName))) {
     return;
   }
+
+  const ctorRegistry = utils.initCtorRegistry(globalObject);
   class NamedNodeMap {
     constructor() {
-      throw new TypeError("Illegal constructor");
+      throw new globalObject.TypeError("Illegal constructor");
     }
 
     item(index) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'item' called on an object that is not a valid instance of NamedNodeMap.");
+        throw new globalObject.TypeError("'item' called on an object that is not a valid instance of NamedNodeMap.");
       }
 
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to execute 'item' on 'NamedNodeMap': 1 argument required, but only " + arguments.length + " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'item' on 'NamedNodeMap': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
         curArg = conversions["unsigned long"](curArg, {
-          context: "Failed to execute 'item' on 'NamedNodeMap': parameter 1"
+          context: "Failed to execute 'item' on 'NamedNodeMap': parameter 1",
+          globals: globalObject
         });
         args.push(curArg);
       }
@@ -121,21 +133,22 @@ exports.install = (globalObject, globalNames) => {
     getNamedItem(qualifiedName) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'getNamedItem' called on an object that is not a valid instance of NamedNodeMap.");
+        throw new globalObject.TypeError(
+          "'getNamedItem' called on an object that is not a valid instance of NamedNodeMap."
+        );
       }
 
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to execute 'getNamedItem' on 'NamedNodeMap': 1 argument required, but only " +
-            arguments.length +
-            " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'getNamedItem' on 'NamedNodeMap': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
         curArg = conversions["DOMString"](curArg, {
-          context: "Failed to execute 'getNamedItem' on 'NamedNodeMap': parameter 1"
+          context: "Failed to execute 'getNamedItem' on 'NamedNodeMap': parameter 1",
+          globals: globalObject
         });
         args.push(curArg);
       }
@@ -145,14 +158,14 @@ exports.install = (globalObject, globalNames) => {
     getNamedItemNS(namespace, localName) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'getNamedItemNS' called on an object that is not a valid instance of NamedNodeMap.");
+        throw new globalObject.TypeError(
+          "'getNamedItemNS' called on an object that is not a valid instance of NamedNodeMap."
+        );
       }
 
       if (arguments.length < 2) {
-        throw new TypeError(
-          "Failed to execute 'getNamedItemNS' on 'NamedNodeMap': 2 arguments required, but only " +
-            arguments.length +
-            " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'getNamedItemNS' on 'NamedNodeMap': 2 arguments required, but only ${arguments.length} present.`
         );
       }
       const args = [];
@@ -162,7 +175,8 @@ exports.install = (globalObject, globalNames) => {
           curArg = null;
         } else {
           curArg = conversions["DOMString"](curArg, {
-            context: "Failed to execute 'getNamedItemNS' on 'NamedNodeMap': parameter 1"
+            context: "Failed to execute 'getNamedItemNS' on 'NamedNodeMap': parameter 1",
+            globals: globalObject
           });
         }
         args.push(curArg);
@@ -170,7 +184,8 @@ exports.install = (globalObject, globalNames) => {
       {
         let curArg = arguments[1];
         curArg = conversions["DOMString"](curArg, {
-          context: "Failed to execute 'getNamedItemNS' on 'NamedNodeMap': parameter 2"
+          context: "Failed to execute 'getNamedItemNS' on 'NamedNodeMap': parameter 2",
+          globals: globalObject
         });
         args.push(curArg);
       }
@@ -180,20 +195,22 @@ exports.install = (globalObject, globalNames) => {
     setNamedItem(attr) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'setNamedItem' called on an object that is not a valid instance of NamedNodeMap.");
+        throw new globalObject.TypeError(
+          "'setNamedItem' called on an object that is not a valid instance of NamedNodeMap."
+        );
       }
 
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to execute 'setNamedItem' on 'NamedNodeMap': 1 argument required, but only " +
-            arguments.length +
-            " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'setNamedItem' on 'NamedNodeMap': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
-        curArg = Attr.convert(curArg, { context: "Failed to execute 'setNamedItem' on 'NamedNodeMap': parameter 1" });
+        curArg = Attr.convert(globalObject, curArg, {
+          context: "Failed to execute 'setNamedItem' on 'NamedNodeMap': parameter 1"
+        });
         args.push(curArg);
       }
       ceReactionsPreSteps_helpers_custom_elements(globalObject);
@@ -207,20 +224,22 @@ exports.install = (globalObject, globalNames) => {
     setNamedItemNS(attr) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'setNamedItemNS' called on an object that is not a valid instance of NamedNodeMap.");
+        throw new globalObject.TypeError(
+          "'setNamedItemNS' called on an object that is not a valid instance of NamedNodeMap."
+        );
       }
 
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to execute 'setNamedItemNS' on 'NamedNodeMap': 1 argument required, but only " +
-            arguments.length +
-            " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'setNamedItemNS' on 'NamedNodeMap': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
-        curArg = Attr.convert(curArg, { context: "Failed to execute 'setNamedItemNS' on 'NamedNodeMap': parameter 1" });
+        curArg = Attr.convert(globalObject, curArg, {
+          context: "Failed to execute 'setNamedItemNS' on 'NamedNodeMap': parameter 1"
+        });
         args.push(curArg);
       }
       ceReactionsPreSteps_helpers_custom_elements(globalObject);
@@ -234,21 +253,22 @@ exports.install = (globalObject, globalNames) => {
     removeNamedItem(qualifiedName) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'removeNamedItem' called on an object that is not a valid instance of NamedNodeMap.");
+        throw new globalObject.TypeError(
+          "'removeNamedItem' called on an object that is not a valid instance of NamedNodeMap."
+        );
       }
 
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to execute 'removeNamedItem' on 'NamedNodeMap': 1 argument required, but only " +
-            arguments.length +
-            " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'removeNamedItem' on 'NamedNodeMap': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
         curArg = conversions["DOMString"](curArg, {
-          context: "Failed to execute 'removeNamedItem' on 'NamedNodeMap': parameter 1"
+          context: "Failed to execute 'removeNamedItem' on 'NamedNodeMap': parameter 1",
+          globals: globalObject
         });
         args.push(curArg);
       }
@@ -263,14 +283,14 @@ exports.install = (globalObject, globalNames) => {
     removeNamedItemNS(namespace, localName) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'removeNamedItemNS' called on an object that is not a valid instance of NamedNodeMap.");
+        throw new globalObject.TypeError(
+          "'removeNamedItemNS' called on an object that is not a valid instance of NamedNodeMap."
+        );
       }
 
       if (arguments.length < 2) {
-        throw new TypeError(
-          "Failed to execute 'removeNamedItemNS' on 'NamedNodeMap': 2 arguments required, but only " +
-            arguments.length +
-            " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'removeNamedItemNS' on 'NamedNodeMap': 2 arguments required, but only ${arguments.length} present.`
         );
       }
       const args = [];
@@ -280,7 +300,8 @@ exports.install = (globalObject, globalNames) => {
           curArg = null;
         } else {
           curArg = conversions["DOMString"](curArg, {
-            context: "Failed to execute 'removeNamedItemNS' on 'NamedNodeMap': parameter 1"
+            context: "Failed to execute 'removeNamedItemNS' on 'NamedNodeMap': parameter 1",
+            globals: globalObject
           });
         }
         args.push(curArg);
@@ -288,7 +309,8 @@ exports.install = (globalObject, globalNames) => {
       {
         let curArg = arguments[1];
         curArg = conversions["DOMString"](curArg, {
-          context: "Failed to execute 'removeNamedItemNS' on 'NamedNodeMap': parameter 2"
+          context: "Failed to execute 'removeNamedItemNS' on 'NamedNodeMap': parameter 2",
+          globals: globalObject
         });
         args.push(curArg);
       }
@@ -304,7 +326,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get length' called on an object that is not a valid instance of NamedNodeMap.");
+        throw new globalObject.TypeError(
+          "'get length' called on an object that is not a valid instance of NamedNodeMap."
+        );
       }
 
       return esValue[implSymbol]["length"];
@@ -320,12 +344,9 @@ exports.install = (globalObject, globalNames) => {
     removeNamedItemNS: { enumerable: true },
     length: { enumerable: true },
     [Symbol.toStringTag]: { value: "NamedNodeMap", configurable: true },
-    [Symbol.iterator]: { value: Array.prototype[Symbol.iterator], configurable: true, writable: true }
+    [Symbol.iterator]: { value: globalObject.Array.prototype[Symbol.iterator], configurable: true, writable: true }
   });
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    globalObject[ctorRegistrySymbol] = Object.create(null);
-  }
-  globalObject[ctorRegistrySymbol][interfaceName] = NamedNodeMap;
+  ctorRegistry[interfaceName] = NamedNodeMap;
 
   Object.defineProperty(globalObject, interfaceName, {
     configurable: true,
@@ -334,7 +355,12 @@ exports.install = (globalObject, globalNames) => {
   });
 };
 
-const proxyHandler = {
+const proxyHandlerCache = new WeakMap();
+class ProxyHandler {
+  constructor(globalObject) {
+    this._globalObject = globalObject;
+  }
+
   get(target, P, receiver) {
     if (typeof P === "symbol") {
       return Reflect.get(target, P, receiver);
@@ -355,7 +381,7 @@ const proxyHandler = {
       return undefined;
     }
     return Reflect.apply(getter, receiver, []);
-  },
+  }
 
   has(target, P) {
     if (typeof P === "symbol") {
@@ -370,7 +396,7 @@ const proxyHandler = {
       return Reflect.has(parent, P);
     }
     return false;
-  },
+  }
 
   ownKeys(target) {
     const keys = new Set();
@@ -389,7 +415,7 @@ const proxyHandler = {
       keys.add(key);
     }
     return [...keys];
-  },
+  }
 
   getOwnPropertyDescriptor(target, P) {
     if (typeof P === "symbol") {
@@ -423,7 +449,7 @@ const proxyHandler = {
     }
 
     return Reflect.getOwnPropertyDescriptor(target, P);
-  },
+  }
 
   set(target, P, V, receiver) {
     if (typeof P === "symbol") {
@@ -432,6 +458,7 @@ const proxyHandler = {
     // The `receiver` argument refers to the Proxy exotic object or an object
     // that inherits from it, whereas `target` refers to the Proxy target:
     if (target[implSymbol][utils.wrapperSymbol] === receiver) {
+      const globalObject = this._globalObject;
     }
     let ownDesc;
 
@@ -478,12 +505,14 @@ const proxyHandler = {
       valueDesc = { writable: true, enumerable: true, configurable: true, value: V };
     }
     return Reflect.defineProperty(receiver, P, valueDesc);
-  },
+  }
 
   defineProperty(target, P, desc) {
     if (typeof P === "symbol") {
       return Reflect.defineProperty(target, P, desc);
     }
+
+    const globalObject = this._globalObject;
 
     if (utils.isArrayIndexPropName(P)) {
       return false;
@@ -495,12 +524,14 @@ const proxyHandler = {
       }
     }
     return Reflect.defineProperty(target, P, desc);
-  },
+  }
 
   deleteProperty(target, P) {
     if (typeof P === "symbol") {
       return Reflect.deleteProperty(target, P);
     }
+
+    const globalObject = this._globalObject;
 
     if (utils.isArrayIndexPropName(P)) {
       const index = P >>> 0;
@@ -512,11 +543,11 @@ const proxyHandler = {
     }
 
     return Reflect.deleteProperty(target, P);
-  },
+  }
 
   preventExtensions() {
     return false;
   }
-};
+}
 
 const Impl = require("../attributes/NamedNodeMap-impl.js");

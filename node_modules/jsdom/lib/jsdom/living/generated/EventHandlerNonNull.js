@@ -3,12 +3,8 @@
 const conversions = require("webidl-conversions");
 const utils = require("./utils.js");
 
-exports.convert = (value, { context = "The provided value" } = {}) => {
+exports.convert = (globalObject, value, { context = "The provided value" } = {}) => {
   function invokeTheCallbackFunction(event) {
-    if (new.target !== undefined) {
-      throw new Error("Internal error: invokeTheCallbackFunction is not a constructor");
-    }
-
     const thisArg = utils.tryWrapperForImpl(this);
     let callResult;
 
@@ -18,7 +14,7 @@ exports.convert = (value, { context = "The provided value" } = {}) => {
       callResult = Reflect.apply(value, thisArg, [event]);
     }
 
-    callResult = conversions["any"](callResult, { context: context });
+    callResult = conversions["any"](callResult, { context: context, globals: globalObject });
 
     return callResult;
   }
@@ -28,7 +24,7 @@ exports.convert = (value, { context = "The provided value" } = {}) => {
 
     let callResult = Reflect.construct(value, [event]);
 
-    callResult = conversions["any"](callResult, { context: context });
+    callResult = conversions["any"](callResult, { context: context, globals: globalObject });
 
     return callResult;
   };

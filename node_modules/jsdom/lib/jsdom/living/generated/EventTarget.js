@@ -18,24 +18,24 @@ exports.is = value => {
 exports.isImpl = value => {
   return utils.isObject(value) && value instanceof Impl.implementation;
 };
-exports.convert = (value, { context = "The provided value" } = {}) => {
+exports.convert = (globalObject, value, { context = "The provided value" } = {}) => {
   if (exports.is(value)) {
     return utils.implForWrapper(value);
   }
-  throw new TypeError(`${context} is not of type 'EventTarget'.`);
+  throw new globalObject.TypeError(`${context} is not of type 'EventTarget'.`);
 };
 
-function makeWrapper(globalObject) {
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    throw new Error("Internal error: invalid global object");
+function makeWrapper(globalObject, newTarget) {
+  let proto;
+  if (newTarget !== undefined) {
+    proto = newTarget.prototype;
   }
 
-  const ctor = globalObject[ctorRegistrySymbol]["EventTarget"];
-  if (ctor === undefined) {
-    throw new Error("Internal error: constructor EventTarget is not installed on the passed global object");
+  if (!utils.isObject(proto)) {
+    proto = globalObject[ctorRegistrySymbol]["EventTarget"].prototype;
   }
 
-  return Object.create(ctor.prototype);
+  return Object.create(proto);
 }
 
 exports.create = (globalObject, constructorArgs, privateData) => {
@@ -66,8 +66,8 @@ exports.setup = (wrapper, globalObject, constructorArgs = [], privateData = {}) 
   return wrapper;
 };
 
-exports.new = globalObject => {
-  const wrapper = makeWrapper(globalObject);
+exports.new = (globalObject, newTarget) => {
+  const wrapper = makeWrapper(globalObject, newTarget);
 
   exports._internalSetup(wrapper, globalObject);
   Object.defineProperty(wrapper, implSymbol, {
@@ -88,6 +88,8 @@ exports.install = (globalObject, globalNames) => {
   if (!globalNames.some(globalName => exposed.has(globalName))) {
     return;
   }
+
+  const ctorRegistry = utils.initCtorRegistry(globalObject);
   class EventTarget {
     constructor() {
       return exports.setup(Object.create(new.target.prototype), globalObject, undefined);
@@ -96,21 +98,22 @@ exports.install = (globalObject, globalNames) => {
     addEventListener(type, callback) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'addEventListener' called on an object that is not a valid instance of EventTarget.");
+        throw new globalObject.TypeError(
+          "'addEventListener' called on an object that is not a valid instance of EventTarget."
+        );
       }
 
       if (arguments.length < 2) {
-        throw new TypeError(
-          "Failed to execute 'addEventListener' on 'EventTarget': 2 arguments required, but only " +
-            arguments.length +
-            " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'addEventListener' on 'EventTarget': 2 arguments required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
         curArg = conversions["DOMString"](curArg, {
-          context: "Failed to execute 'addEventListener' on 'EventTarget': parameter 1"
+          context: "Failed to execute 'addEventListener' on 'EventTarget': parameter 1",
+          globals: globalObject
         });
         args.push(curArg);
       }
@@ -119,7 +122,7 @@ exports.install = (globalObject, globalNames) => {
         if (curArg === null || curArg === undefined) {
           curArg = null;
         } else {
-          curArg = EventListener.convert(curArg, {
+          curArg = EventListener.convert(globalObject, curArg, {
             context: "Failed to execute 'addEventListener' on 'EventTarget': parameter 2"
           });
         }
@@ -129,20 +132,22 @@ exports.install = (globalObject, globalNames) => {
         let curArg = arguments[2];
         if (curArg !== undefined) {
           if (curArg === null || curArg === undefined) {
-            curArg = AddEventListenerOptions.convert(curArg, {
+            curArg = AddEventListenerOptions.convert(globalObject, curArg, {
               context: "Failed to execute 'addEventListener' on 'EventTarget': parameter 3"
             });
           } else if (utils.isObject(curArg)) {
-            curArg = AddEventListenerOptions.convert(curArg, {
+            curArg = AddEventListenerOptions.convert(globalObject, curArg, {
               context: "Failed to execute 'addEventListener' on 'EventTarget': parameter 3" + " dictionary"
             });
           } else if (typeof curArg === "boolean") {
             curArg = conversions["boolean"](curArg, {
-              context: "Failed to execute 'addEventListener' on 'EventTarget': parameter 3"
+              context: "Failed to execute 'addEventListener' on 'EventTarget': parameter 3",
+              globals: globalObject
             });
           } else {
             curArg = conversions["boolean"](curArg, {
-              context: "Failed to execute 'addEventListener' on 'EventTarget': parameter 3"
+              context: "Failed to execute 'addEventListener' on 'EventTarget': parameter 3",
+              globals: globalObject
             });
           }
         }
@@ -154,21 +159,22 @@ exports.install = (globalObject, globalNames) => {
     removeEventListener(type, callback) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'removeEventListener' called on an object that is not a valid instance of EventTarget.");
+        throw new globalObject.TypeError(
+          "'removeEventListener' called on an object that is not a valid instance of EventTarget."
+        );
       }
 
       if (arguments.length < 2) {
-        throw new TypeError(
-          "Failed to execute 'removeEventListener' on 'EventTarget': 2 arguments required, but only " +
-            arguments.length +
-            " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'removeEventListener' on 'EventTarget': 2 arguments required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
         curArg = conversions["DOMString"](curArg, {
-          context: "Failed to execute 'removeEventListener' on 'EventTarget': parameter 1"
+          context: "Failed to execute 'removeEventListener' on 'EventTarget': parameter 1",
+          globals: globalObject
         });
         args.push(curArg);
       }
@@ -177,7 +183,7 @@ exports.install = (globalObject, globalNames) => {
         if (curArg === null || curArg === undefined) {
           curArg = null;
         } else {
-          curArg = EventListener.convert(curArg, {
+          curArg = EventListener.convert(globalObject, curArg, {
             context: "Failed to execute 'removeEventListener' on 'EventTarget': parameter 2"
           });
         }
@@ -187,20 +193,22 @@ exports.install = (globalObject, globalNames) => {
         let curArg = arguments[2];
         if (curArg !== undefined) {
           if (curArg === null || curArg === undefined) {
-            curArg = EventListenerOptions.convert(curArg, {
+            curArg = EventListenerOptions.convert(globalObject, curArg, {
               context: "Failed to execute 'removeEventListener' on 'EventTarget': parameter 3"
             });
           } else if (utils.isObject(curArg)) {
-            curArg = EventListenerOptions.convert(curArg, {
+            curArg = EventListenerOptions.convert(globalObject, curArg, {
               context: "Failed to execute 'removeEventListener' on 'EventTarget': parameter 3" + " dictionary"
             });
           } else if (typeof curArg === "boolean") {
             curArg = conversions["boolean"](curArg, {
-              context: "Failed to execute 'removeEventListener' on 'EventTarget': parameter 3"
+              context: "Failed to execute 'removeEventListener' on 'EventTarget': parameter 3",
+              globals: globalObject
             });
           } else {
             curArg = conversions["boolean"](curArg, {
-              context: "Failed to execute 'removeEventListener' on 'EventTarget': parameter 3"
+              context: "Failed to execute 'removeEventListener' on 'EventTarget': parameter 3",
+              globals: globalObject
             });
           }
         }
@@ -212,20 +220,22 @@ exports.install = (globalObject, globalNames) => {
     dispatchEvent(event) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'dispatchEvent' called on an object that is not a valid instance of EventTarget.");
+        throw new globalObject.TypeError(
+          "'dispatchEvent' called on an object that is not a valid instance of EventTarget."
+        );
       }
 
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to execute 'dispatchEvent' on 'EventTarget': 1 argument required, but only " +
-            arguments.length +
-            " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'dispatchEvent' on 'EventTarget': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
-        curArg = Event.convert(curArg, { context: "Failed to execute 'dispatchEvent' on 'EventTarget': parameter 1" });
+        curArg = Event.convert(globalObject, curArg, {
+          context: "Failed to execute 'dispatchEvent' on 'EventTarget': parameter 1"
+        });
         args.push(curArg);
       }
       return esValue[implSymbol].dispatchEvent(...args);
@@ -237,10 +247,7 @@ exports.install = (globalObject, globalNames) => {
     dispatchEvent: { enumerable: true },
     [Symbol.toStringTag]: { value: "EventTarget", configurable: true }
   });
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    globalObject[ctorRegistrySymbol] = Object.create(null);
-  }
-  globalObject[ctorRegistrySymbol][interfaceName] = EventTarget;
+  ctorRegistry[interfaceName] = EventTarget;
 
   Object.defineProperty(globalObject, interfaceName, {
     configurable: true,

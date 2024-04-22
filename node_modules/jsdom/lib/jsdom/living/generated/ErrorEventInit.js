@@ -5,14 +5,17 @@ const utils = require("./utils.js");
 
 const EventInit = require("./EventInit.js");
 
-exports._convertInherit = (obj, ret, { context = "The provided value" } = {}) => {
-  EventInit._convertInherit(obj, ret, { context });
+exports._convertInherit = (globalObject, obj, ret, { context = "The provided value" } = {}) => {
+  EventInit._convertInherit(globalObject, obj, ret, { context });
 
   {
     const key = "colno";
     let value = obj === undefined || obj === null ? undefined : obj[key];
     if (value !== undefined) {
-      value = conversions["unsigned long"](value, { context: context + " has member 'colno' that" });
+      value = conversions["unsigned long"](value, {
+        context: context + " has member 'colno' that",
+        globals: globalObject
+      });
 
       ret[key] = value;
     } else {
@@ -24,7 +27,7 @@ exports._convertInherit = (obj, ret, { context = "The provided value" } = {}) =>
     const key = "error";
     let value = obj === undefined || obj === null ? undefined : obj[key];
     if (value !== undefined) {
-      value = conversions["any"](value, { context: context + " has member 'error' that" });
+      value = conversions["any"](value, { context: context + " has member 'error' that", globals: globalObject });
 
       ret[key] = value;
     } else {
@@ -36,7 +39,10 @@ exports._convertInherit = (obj, ret, { context = "The provided value" } = {}) =>
     const key = "filename";
     let value = obj === undefined || obj === null ? undefined : obj[key];
     if (value !== undefined) {
-      value = conversions["USVString"](value, { context: context + " has member 'filename' that" });
+      value = conversions["USVString"](value, {
+        context: context + " has member 'filename' that",
+        globals: globalObject
+      });
 
       ret[key] = value;
     } else {
@@ -48,7 +54,10 @@ exports._convertInherit = (obj, ret, { context = "The provided value" } = {}) =>
     const key = "lineno";
     let value = obj === undefined || obj === null ? undefined : obj[key];
     if (value !== undefined) {
-      value = conversions["unsigned long"](value, { context: context + " has member 'lineno' that" });
+      value = conversions["unsigned long"](value, {
+        context: context + " has member 'lineno' that",
+        globals: globalObject
+      });
 
       ret[key] = value;
     } else {
@@ -60,7 +69,10 @@ exports._convertInherit = (obj, ret, { context = "The provided value" } = {}) =>
     const key = "message";
     let value = obj === undefined || obj === null ? undefined : obj[key];
     if (value !== undefined) {
-      value = conversions["DOMString"](value, { context: context + " has member 'message' that" });
+      value = conversions["DOMString"](value, {
+        context: context + " has member 'message' that",
+        globals: globalObject
+      });
 
       ret[key] = value;
     } else {
@@ -69,12 +81,12 @@ exports._convertInherit = (obj, ret, { context = "The provided value" } = {}) =>
   }
 };
 
-exports.convert = function convert(obj, { context = "The provided value" } = {}) {
+exports.convert = (globalObject, obj, { context = "The provided value" } = {}) => {
   if (obj !== undefined && typeof obj !== "object" && typeof obj !== "function") {
-    throw new TypeError(`${context} is not an object.`);
+    throw new globalObject.TypeError(`${context} is not an object.`);
   }
 
   const ret = Object.create(null);
-  exports._convertInherit(obj, ret, { context });
+  exports._convertInherit(globalObject, obj, ret, { context });
   return ret;
 };

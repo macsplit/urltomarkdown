@@ -20,24 +20,24 @@ exports.is = value => {
 exports.isImpl = value => {
   return utils.isObject(value) && value instanceof Impl.implementation;
 };
-exports.convert = (value, { context = "The provided value" } = {}) => {
+exports.convert = (globalObject, value, { context = "The provided value" } = {}) => {
   if (exports.is(value)) {
     return utils.implForWrapper(value);
   }
-  throw new TypeError(`${context} is not of type 'HTMLOptionsCollection'.`);
+  throw new globalObject.TypeError(`${context} is not of type 'HTMLOptionsCollection'.`);
 };
 
-function makeWrapper(globalObject) {
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    throw new Error("Internal error: invalid global object");
+function makeWrapper(globalObject, newTarget) {
+  let proto;
+  if (newTarget !== undefined) {
+    proto = newTarget.prototype;
   }
 
-  const ctor = globalObject[ctorRegistrySymbol]["HTMLOptionsCollection"];
-  if (ctor === undefined) {
-    throw new Error("Internal error: constructor HTMLOptionsCollection is not installed on the passed global object");
+  if (!utils.isObject(proto)) {
+    proto = globalObject[ctorRegistrySymbol]["HTMLOptionsCollection"].prototype;
   }
 
-  return Object.create(ctor.prototype);
+  return Object.create(proto);
 }
 
 function makeProxy(wrapper, globalObject) {
@@ -81,8 +81,8 @@ exports.setup = (wrapper, globalObject, constructorArgs = [], privateData = {}) 
   return wrapper;
 };
 
-exports.new = globalObject => {
-  let wrapper = makeWrapper(globalObject);
+exports.new = (globalObject, newTarget) => {
+  let wrapper = makeWrapper(globalObject, newTarget);
 
   exports._internalSetup(wrapper, globalObject);
   Object.defineProperty(wrapper, implSymbol, {
@@ -106,25 +106,23 @@ exports.install = (globalObject, globalNames) => {
     return;
   }
 
-  if (globalObject.HTMLCollection === undefined) {
-    throw new Error("Internal error: attempting to evaluate HTMLOptionsCollection before HTMLCollection");
-  }
+  const ctorRegistry = utils.initCtorRegistry(globalObject);
   class HTMLOptionsCollection extends globalObject.HTMLCollection {
     constructor() {
-      throw new TypeError("Illegal constructor");
+      throw new globalObject.TypeError("Illegal constructor");
     }
 
     add(element) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'add' called on an object that is not a valid instance of HTMLOptionsCollection.");
+        throw new globalObject.TypeError(
+          "'add' called on an object that is not a valid instance of HTMLOptionsCollection."
+        );
       }
 
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to execute 'add' on 'HTMLOptionsCollection': 1 argument required, but only " +
-            arguments.length +
-            " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'add' on 'HTMLOptionsCollection': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
@@ -133,7 +131,7 @@ exports.install = (globalObject, globalNames) => {
         if (HTMLOptionElement.is(curArg) || HTMLOptGroupElement.is(curArg)) {
           curArg = utils.implForWrapper(curArg);
         } else {
-          throw new TypeError(
+          throw new globalObject.TypeError(
             "Failed to execute 'add' on 'HTMLOptionsCollection': parameter 1" + " is not of any supported type."
           );
         }
@@ -149,11 +147,13 @@ exports.install = (globalObject, globalNames) => {
               curArg = utils.implForWrapper(curArg);
             } else if (typeof curArg === "number") {
               curArg = conversions["long"](curArg, {
-                context: "Failed to execute 'add' on 'HTMLOptionsCollection': parameter 2"
+                context: "Failed to execute 'add' on 'HTMLOptionsCollection': parameter 2",
+                globals: globalObject
               });
             } else {
               curArg = conversions["long"](curArg, {
-                context: "Failed to execute 'add' on 'HTMLOptionsCollection': parameter 2"
+                context: "Failed to execute 'add' on 'HTMLOptionsCollection': parameter 2",
+                globals: globalObject
               });
             }
           }
@@ -173,21 +173,22 @@ exports.install = (globalObject, globalNames) => {
     remove(index) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'remove' called on an object that is not a valid instance of HTMLOptionsCollection.");
+        throw new globalObject.TypeError(
+          "'remove' called on an object that is not a valid instance of HTMLOptionsCollection."
+        );
       }
 
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to execute 'remove' on 'HTMLOptionsCollection': 1 argument required, but only " +
-            arguments.length +
-            " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'remove' on 'HTMLOptionsCollection': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
         curArg = conversions["long"](curArg, {
-          context: "Failed to execute 'remove' on 'HTMLOptionsCollection': parameter 1"
+          context: "Failed to execute 'remove' on 'HTMLOptionsCollection': parameter 1",
+          globals: globalObject
         });
         args.push(curArg);
       }
@@ -203,7 +204,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get length' called on an object that is not a valid instance of HTMLOptionsCollection.");
+        throw new globalObject.TypeError(
+          "'get length' called on an object that is not a valid instance of HTMLOptionsCollection."
+        );
       }
 
       ceReactionsPreSteps_helpers_custom_elements(globalObject);
@@ -218,11 +221,14 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'set length' called on an object that is not a valid instance of HTMLOptionsCollection.");
+        throw new globalObject.TypeError(
+          "'set length' called on an object that is not a valid instance of HTMLOptionsCollection."
+        );
       }
 
       V = conversions["unsigned long"](V, {
-        context: "Failed to set the 'length' property on 'HTMLOptionsCollection': The provided value"
+        context: "Failed to set the 'length' property on 'HTMLOptionsCollection': The provided value",
+        globals: globalObject
       });
 
       ceReactionsPreSteps_helpers_custom_elements(globalObject);
@@ -237,7 +243,7 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError(
+        throw new globalObject.TypeError(
           "'get selectedIndex' called on an object that is not a valid instance of HTMLOptionsCollection."
         );
       }
@@ -249,13 +255,14 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError(
+        throw new globalObject.TypeError(
           "'set selectedIndex' called on an object that is not a valid instance of HTMLOptionsCollection."
         );
       }
 
       V = conversions["long"](V, {
-        context: "Failed to set the 'selectedIndex' property on 'HTMLOptionsCollection': The provided value"
+        context: "Failed to set the 'selectedIndex' property on 'HTMLOptionsCollection': The provided value",
+        globals: globalObject
       });
 
       esValue[implSymbol]["selectedIndex"] = V;
@@ -267,12 +274,9 @@ exports.install = (globalObject, globalNames) => {
     length: { enumerable: true },
     selectedIndex: { enumerable: true },
     [Symbol.toStringTag]: { value: "HTMLOptionsCollection", configurable: true },
-    [Symbol.iterator]: { value: Array.prototype[Symbol.iterator], configurable: true, writable: true }
+    [Symbol.iterator]: { value: globalObject.Array.prototype[Symbol.iterator], configurable: true, writable: true }
   });
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    globalObject[ctorRegistrySymbol] = Object.create(null);
-  }
-  globalObject[ctorRegistrySymbol][interfaceName] = HTMLOptionsCollection;
+  ctorRegistry[interfaceName] = HTMLOptionsCollection;
 
   Object.defineProperty(globalObject, interfaceName, {
     configurable: true,
@@ -393,7 +397,7 @@ class ProxyHandler {
         if (indexedValue === null || indexedValue === undefined) {
           indexedValue = null;
         } else {
-          indexedValue = HTMLOptionElement.convert(indexedValue, {
+          indexedValue = HTMLOptionElement.convert(globalObject, indexedValue, {
             context: "Failed to set the " + index + " property on 'HTMLOptionsCollection': The provided value"
           });
         }
@@ -478,7 +482,7 @@ class ProxyHandler {
       if (indexedValue === null || indexedValue === undefined) {
         indexedValue = null;
       } else {
-        indexedValue = HTMLOptionElement.convert(indexedValue, {
+        indexedValue = HTMLOptionElement.convert(globalObject, indexedValue, {
           context: "Failed to set the " + index + " property on 'HTMLOptionsCollection': The provided value"
         });
       }

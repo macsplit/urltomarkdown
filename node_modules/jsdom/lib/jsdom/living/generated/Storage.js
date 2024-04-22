@@ -14,24 +14,33 @@ exports.is = value => {
 exports.isImpl = value => {
   return utils.isObject(value) && value instanceof Impl.implementation;
 };
-exports.convert = (value, { context = "The provided value" } = {}) => {
+exports.convert = (globalObject, value, { context = "The provided value" } = {}) => {
   if (exports.is(value)) {
     return utils.implForWrapper(value);
   }
-  throw new TypeError(`${context} is not of type 'Storage'.`);
+  throw new globalObject.TypeError(`${context} is not of type 'Storage'.`);
 };
 
-function makeWrapper(globalObject) {
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    throw new Error("Internal error: invalid global object");
+function makeWrapper(globalObject, newTarget) {
+  let proto;
+  if (newTarget !== undefined) {
+    proto = newTarget.prototype;
   }
 
-  const ctor = globalObject[ctorRegistrySymbol]["Storage"];
-  if (ctor === undefined) {
-    throw new Error("Internal error: constructor Storage is not installed on the passed global object");
+  if (!utils.isObject(proto)) {
+    proto = globalObject[ctorRegistrySymbol]["Storage"].prototype;
   }
 
-  return Object.create(ctor.prototype);
+  return Object.create(proto);
+}
+
+function makeProxy(wrapper, globalObject) {
+  let proxyHandler = proxyHandlerCache.get(globalObject);
+  if (proxyHandler === undefined) {
+    proxyHandler = new ProxyHandler(globalObject);
+    proxyHandlerCache.set(globalObject, proxyHandler);
+  }
+  return new Proxy(wrapper, proxyHandler);
 }
 
 exports.create = (globalObject, constructorArgs, privateData) => {
@@ -55,7 +64,7 @@ exports.setup = (wrapper, globalObject, constructorArgs = [], privateData = {}) 
     configurable: true
   });
 
-  wrapper = new Proxy(wrapper, proxyHandler);
+  wrapper = makeProxy(wrapper, globalObject);
 
   wrapper[implSymbol][utils.wrapperSymbol] = wrapper;
   if (Impl.init) {
@@ -64,8 +73,8 @@ exports.setup = (wrapper, globalObject, constructorArgs = [], privateData = {}) 
   return wrapper;
 };
 
-exports.new = globalObject => {
-  let wrapper = makeWrapper(globalObject);
+exports.new = (globalObject, newTarget) => {
+  let wrapper = makeWrapper(globalObject, newTarget);
 
   exports._internalSetup(wrapper, globalObject);
   Object.defineProperty(wrapper, implSymbol, {
@@ -73,7 +82,7 @@ exports.new = globalObject => {
     configurable: true
   });
 
-  wrapper = new Proxy(wrapper, proxyHandler);
+  wrapper = makeProxy(wrapper, globalObject);
 
   wrapper[implSymbol][utils.wrapperSymbol] = wrapper;
   if (Impl.init) {
@@ -88,26 +97,31 @@ exports.install = (globalObject, globalNames) => {
   if (!globalNames.some(globalName => exposed.has(globalName))) {
     return;
   }
+
+  const ctorRegistry = utils.initCtorRegistry(globalObject);
   class Storage {
     constructor() {
-      throw new TypeError("Illegal constructor");
+      throw new globalObject.TypeError("Illegal constructor");
     }
 
     key(index) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'key' called on an object that is not a valid instance of Storage.");
+        throw new globalObject.TypeError("'key' called on an object that is not a valid instance of Storage.");
       }
 
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to execute 'key' on 'Storage': 1 argument required, but only " + arguments.length + " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'key' on 'Storage': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
-        curArg = conversions["unsigned long"](curArg, { context: "Failed to execute 'key' on 'Storage': parameter 1" });
+        curArg = conversions["unsigned long"](curArg, {
+          context: "Failed to execute 'key' on 'Storage': parameter 1",
+          globals: globalObject
+        });
         args.push(curArg);
       }
       return esValue[implSymbol].key(...args);
@@ -116,18 +130,21 @@ exports.install = (globalObject, globalNames) => {
     getItem(key) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'getItem' called on an object that is not a valid instance of Storage.");
+        throw new globalObject.TypeError("'getItem' called on an object that is not a valid instance of Storage.");
       }
 
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to execute 'getItem' on 'Storage': 1 argument required, but only " + arguments.length + " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'getItem' on 'Storage': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
-        curArg = conversions["DOMString"](curArg, { context: "Failed to execute 'getItem' on 'Storage': parameter 1" });
+        curArg = conversions["DOMString"](curArg, {
+          context: "Failed to execute 'getItem' on 'Storage': parameter 1",
+          globals: globalObject
+        });
         args.push(curArg);
       }
       return esValue[implSymbol].getItem(...args);
@@ -136,23 +153,29 @@ exports.install = (globalObject, globalNames) => {
     setItem(key, value) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'setItem' called on an object that is not a valid instance of Storage.");
+        throw new globalObject.TypeError("'setItem' called on an object that is not a valid instance of Storage.");
       }
 
       if (arguments.length < 2) {
-        throw new TypeError(
-          "Failed to execute 'setItem' on 'Storage': 2 arguments required, but only " + arguments.length + " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'setItem' on 'Storage': 2 arguments required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
-        curArg = conversions["DOMString"](curArg, { context: "Failed to execute 'setItem' on 'Storage': parameter 1" });
+        curArg = conversions["DOMString"](curArg, {
+          context: "Failed to execute 'setItem' on 'Storage': parameter 1",
+          globals: globalObject
+        });
         args.push(curArg);
       }
       {
         let curArg = arguments[1];
-        curArg = conversions["DOMString"](curArg, { context: "Failed to execute 'setItem' on 'Storage': parameter 2" });
+        curArg = conversions["DOMString"](curArg, {
+          context: "Failed to execute 'setItem' on 'Storage': parameter 2",
+          globals: globalObject
+        });
         args.push(curArg);
       }
       return esValue[implSymbol].setItem(...args);
@@ -161,19 +184,20 @@ exports.install = (globalObject, globalNames) => {
     removeItem(key) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'removeItem' called on an object that is not a valid instance of Storage.");
+        throw new globalObject.TypeError("'removeItem' called on an object that is not a valid instance of Storage.");
       }
 
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to execute 'removeItem' on 'Storage': 1 argument required, but only " + arguments.length + " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'removeItem' on 'Storage': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
         curArg = conversions["DOMString"](curArg, {
-          context: "Failed to execute 'removeItem' on 'Storage': parameter 1"
+          context: "Failed to execute 'removeItem' on 'Storage': parameter 1",
+          globals: globalObject
         });
         args.push(curArg);
       }
@@ -183,7 +207,7 @@ exports.install = (globalObject, globalNames) => {
     clear() {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'clear' called on an object that is not a valid instance of Storage.");
+        throw new globalObject.TypeError("'clear' called on an object that is not a valid instance of Storage.");
       }
 
       return esValue[implSymbol].clear();
@@ -193,7 +217,7 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get length' called on an object that is not a valid instance of Storage.");
+        throw new globalObject.TypeError("'get length' called on an object that is not a valid instance of Storage.");
       }
 
       return esValue[implSymbol]["length"];
@@ -208,10 +232,7 @@ exports.install = (globalObject, globalNames) => {
     length: { enumerable: true },
     [Symbol.toStringTag]: { value: "Storage", configurable: true }
   });
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    globalObject[ctorRegistrySymbol] = Object.create(null);
-  }
-  globalObject[ctorRegistrySymbol][interfaceName] = Storage;
+  ctorRegistry[interfaceName] = Storage;
 
   Object.defineProperty(globalObject, interfaceName, {
     configurable: true,
@@ -220,7 +241,12 @@ exports.install = (globalObject, globalNames) => {
   });
 };
 
-const proxyHandler = {
+const proxyHandlerCache = new WeakMap();
+class ProxyHandler {
+  constructor(globalObject) {
+    this._globalObject = globalObject;
+  }
+
   get(target, P, receiver) {
     if (typeof P === "symbol") {
       return Reflect.get(target, P, receiver);
@@ -241,7 +267,7 @@ const proxyHandler = {
       return undefined;
     }
     return Reflect.apply(getter, receiver, []);
-  },
+  }
 
   has(target, P) {
     if (typeof P === "symbol") {
@@ -256,7 +282,7 @@ const proxyHandler = {
       return Reflect.has(parent, P);
     }
     return false;
-  },
+  }
 
   ownKeys(target) {
     const keys = new Set();
@@ -271,7 +297,7 @@ const proxyHandler = {
       keys.add(key);
     }
     return [...keys];
-  },
+  }
 
   getOwnPropertyDescriptor(target, P) {
     if (typeof P === "symbol") {
@@ -291,7 +317,7 @@ const proxyHandler = {
     }
 
     return Reflect.getOwnPropertyDescriptor(target, P);
-  },
+  }
 
   set(target, P, V, receiver) {
     if (typeof P === "symbol") {
@@ -300,11 +326,14 @@ const proxyHandler = {
     // The `receiver` argument refers to the Proxy exotic object or an object
     // that inherits from it, whereas `target` refers to the Proxy target:
     if (target[implSymbol][utils.wrapperSymbol] === receiver) {
+      const globalObject = this._globalObject;
+
       if (typeof P === "string") {
         let namedValue = V;
 
         namedValue = conversions["DOMString"](namedValue, {
-          context: "Failed to set the '" + P + "' property on 'Storage': The provided value"
+          context: "Failed to set the '" + P + "' property on 'Storage': The provided value",
+          globals: globalObject
         });
 
         target[implSymbol].setItem(P, namedValue);
@@ -344,12 +373,14 @@ const proxyHandler = {
       valueDesc = { writable: true, enumerable: true, configurable: true, value: V };
     }
     return Reflect.defineProperty(receiver, P, valueDesc);
-  },
+  }
 
   defineProperty(target, P, desc) {
     if (typeof P === "symbol") {
       return Reflect.defineProperty(target, P, desc);
     }
+
+    const globalObject = this._globalObject;
     if (!utils.hasOwn(target, P)) {
       if (desc.get || desc.set) {
         return false;
@@ -358,7 +389,8 @@ const proxyHandler = {
       let namedValue = desc.value;
 
       namedValue = conversions["DOMString"](namedValue, {
-        context: "Failed to set the '" + P + "' property on 'Storage': The provided value"
+        context: "Failed to set the '" + P + "' property on 'Storage': The provided value",
+        globals: globalObject
       });
 
       target[implSymbol].setItem(P, namedValue);
@@ -366,12 +398,14 @@ const proxyHandler = {
       return true;
     }
     return Reflect.defineProperty(target, P, desc);
-  },
+  }
 
   deleteProperty(target, P) {
     if (typeof P === "symbol") {
       return Reflect.deleteProperty(target, P);
     }
+
+    const globalObject = this._globalObject;
 
     if (target[implSymbol].getItem(P) !== null && !(P in target)) {
       target[implSymbol].removeItem(P);
@@ -379,11 +413,11 @@ const proxyHandler = {
     }
 
     return Reflect.deleteProperty(target, P);
-  },
+  }
 
   preventExtensions() {
     return false;
   }
-};
+}
 
 const Impl = require("../webstorage/Storage-impl.js");

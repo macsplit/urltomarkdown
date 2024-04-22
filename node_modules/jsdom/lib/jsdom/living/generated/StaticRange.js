@@ -16,24 +16,24 @@ exports.is = value => {
 exports.isImpl = value => {
   return utils.isObject(value) && value instanceof Impl.implementation;
 };
-exports.convert = (value, { context = "The provided value" } = {}) => {
+exports.convert = (globalObject, value, { context = "The provided value" } = {}) => {
   if (exports.is(value)) {
     return utils.implForWrapper(value);
   }
-  throw new TypeError(`${context} is not of type 'StaticRange'.`);
+  throw new globalObject.TypeError(`${context} is not of type 'StaticRange'.`);
 };
 
-function makeWrapper(globalObject) {
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    throw new Error("Internal error: invalid global object");
+function makeWrapper(globalObject, newTarget) {
+  let proto;
+  if (newTarget !== undefined) {
+    proto = newTarget.prototype;
   }
 
-  const ctor = globalObject[ctorRegistrySymbol]["StaticRange"];
-  if (ctor === undefined) {
-    throw new Error("Internal error: constructor StaticRange is not installed on the passed global object");
+  if (!utils.isObject(proto)) {
+    proto = globalObject[ctorRegistrySymbol]["StaticRange"].prototype;
   }
 
-  return Object.create(ctor.prototype);
+  return Object.create(proto);
 }
 
 exports.create = (globalObject, constructorArgs, privateData) => {
@@ -66,8 +66,8 @@ exports.setup = (wrapper, globalObject, constructorArgs = [], privateData = {}) 
   return wrapper;
 };
 
-exports.new = globalObject => {
-  const wrapper = makeWrapper(globalObject);
+exports.new = (globalObject, newTarget) => {
+  const wrapper = makeWrapper(globalObject, newTarget);
 
   exports._internalSetup(wrapper, globalObject);
   Object.defineProperty(wrapper, implSymbol, {
@@ -89,20 +89,20 @@ exports.install = (globalObject, globalNames) => {
     return;
   }
 
-  if (globalObject.AbstractRange === undefined) {
-    throw new Error("Internal error: attempting to evaluate StaticRange before AbstractRange");
-  }
+  const ctorRegistry = utils.initCtorRegistry(globalObject);
   class StaticRange extends globalObject.AbstractRange {
     constructor(init) {
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to construct 'StaticRange': 1 argument required, but only " + arguments.length + " present."
+        throw new globalObject.TypeError(
+          `Failed to construct 'StaticRange': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
-        curArg = StaticRangeInit.convert(curArg, { context: "Failed to construct 'StaticRange': parameter 1" });
+        curArg = StaticRangeInit.convert(globalObject, curArg, {
+          context: "Failed to construct 'StaticRange': parameter 1"
+        });
         args.push(curArg);
       }
       return exports.setup(Object.create(new.target.prototype), globalObject, args);
@@ -111,10 +111,7 @@ exports.install = (globalObject, globalNames) => {
   Object.defineProperties(StaticRange.prototype, {
     [Symbol.toStringTag]: { value: "StaticRange", configurable: true }
   });
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    globalObject[ctorRegistrySymbol] = Object.create(null);
-  }
-  globalObject[ctorRegistrySymbol][interfaceName] = StaticRange;
+  ctorRegistry[interfaceName] = StaticRange;
 
   Object.defineProperty(globalObject, interfaceName, {
     configurable: true,

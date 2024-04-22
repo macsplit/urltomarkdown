@@ -5,16 +5,16 @@ const utils = require("./utils.js");
 
 const Node = require("./Node.js");
 
-exports._convertInherit = (obj, ret, { context = "The provided value" } = {}) => {
+exports._convertInherit = (globalObject, obj, ret, { context = "The provided value" } = {}) => {
   {
     const key = "endContainer";
     let value = obj === undefined || obj === null ? undefined : obj[key];
     if (value !== undefined) {
-      value = Node.convert(value, { context: context + " has member 'endContainer' that" });
+      value = Node.convert(globalObject, value, { context: context + " has member 'endContainer' that" });
 
       ret[key] = value;
     } else {
-      throw new TypeError("endContainer is required in 'StaticRangeInit'");
+      throw new globalObject.TypeError("endContainer is required in 'StaticRangeInit'");
     }
   }
 
@@ -22,11 +22,14 @@ exports._convertInherit = (obj, ret, { context = "The provided value" } = {}) =>
     const key = "endOffset";
     let value = obj === undefined || obj === null ? undefined : obj[key];
     if (value !== undefined) {
-      value = conversions["unsigned long"](value, { context: context + " has member 'endOffset' that" });
+      value = conversions["unsigned long"](value, {
+        context: context + " has member 'endOffset' that",
+        globals: globalObject
+      });
 
       ret[key] = value;
     } else {
-      throw new TypeError("endOffset is required in 'StaticRangeInit'");
+      throw new globalObject.TypeError("endOffset is required in 'StaticRangeInit'");
     }
   }
 
@@ -34,11 +37,11 @@ exports._convertInherit = (obj, ret, { context = "The provided value" } = {}) =>
     const key = "startContainer";
     let value = obj === undefined || obj === null ? undefined : obj[key];
     if (value !== undefined) {
-      value = Node.convert(value, { context: context + " has member 'startContainer' that" });
+      value = Node.convert(globalObject, value, { context: context + " has member 'startContainer' that" });
 
       ret[key] = value;
     } else {
-      throw new TypeError("startContainer is required in 'StaticRangeInit'");
+      throw new globalObject.TypeError("startContainer is required in 'StaticRangeInit'");
     }
   }
 
@@ -46,21 +49,24 @@ exports._convertInherit = (obj, ret, { context = "The provided value" } = {}) =>
     const key = "startOffset";
     let value = obj === undefined || obj === null ? undefined : obj[key];
     if (value !== undefined) {
-      value = conversions["unsigned long"](value, { context: context + " has member 'startOffset' that" });
+      value = conversions["unsigned long"](value, {
+        context: context + " has member 'startOffset' that",
+        globals: globalObject
+      });
 
       ret[key] = value;
     } else {
-      throw new TypeError("startOffset is required in 'StaticRangeInit'");
+      throw new globalObject.TypeError("startOffset is required in 'StaticRangeInit'");
     }
   }
 };
 
-exports.convert = function convert(obj, { context = "The provided value" } = {}) {
+exports.convert = (globalObject, obj, { context = "The provided value" } = {}) => {
   if (obj !== undefined && typeof obj !== "object" && typeof obj !== "function") {
-    throw new TypeError(`${context} is not an object.`);
+    throw new globalObject.TypeError(`${context} is not an object.`);
   }
 
   const ret = Object.create(null);
-  exports._convertInherit(obj, ret, { context });
+  exports._convertInherit(globalObject, obj, ret, { context });
   return ret;
 };

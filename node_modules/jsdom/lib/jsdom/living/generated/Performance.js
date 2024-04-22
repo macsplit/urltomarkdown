@@ -15,24 +15,24 @@ exports.is = value => {
 exports.isImpl = value => {
   return utils.isObject(value) && value instanceof Impl.implementation;
 };
-exports.convert = (value, { context = "The provided value" } = {}) => {
+exports.convert = (globalObject, value, { context = "The provided value" } = {}) => {
   if (exports.is(value)) {
     return utils.implForWrapper(value);
   }
-  throw new TypeError(`${context} is not of type 'Performance'.`);
+  throw new globalObject.TypeError(`${context} is not of type 'Performance'.`);
 };
 
-function makeWrapper(globalObject) {
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    throw new Error("Internal error: invalid global object");
+function makeWrapper(globalObject, newTarget) {
+  let proto;
+  if (newTarget !== undefined) {
+    proto = newTarget.prototype;
   }
 
-  const ctor = globalObject[ctorRegistrySymbol]["Performance"];
-  if (ctor === undefined) {
-    throw new Error("Internal error: constructor Performance is not installed on the passed global object");
+  if (!utils.isObject(proto)) {
+    proto = globalObject[ctorRegistrySymbol]["Performance"].prototype;
   }
 
-  return Object.create(ctor.prototype);
+  return Object.create(proto);
 }
 
 exports.create = (globalObject, constructorArgs, privateData) => {
@@ -65,8 +65,8 @@ exports.setup = (wrapper, globalObject, constructorArgs = [], privateData = {}) 
   return wrapper;
 };
 
-exports.new = globalObject => {
-  const wrapper = makeWrapper(globalObject);
+exports.new = (globalObject, newTarget) => {
+  const wrapper = makeWrapper(globalObject, newTarget);
 
   exports._internalSetup(wrapper, globalObject);
   Object.defineProperty(wrapper, implSymbol, {
@@ -88,18 +88,16 @@ exports.install = (globalObject, globalNames) => {
     return;
   }
 
-  if (globalObject.EventTarget === undefined) {
-    throw new Error("Internal error: attempting to evaluate Performance before EventTarget");
-  }
+  const ctorRegistry = utils.initCtorRegistry(globalObject);
   class Performance extends globalObject.EventTarget {
     constructor() {
-      throw new TypeError("Illegal constructor");
+      throw new globalObject.TypeError("Illegal constructor");
     }
 
     now() {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'now' called on an object that is not a valid instance of Performance.");
+        throw new globalObject.TypeError("'now' called on an object that is not a valid instance of Performance.");
       }
 
       return utils.tryWrapperForImpl(esValue[implSymbol].now());
@@ -108,7 +106,7 @@ exports.install = (globalObject, globalNames) => {
     toJSON() {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'toJSON' called on an object that is not a valid instance of Performance.");
+        throw new globalObject.TypeError("'toJSON' called on an object that is not a valid instance of Performance.");
       }
 
       return esValue[implSymbol].toJSON();
@@ -118,7 +116,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get timeOrigin' called on an object that is not a valid instance of Performance.");
+        throw new globalObject.TypeError(
+          "'get timeOrigin' called on an object that is not a valid instance of Performance."
+        );
       }
 
       return utils.tryWrapperForImpl(esValue[implSymbol]["timeOrigin"]);
@@ -130,10 +130,7 @@ exports.install = (globalObject, globalNames) => {
     timeOrigin: { enumerable: true },
     [Symbol.toStringTag]: { value: "Performance", configurable: true }
   });
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    globalObject[ctorRegistrySymbol] = Object.create(null);
-  }
-  globalObject[ctorRegistrySymbol][interfaceName] = Performance;
+  ctorRegistry[interfaceName] = Performance;
 
   Object.defineProperty(globalObject, interfaceName, {
     configurable: true,

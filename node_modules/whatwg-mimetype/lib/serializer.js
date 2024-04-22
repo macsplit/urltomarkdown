@@ -14,7 +14,7 @@ module.exports = mimeType => {
     serialization += "=";
 
     if (!solelyContainsHTTPTokenCodePoints(value) || value.length === 0) {
-      value = value.replace(/(["\\])/g, "\\$1");
+      value = value.replace(/(["\\])/ug, "\\$1");
       value = `"${value}"`;
     }
 

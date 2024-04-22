@@ -24,7 +24,7 @@ console.assert(mimeType.isXML() === false);
 
 Parsing is a fairly complex process; see [the specification](https://mimesniff.spec.whatwg.org/#parsing-a-mime-type) for details (and similarly [for serialization](https://mimesniff.spec.whatwg.org/#serializing-a-mime-type)).
 
-This package's algorithms conform to those of the WHATWG [MIME Sniffing Standard](https://mimesniff.spec.whatwg.org/), and is aligned up to commit [126286a](https://github.com/whatwg/mimesniff/commit/126286ab2dcf3e2d541349ed93539a88bf394ad5).
+This package's algorithms conform to those of the WHATWG [MIME Sniffing Standard](https://mimesniff.spec.whatwg.org/), and is aligned up to commit [8e9a7dd](https://github.com/whatwg/mimesniff/commit/8e9a7dd90717c595a4e4d982cd216e4411d33736).
 
 ## `MIMEType` API
 
@@ -52,7 +52,7 @@ As an alternative to the constructor, you can use `MIMEType.parse(string)`. The 
 - `toString()` serializes the MIME type to a string
 - `isHTML()`: returns true if this instance represents [a HTML MIME type](https://mimesniff.spec.whatwg.org/#html-mime-type)
 - `isXML()`: returns true if this instance represents [an XML MIME type](https://mimesniff.spec.whatwg.org/#xml-mime-type)
-- `isJavaScript({ allowParameters })`: returns true if this instance represents [a JavaScript MIME type](https://html.spec.whatwg.org/multipage/scripting.html#javascript-mime-type); `allowParameters` can be set to true to allow arbitrary parameters, instead of their presence causing the method to return `false`
+- `isJavaScript({ prohibitParameters })`: returns true if this instance represents [a JavaScript MIME type](https://html.spec.whatwg.org/multipage/scripting.html#javascript-mime-type). `prohibitParameters` can be set to true to disallow any parameters, i.e. to test if the MIME type's serialization is a [JavaScript MIME type essence match](https://mimesniff.spec.whatwg.org/#javascript-mime-type-essence-match).
 
 _Note: the `isHTML()`, `isXML()`, and `isJavaScript()` methods are speculative, and may be removed or changed in future major versions. See [whatwg/mimesniff#48](https://github.com/whatwg/mimesniff/issues/48) for brainstorming in this area. Currently we implement these mainly because they are useful in jsdom._
 

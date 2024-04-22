@@ -17,24 +17,24 @@ exports.is = value => {
 exports.isImpl = value => {
   return utils.isObject(value) && value instanceof Impl.implementation;
 };
-exports.convert = (value, { context = "The provided value" } = {}) => {
+exports.convert = (globalObject, value, { context = "The provided value" } = {}) => {
   if (exports.is(value)) {
     return utils.implForWrapper(value);
   }
-  throw new TypeError(`${context} is not of type 'DocumentType'.`);
+  throw new globalObject.TypeError(`${context} is not of type 'DocumentType'.`);
 };
 
-function makeWrapper(globalObject) {
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    throw new Error("Internal error: invalid global object");
+function makeWrapper(globalObject, newTarget) {
+  let proto;
+  if (newTarget !== undefined) {
+    proto = newTarget.prototype;
   }
 
-  const ctor = globalObject[ctorRegistrySymbol]["DocumentType"];
-  if (ctor === undefined) {
-    throw new Error("Internal error: constructor DocumentType is not installed on the passed global object");
+  if (!utils.isObject(proto)) {
+    proto = globalObject[ctorRegistrySymbol]["DocumentType"].prototype;
   }
 
-  return Object.create(ctor.prototype);
+  return Object.create(proto);
 }
 
 exports.create = (globalObject, constructorArgs, privateData) => {
@@ -67,8 +67,8 @@ exports.setup = (wrapper, globalObject, constructorArgs = [], privateData = {}) 
   return wrapper;
 };
 
-exports.new = globalObject => {
-  const wrapper = makeWrapper(globalObject);
+exports.new = (globalObject, newTarget) => {
+  const wrapper = makeWrapper(globalObject, newTarget);
 
   exports._internalSetup(wrapper, globalObject);
   Object.defineProperty(wrapper, implSymbol, {
@@ -90,18 +90,16 @@ exports.install = (globalObject, globalNames) => {
     return;
   }
 
-  if (globalObject.Node === undefined) {
-    throw new Error("Internal error: attempting to evaluate DocumentType before Node");
-  }
+  const ctorRegistry = utils.initCtorRegistry(globalObject);
   class DocumentType extends globalObject.Node {
     constructor() {
-      throw new TypeError("Illegal constructor");
+      throw new globalObject.TypeError("Illegal constructor");
     }
 
     before() {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'before' called on an object that is not a valid instance of DocumentType.");
+        throw new globalObject.TypeError("'before' called on an object that is not a valid instance of DocumentType.");
       }
       const args = [];
       for (let i = 0; i < arguments.length; i++) {
@@ -110,7 +108,8 @@ exports.install = (globalObject, globalNames) => {
           curArg = utils.implForWrapper(curArg);
         } else {
           curArg = conversions["DOMString"](curArg, {
-            context: "Failed to execute 'before' on 'DocumentType': parameter " + (i + 1)
+            context: "Failed to execute 'before' on 'DocumentType': parameter " + (i + 1),
+            globals: globalObject
           });
         }
         args.push(curArg);
@@ -126,7 +125,7 @@ exports.install = (globalObject, globalNames) => {
     after() {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'after' called on an object that is not a valid instance of DocumentType.");
+        throw new globalObject.TypeError("'after' called on an object that is not a valid instance of DocumentType.");
       }
       const args = [];
       for (let i = 0; i < arguments.length; i++) {
@@ -135,7 +134,8 @@ exports.install = (globalObject, globalNames) => {
           curArg = utils.implForWrapper(curArg);
         } else {
           curArg = conversions["DOMString"](curArg, {
-            context: "Failed to execute 'after' on 'DocumentType': parameter " + (i + 1)
+            context: "Failed to execute 'after' on 'DocumentType': parameter " + (i + 1),
+            globals: globalObject
           });
         }
         args.push(curArg);
@@ -151,7 +151,9 @@ exports.install = (globalObject, globalNames) => {
     replaceWith() {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'replaceWith' called on an object that is not a valid instance of DocumentType.");
+        throw new globalObject.TypeError(
+          "'replaceWith' called on an object that is not a valid instance of DocumentType."
+        );
       }
       const args = [];
       for (let i = 0; i < arguments.length; i++) {
@@ -160,7 +162,8 @@ exports.install = (globalObject, globalNames) => {
           curArg = utils.implForWrapper(curArg);
         } else {
           curArg = conversions["DOMString"](curArg, {
-            context: "Failed to execute 'replaceWith' on 'DocumentType': parameter " + (i + 1)
+            context: "Failed to execute 'replaceWith' on 'DocumentType': parameter " + (i + 1),
+            globals: globalObject
           });
         }
         args.push(curArg);
@@ -176,7 +179,7 @@ exports.install = (globalObject, globalNames) => {
     remove() {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'remove' called on an object that is not a valid instance of DocumentType.");
+        throw new globalObject.TypeError("'remove' called on an object that is not a valid instance of DocumentType.");
       }
 
       ceReactionsPreSteps_helpers_custom_elements(globalObject);
@@ -191,7 +194,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get name' called on an object that is not a valid instance of DocumentType.");
+        throw new globalObject.TypeError(
+          "'get name' called on an object that is not a valid instance of DocumentType."
+        );
       }
 
       return esValue[implSymbol]["name"];
@@ -201,7 +206,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get publicId' called on an object that is not a valid instance of DocumentType.");
+        throw new globalObject.TypeError(
+          "'get publicId' called on an object that is not a valid instance of DocumentType."
+        );
       }
 
       return esValue[implSymbol]["publicId"];
@@ -211,7 +218,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get systemId' called on an object that is not a valid instance of DocumentType.");
+        throw new globalObject.TypeError(
+          "'get systemId' called on an object that is not a valid instance of DocumentType."
+        );
       }
 
       return esValue[implSymbol]["systemId"];
@@ -231,10 +240,7 @@ exports.install = (globalObject, globalNames) => {
       configurable: true
     }
   });
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    globalObject[ctorRegistrySymbol] = Object.create(null);
-  }
-  globalObject[ctorRegistrySymbol][interfaceName] = DocumentType;
+  ctorRegistry[interfaceName] = DocumentType;
 
   Object.defineProperty(globalObject, interfaceName, {
     configurable: true,

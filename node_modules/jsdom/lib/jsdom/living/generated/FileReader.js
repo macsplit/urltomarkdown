@@ -17,24 +17,24 @@ exports.is = value => {
 exports.isImpl = value => {
   return utils.isObject(value) && value instanceof Impl.implementation;
 };
-exports.convert = (value, { context = "The provided value" } = {}) => {
+exports.convert = (globalObject, value, { context = "The provided value" } = {}) => {
   if (exports.is(value)) {
     return utils.implForWrapper(value);
   }
-  throw new TypeError(`${context} is not of type 'FileReader'.`);
+  throw new globalObject.TypeError(`${context} is not of type 'FileReader'.`);
 };
 
-function makeWrapper(globalObject) {
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    throw new Error("Internal error: invalid global object");
+function makeWrapper(globalObject, newTarget) {
+  let proto;
+  if (newTarget !== undefined) {
+    proto = newTarget.prototype;
   }
 
-  const ctor = globalObject[ctorRegistrySymbol]["FileReader"];
-  if (ctor === undefined) {
-    throw new Error("Internal error: constructor FileReader is not installed on the passed global object");
+  if (!utils.isObject(proto)) {
+    proto = globalObject[ctorRegistrySymbol]["FileReader"].prototype;
   }
 
-  return Object.create(ctor.prototype);
+  return Object.create(proto);
 }
 
 exports.create = (globalObject, constructorArgs, privateData) => {
@@ -67,8 +67,8 @@ exports.setup = (wrapper, globalObject, constructorArgs = [], privateData = {}) 
   return wrapper;
 };
 
-exports.new = globalObject => {
-  const wrapper = makeWrapper(globalObject);
+exports.new = (globalObject, newTarget) => {
+  const wrapper = makeWrapper(globalObject, newTarget);
 
   exports._internalSetup(wrapper, globalObject);
   Object.defineProperty(wrapper, implSymbol, {
@@ -90,9 +90,7 @@ exports.install = (globalObject, globalNames) => {
     return;
   }
 
-  if (globalObject.EventTarget === undefined) {
-    throw new Error("Internal error: attempting to evaluate FileReader before EventTarget");
-  }
+  const ctorRegistry = utils.initCtorRegistry(globalObject);
   class FileReader extends globalObject.EventTarget {
     constructor() {
       return exports.setup(Object.create(new.target.prototype), globalObject, undefined);
@@ -101,20 +99,20 @@ exports.install = (globalObject, globalNames) => {
     readAsArrayBuffer(blob) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'readAsArrayBuffer' called on an object that is not a valid instance of FileReader.");
+        throw new globalObject.TypeError(
+          "'readAsArrayBuffer' called on an object that is not a valid instance of FileReader."
+        );
       }
 
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to execute 'readAsArrayBuffer' on 'FileReader': 1 argument required, but only " +
-            arguments.length +
-            " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'readAsArrayBuffer' on 'FileReader': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
-        curArg = Blob.convert(curArg, {
+        curArg = Blob.convert(globalObject, curArg, {
           context: "Failed to execute 'readAsArrayBuffer' on 'FileReader': parameter 1"
         });
         args.push(curArg);
@@ -125,20 +123,20 @@ exports.install = (globalObject, globalNames) => {
     readAsBinaryString(blob) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'readAsBinaryString' called on an object that is not a valid instance of FileReader.");
+        throw new globalObject.TypeError(
+          "'readAsBinaryString' called on an object that is not a valid instance of FileReader."
+        );
       }
 
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to execute 'readAsBinaryString' on 'FileReader': 1 argument required, but only " +
-            arguments.length +
-            " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'readAsBinaryString' on 'FileReader': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
-        curArg = Blob.convert(curArg, {
+        curArg = Blob.convert(globalObject, curArg, {
           context: "Failed to execute 'readAsBinaryString' on 'FileReader': parameter 1"
         });
         args.push(curArg);
@@ -149,27 +147,30 @@ exports.install = (globalObject, globalNames) => {
     readAsText(blob) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'readAsText' called on an object that is not a valid instance of FileReader.");
+        throw new globalObject.TypeError(
+          "'readAsText' called on an object that is not a valid instance of FileReader."
+        );
       }
 
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to execute 'readAsText' on 'FileReader': 1 argument required, but only " +
-            arguments.length +
-            " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'readAsText' on 'FileReader': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
-        curArg = Blob.convert(curArg, { context: "Failed to execute 'readAsText' on 'FileReader': parameter 1" });
+        curArg = Blob.convert(globalObject, curArg, {
+          context: "Failed to execute 'readAsText' on 'FileReader': parameter 1"
+        });
         args.push(curArg);
       }
       {
         let curArg = arguments[1];
         if (curArg !== undefined) {
           curArg = conversions["DOMString"](curArg, {
-            context: "Failed to execute 'readAsText' on 'FileReader': parameter 2"
+            context: "Failed to execute 'readAsText' on 'FileReader': parameter 2",
+            globals: globalObject
           });
         }
         args.push(curArg);
@@ -180,20 +181,22 @@ exports.install = (globalObject, globalNames) => {
     readAsDataURL(blob) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'readAsDataURL' called on an object that is not a valid instance of FileReader.");
+        throw new globalObject.TypeError(
+          "'readAsDataURL' called on an object that is not a valid instance of FileReader."
+        );
       }
 
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to execute 'readAsDataURL' on 'FileReader': 1 argument required, but only " +
-            arguments.length +
-            " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'readAsDataURL' on 'FileReader': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
-        curArg = Blob.convert(curArg, { context: "Failed to execute 'readAsDataURL' on 'FileReader': parameter 1" });
+        curArg = Blob.convert(globalObject, curArg, {
+          context: "Failed to execute 'readAsDataURL' on 'FileReader': parameter 1"
+        });
         args.push(curArg);
       }
       return esValue[implSymbol].readAsDataURL(...args);
@@ -202,7 +205,7 @@ exports.install = (globalObject, globalNames) => {
     abort() {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'abort' called on an object that is not a valid instance of FileReader.");
+        throw new globalObject.TypeError("'abort' called on an object that is not a valid instance of FileReader.");
       }
 
       return esValue[implSymbol].abort();
@@ -212,7 +215,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get readyState' called on an object that is not a valid instance of FileReader.");
+        throw new globalObject.TypeError(
+          "'get readyState' called on an object that is not a valid instance of FileReader."
+        );
       }
 
       return esValue[implSymbol]["readyState"];
@@ -222,7 +227,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get result' called on an object that is not a valid instance of FileReader.");
+        throw new globalObject.TypeError(
+          "'get result' called on an object that is not a valid instance of FileReader."
+        );
       }
 
       return utils.tryWrapperForImpl(esValue[implSymbol]["result"]);
@@ -232,7 +239,7 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get error' called on an object that is not a valid instance of FileReader.");
+        throw new globalObject.TypeError("'get error' called on an object that is not a valid instance of FileReader.");
       }
 
       return utils.tryWrapperForImpl(esValue[implSymbol]["error"]);
@@ -242,7 +249,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get onloadstart' called on an object that is not a valid instance of FileReader.");
+        throw new globalObject.TypeError(
+          "'get onloadstart' called on an object that is not a valid instance of FileReader."
+        );
       }
 
       return utils.tryWrapperForImpl(esValue[implSymbol]["onloadstart"]);
@@ -252,13 +261,15 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'set onloadstart' called on an object that is not a valid instance of FileReader.");
+        throw new globalObject.TypeError(
+          "'set onloadstart' called on an object that is not a valid instance of FileReader."
+        );
       }
 
       if (!utils.isObject(V)) {
         V = null;
       } else {
-        V = EventHandlerNonNull.convert(V, {
+        V = EventHandlerNonNull.convert(globalObject, V, {
           context: "Failed to set the 'onloadstart' property on 'FileReader': The provided value"
         });
       }
@@ -269,7 +280,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get onprogress' called on an object that is not a valid instance of FileReader.");
+        throw new globalObject.TypeError(
+          "'get onprogress' called on an object that is not a valid instance of FileReader."
+        );
       }
 
       return utils.tryWrapperForImpl(esValue[implSymbol]["onprogress"]);
@@ -279,13 +292,15 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'set onprogress' called on an object that is not a valid instance of FileReader.");
+        throw new globalObject.TypeError(
+          "'set onprogress' called on an object that is not a valid instance of FileReader."
+        );
       }
 
       if (!utils.isObject(V)) {
         V = null;
       } else {
-        V = EventHandlerNonNull.convert(V, {
+        V = EventHandlerNonNull.convert(globalObject, V, {
           context: "Failed to set the 'onprogress' property on 'FileReader': The provided value"
         });
       }
@@ -296,7 +311,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get onload' called on an object that is not a valid instance of FileReader.");
+        throw new globalObject.TypeError(
+          "'get onload' called on an object that is not a valid instance of FileReader."
+        );
       }
 
       return utils.tryWrapperForImpl(esValue[implSymbol]["onload"]);
@@ -306,13 +323,15 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'set onload' called on an object that is not a valid instance of FileReader.");
+        throw new globalObject.TypeError(
+          "'set onload' called on an object that is not a valid instance of FileReader."
+        );
       }
 
       if (!utils.isObject(V)) {
         V = null;
       } else {
-        V = EventHandlerNonNull.convert(V, {
+        V = EventHandlerNonNull.convert(globalObject, V, {
           context: "Failed to set the 'onload' property on 'FileReader': The provided value"
         });
       }
@@ -323,7 +342,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get onabort' called on an object that is not a valid instance of FileReader.");
+        throw new globalObject.TypeError(
+          "'get onabort' called on an object that is not a valid instance of FileReader."
+        );
       }
 
       return utils.tryWrapperForImpl(esValue[implSymbol]["onabort"]);
@@ -333,13 +354,15 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'set onabort' called on an object that is not a valid instance of FileReader.");
+        throw new globalObject.TypeError(
+          "'set onabort' called on an object that is not a valid instance of FileReader."
+        );
       }
 
       if (!utils.isObject(V)) {
         V = null;
       } else {
-        V = EventHandlerNonNull.convert(V, {
+        V = EventHandlerNonNull.convert(globalObject, V, {
           context: "Failed to set the 'onabort' property on 'FileReader': The provided value"
         });
       }
@@ -350,7 +373,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get onerror' called on an object that is not a valid instance of FileReader.");
+        throw new globalObject.TypeError(
+          "'get onerror' called on an object that is not a valid instance of FileReader."
+        );
       }
 
       return utils.tryWrapperForImpl(esValue[implSymbol]["onerror"]);
@@ -360,13 +385,15 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'set onerror' called on an object that is not a valid instance of FileReader.");
+        throw new globalObject.TypeError(
+          "'set onerror' called on an object that is not a valid instance of FileReader."
+        );
       }
 
       if (!utils.isObject(V)) {
         V = null;
       } else {
-        V = EventHandlerNonNull.convert(V, {
+        V = EventHandlerNonNull.convert(globalObject, V, {
           context: "Failed to set the 'onerror' property on 'FileReader': The provided value"
         });
       }
@@ -377,7 +404,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get onloadend' called on an object that is not a valid instance of FileReader.");
+        throw new globalObject.TypeError(
+          "'get onloadend' called on an object that is not a valid instance of FileReader."
+        );
       }
 
       return utils.tryWrapperForImpl(esValue[implSymbol]["onloadend"]);
@@ -387,13 +416,15 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'set onloadend' called on an object that is not a valid instance of FileReader.");
+        throw new globalObject.TypeError(
+          "'set onloadend' called on an object that is not a valid instance of FileReader."
+        );
       }
 
       if (!utils.isObject(V)) {
         V = null;
       } else {
-        V = EventHandlerNonNull.convert(V, {
+        V = EventHandlerNonNull.convert(globalObject, V, {
           context: "Failed to set the 'onloadend' property on 'FileReader': The provided value"
         });
       }
@@ -425,10 +456,7 @@ exports.install = (globalObject, globalNames) => {
     LOADING: { value: 1, enumerable: true },
     DONE: { value: 2, enumerable: true }
   });
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    globalObject[ctorRegistrySymbol] = Object.create(null);
-  }
-  globalObject[ctorRegistrySymbol][interfaceName] = FileReader;
+  ctorRegistry[interfaceName] = FileReader;
 
   Object.defineProperty(globalObject, interfaceName, {
     configurable: true,

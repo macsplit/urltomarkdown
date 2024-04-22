@@ -15,24 +15,24 @@ exports.is = value => {
 exports.isImpl = value => {
   return utils.isObject(value) && value instanceof Impl.implementation;
 };
-exports.convert = (value, { context = "The provided value" } = {}) => {
+exports.convert = (globalObject, value, { context = "The provided value" } = {}) => {
   if (exports.is(value)) {
     return utils.implForWrapper(value);
   }
-  throw new TypeError(`${context} is not of type 'TreeWalker'.`);
+  throw new globalObject.TypeError(`${context} is not of type 'TreeWalker'.`);
 };
 
-function makeWrapper(globalObject) {
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    throw new Error("Internal error: invalid global object");
+function makeWrapper(globalObject, newTarget) {
+  let proto;
+  if (newTarget !== undefined) {
+    proto = newTarget.prototype;
   }
 
-  const ctor = globalObject[ctorRegistrySymbol]["TreeWalker"];
-  if (ctor === undefined) {
-    throw new Error("Internal error: constructor TreeWalker is not installed on the passed global object");
+  if (!utils.isObject(proto)) {
+    proto = globalObject[ctorRegistrySymbol]["TreeWalker"].prototype;
   }
 
-  return Object.create(ctor.prototype);
+  return Object.create(proto);
 }
 
 exports.create = (globalObject, constructorArgs, privateData) => {
@@ -63,8 +63,8 @@ exports.setup = (wrapper, globalObject, constructorArgs = [], privateData = {}) 
   return wrapper;
 };
 
-exports.new = globalObject => {
-  const wrapper = makeWrapper(globalObject);
+exports.new = (globalObject, newTarget) => {
+  const wrapper = makeWrapper(globalObject, newTarget);
 
   exports._internalSetup(wrapper, globalObject);
   Object.defineProperty(wrapper, implSymbol, {
@@ -85,15 +85,19 @@ exports.install = (globalObject, globalNames) => {
   if (!globalNames.some(globalName => exposed.has(globalName))) {
     return;
   }
+
+  const ctorRegistry = utils.initCtorRegistry(globalObject);
   class TreeWalker {
     constructor() {
-      throw new TypeError("Illegal constructor");
+      throw new globalObject.TypeError("Illegal constructor");
     }
 
     parentNode() {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'parentNode' called on an object that is not a valid instance of TreeWalker.");
+        throw new globalObject.TypeError(
+          "'parentNode' called on an object that is not a valid instance of TreeWalker."
+        );
       }
 
       return utils.tryWrapperForImpl(esValue[implSymbol].parentNode());
@@ -102,7 +106,9 @@ exports.install = (globalObject, globalNames) => {
     firstChild() {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'firstChild' called on an object that is not a valid instance of TreeWalker.");
+        throw new globalObject.TypeError(
+          "'firstChild' called on an object that is not a valid instance of TreeWalker."
+        );
       }
 
       return utils.tryWrapperForImpl(esValue[implSymbol].firstChild());
@@ -111,7 +117,7 @@ exports.install = (globalObject, globalNames) => {
     lastChild() {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'lastChild' called on an object that is not a valid instance of TreeWalker.");
+        throw new globalObject.TypeError("'lastChild' called on an object that is not a valid instance of TreeWalker.");
       }
 
       return utils.tryWrapperForImpl(esValue[implSymbol].lastChild());
@@ -120,7 +126,9 @@ exports.install = (globalObject, globalNames) => {
     previousSibling() {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'previousSibling' called on an object that is not a valid instance of TreeWalker.");
+        throw new globalObject.TypeError(
+          "'previousSibling' called on an object that is not a valid instance of TreeWalker."
+        );
       }
 
       return utils.tryWrapperForImpl(esValue[implSymbol].previousSibling());
@@ -129,7 +137,9 @@ exports.install = (globalObject, globalNames) => {
     nextSibling() {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'nextSibling' called on an object that is not a valid instance of TreeWalker.");
+        throw new globalObject.TypeError(
+          "'nextSibling' called on an object that is not a valid instance of TreeWalker."
+        );
       }
 
       return utils.tryWrapperForImpl(esValue[implSymbol].nextSibling());
@@ -138,7 +148,9 @@ exports.install = (globalObject, globalNames) => {
     previousNode() {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'previousNode' called on an object that is not a valid instance of TreeWalker.");
+        throw new globalObject.TypeError(
+          "'previousNode' called on an object that is not a valid instance of TreeWalker."
+        );
       }
 
       return utils.tryWrapperForImpl(esValue[implSymbol].previousNode());
@@ -147,7 +159,7 @@ exports.install = (globalObject, globalNames) => {
     nextNode() {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'nextNode' called on an object that is not a valid instance of TreeWalker.");
+        throw new globalObject.TypeError("'nextNode' called on an object that is not a valid instance of TreeWalker.");
       }
 
       return utils.tryWrapperForImpl(esValue[implSymbol].nextNode());
@@ -157,7 +169,7 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get root' called on an object that is not a valid instance of TreeWalker.");
+        throw new globalObject.TypeError("'get root' called on an object that is not a valid instance of TreeWalker.");
       }
 
       return utils.getSameObject(this, "root", () => {
@@ -169,7 +181,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get whatToShow' called on an object that is not a valid instance of TreeWalker.");
+        throw new globalObject.TypeError(
+          "'get whatToShow' called on an object that is not a valid instance of TreeWalker."
+        );
       }
 
       return esValue[implSymbol]["whatToShow"];
@@ -179,7 +193,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get filter' called on an object that is not a valid instance of TreeWalker.");
+        throw new globalObject.TypeError(
+          "'get filter' called on an object that is not a valid instance of TreeWalker."
+        );
       }
 
       return utils.tryWrapperForImpl(esValue[implSymbol]["filter"]);
@@ -189,7 +205,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get currentNode' called on an object that is not a valid instance of TreeWalker.");
+        throw new globalObject.TypeError(
+          "'get currentNode' called on an object that is not a valid instance of TreeWalker."
+        );
       }
 
       return utils.tryWrapperForImpl(esValue[implSymbol]["currentNode"]);
@@ -199,10 +217,14 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'set currentNode' called on an object that is not a valid instance of TreeWalker.");
+        throw new globalObject.TypeError(
+          "'set currentNode' called on an object that is not a valid instance of TreeWalker."
+        );
       }
 
-      V = Node.convert(V, { context: "Failed to set the 'currentNode' property on 'TreeWalker': The provided value" });
+      V = Node.convert(globalObject, V, {
+        context: "Failed to set the 'currentNode' property on 'TreeWalker': The provided value"
+      });
 
       esValue[implSymbol]["currentNode"] = V;
     }
@@ -221,10 +243,7 @@ exports.install = (globalObject, globalNames) => {
     currentNode: { enumerable: true },
     [Symbol.toStringTag]: { value: "TreeWalker", configurable: true }
   });
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    globalObject[ctorRegistrySymbol] = Object.create(null);
-  }
-  globalObject[ctorRegistrySymbol][interfaceName] = TreeWalker;
+  ctorRegistry[interfaceName] = TreeWalker;
 
   Object.defineProperty(globalObject, interfaceName, {
     configurable: true,

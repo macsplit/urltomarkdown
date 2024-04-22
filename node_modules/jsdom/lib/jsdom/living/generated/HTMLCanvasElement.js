@@ -19,24 +19,24 @@ exports.is = value => {
 exports.isImpl = value => {
   return utils.isObject(value) && value instanceof Impl.implementation;
 };
-exports.convert = (value, { context = "The provided value" } = {}) => {
+exports.convert = (globalObject, value, { context = "The provided value" } = {}) => {
   if (exports.is(value)) {
     return utils.implForWrapper(value);
   }
-  throw new TypeError(`${context} is not of type 'HTMLCanvasElement'.`);
+  throw new globalObject.TypeError(`${context} is not of type 'HTMLCanvasElement'.`);
 };
 
-function makeWrapper(globalObject) {
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    throw new Error("Internal error: invalid global object");
+function makeWrapper(globalObject, newTarget) {
+  let proto;
+  if (newTarget !== undefined) {
+    proto = newTarget.prototype;
   }
 
-  const ctor = globalObject[ctorRegistrySymbol]["HTMLCanvasElement"];
-  if (ctor === undefined) {
-    throw new Error("Internal error: constructor HTMLCanvasElement is not installed on the passed global object");
+  if (!utils.isObject(proto)) {
+    proto = globalObject[ctorRegistrySymbol]["HTMLCanvasElement"].prototype;
   }
 
-  return Object.create(ctor.prototype);
+  return Object.create(proto);
 }
 
 exports.create = (globalObject, constructorArgs, privateData) => {
@@ -69,8 +69,8 @@ exports.setup = (wrapper, globalObject, constructorArgs = [], privateData = {}) 
   return wrapper;
 };
 
-exports.new = globalObject => {
-  const wrapper = makeWrapper(globalObject);
+exports.new = (globalObject, newTarget) => {
+  const wrapper = makeWrapper(globalObject, newTarget);
 
   exports._internalSetup(wrapper, globalObject);
   Object.defineProperty(wrapper, implSymbol, {
@@ -92,9 +92,7 @@ exports.install = (globalObject, globalNames) => {
     return;
   }
 
-  if (globalObject.HTMLElement === undefined) {
-    throw new Error("Internal error: attempting to evaluate HTMLCanvasElement before HTMLElement");
-  }
+  const ctorRegistry = utils.initCtorRegistry(globalObject);
   class HTMLCanvasElement extends globalObject.HTMLElement {
     constructor() {
       return HTMLConstructor_helpers_html_constructor(globalObject, interfaceName, new.target);
@@ -103,28 +101,30 @@ exports.install = (globalObject, globalNames) => {
     getContext(contextId) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'getContext' called on an object that is not a valid instance of HTMLCanvasElement.");
+        throw new globalObject.TypeError(
+          "'getContext' called on an object that is not a valid instance of HTMLCanvasElement."
+        );
       }
 
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to execute 'getContext' on 'HTMLCanvasElement': 1 argument required, but only " +
-            arguments.length +
-            " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'getContext' on 'HTMLCanvasElement': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
         curArg = conversions["DOMString"](curArg, {
-          context: "Failed to execute 'getContext' on 'HTMLCanvasElement': parameter 1"
+          context: "Failed to execute 'getContext' on 'HTMLCanvasElement': parameter 1",
+          globals: globalObject
         });
         args.push(curArg);
       }
       for (let i = 1; i < arguments.length; i++) {
         let curArg = arguments[i];
         curArg = conversions["any"](curArg, {
-          context: "Failed to execute 'getContext' on 'HTMLCanvasElement': parameter " + (i + 1)
+          context: "Failed to execute 'getContext' on 'HTMLCanvasElement': parameter " + (i + 1),
+          globals: globalObject
         });
         args.push(curArg);
       }
@@ -134,14 +134,17 @@ exports.install = (globalObject, globalNames) => {
     toDataURL() {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'toDataURL' called on an object that is not a valid instance of HTMLCanvasElement.");
+        throw new globalObject.TypeError(
+          "'toDataURL' called on an object that is not a valid instance of HTMLCanvasElement."
+        );
       }
       const args = [];
       {
         let curArg = arguments[0];
         if (curArg !== undefined) {
           curArg = conversions["DOMString"](curArg, {
-            context: "Failed to execute 'toDataURL' on 'HTMLCanvasElement': parameter 1"
+            context: "Failed to execute 'toDataURL' on 'HTMLCanvasElement': parameter 1",
+            globals: globalObject
           });
         }
         args.push(curArg);
@@ -150,7 +153,8 @@ exports.install = (globalObject, globalNames) => {
         let curArg = arguments[1];
         if (curArg !== undefined) {
           curArg = conversions["any"](curArg, {
-            context: "Failed to execute 'toDataURL' on 'HTMLCanvasElement': parameter 2"
+            context: "Failed to execute 'toDataURL' on 'HTMLCanvasElement': parameter 2",
+            globals: globalObject
           });
         }
         args.push(curArg);
@@ -161,20 +165,20 @@ exports.install = (globalObject, globalNames) => {
     toBlob(callback) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'toBlob' called on an object that is not a valid instance of HTMLCanvasElement.");
+        throw new globalObject.TypeError(
+          "'toBlob' called on an object that is not a valid instance of HTMLCanvasElement."
+        );
       }
 
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to execute 'toBlob' on 'HTMLCanvasElement': 1 argument required, but only " +
-            arguments.length +
-            " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'toBlob' on 'HTMLCanvasElement': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
-        curArg = BlobCallback.convert(curArg, {
+        curArg = BlobCallback.convert(globalObject, curArg, {
           context: "Failed to execute 'toBlob' on 'HTMLCanvasElement': parameter 1"
         });
         args.push(curArg);
@@ -183,7 +187,8 @@ exports.install = (globalObject, globalNames) => {
         let curArg = arguments[1];
         if (curArg !== undefined) {
           curArg = conversions["DOMString"](curArg, {
-            context: "Failed to execute 'toBlob' on 'HTMLCanvasElement': parameter 2"
+            context: "Failed to execute 'toBlob' on 'HTMLCanvasElement': parameter 2",
+            globals: globalObject
           });
         }
         args.push(curArg);
@@ -192,7 +197,8 @@ exports.install = (globalObject, globalNames) => {
         let curArg = arguments[2];
         if (curArg !== undefined) {
           curArg = conversions["any"](curArg, {
-            context: "Failed to execute 'toBlob' on 'HTMLCanvasElement': parameter 3"
+            context: "Failed to execute 'toBlob' on 'HTMLCanvasElement': parameter 3",
+            globals: globalObject
           });
         }
         args.push(curArg);
@@ -204,7 +210,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get width' called on an object that is not a valid instance of HTMLCanvasElement.");
+        throw new globalObject.TypeError(
+          "'get width' called on an object that is not a valid instance of HTMLCanvasElement."
+        );
       }
 
       ceReactionsPreSteps_helpers_custom_elements(globalObject);
@@ -219,11 +227,14 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'set width' called on an object that is not a valid instance of HTMLCanvasElement.");
+        throw new globalObject.TypeError(
+          "'set width' called on an object that is not a valid instance of HTMLCanvasElement."
+        );
       }
 
       V = conversions["unsigned long"](V, {
-        context: "Failed to set the 'width' property on 'HTMLCanvasElement': The provided value"
+        context: "Failed to set the 'width' property on 'HTMLCanvasElement': The provided value",
+        globals: globalObject
       });
 
       ceReactionsPreSteps_helpers_custom_elements(globalObject);
@@ -238,7 +249,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get height' called on an object that is not a valid instance of HTMLCanvasElement.");
+        throw new globalObject.TypeError(
+          "'get height' called on an object that is not a valid instance of HTMLCanvasElement."
+        );
       }
 
       ceReactionsPreSteps_helpers_custom_elements(globalObject);
@@ -253,11 +266,14 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'set height' called on an object that is not a valid instance of HTMLCanvasElement.");
+        throw new globalObject.TypeError(
+          "'set height' called on an object that is not a valid instance of HTMLCanvasElement."
+        );
       }
 
       V = conversions["unsigned long"](V, {
-        context: "Failed to set the 'height' property on 'HTMLCanvasElement': The provided value"
+        context: "Failed to set the 'height' property on 'HTMLCanvasElement': The provided value",
+        globals: globalObject
       });
 
       ceReactionsPreSteps_helpers_custom_elements(globalObject);
@@ -276,10 +292,7 @@ exports.install = (globalObject, globalNames) => {
     height: { enumerable: true },
     [Symbol.toStringTag]: { value: "HTMLCanvasElement", configurable: true }
   });
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    globalObject[ctorRegistrySymbol] = Object.create(null);
-  }
-  globalObject[ctorRegistrySymbol][interfaceName] = HTMLCanvasElement;
+  ctorRegistry[interfaceName] = HTMLCanvasElement;
 
   Object.defineProperty(globalObject, interfaceName, {
     configurable: true,

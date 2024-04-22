@@ -14,24 +14,24 @@ exports.is = value => {
 exports.isImpl = value => {
   return utils.isObject(value) && value instanceof Impl.implementation;
 };
-exports.convert = (value, { context = "The provided value" } = {}) => {
+exports.convert = (globalObject, value, { context = "The provided value" } = {}) => {
   if (exports.is(value)) {
     return utils.implForWrapper(value);
   }
-  throw new TypeError(`${context} is not of type 'External'.`);
+  throw new globalObject.TypeError(`${context} is not of type 'External'.`);
 };
 
-function makeWrapper(globalObject) {
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    throw new Error("Internal error: invalid global object");
+function makeWrapper(globalObject, newTarget) {
+  let proto;
+  if (newTarget !== undefined) {
+    proto = newTarget.prototype;
   }
 
-  const ctor = globalObject[ctorRegistrySymbol]["External"];
-  if (ctor === undefined) {
-    throw new Error("Internal error: constructor External is not installed on the passed global object");
+  if (!utils.isObject(proto)) {
+    proto = globalObject[ctorRegistrySymbol]["External"].prototype;
   }
 
-  return Object.create(ctor.prototype);
+  return Object.create(proto);
 }
 
 exports.create = (globalObject, constructorArgs, privateData) => {
@@ -62,8 +62,8 @@ exports.setup = (wrapper, globalObject, constructorArgs = [], privateData = {}) 
   return wrapper;
 };
 
-exports.new = globalObject => {
-  const wrapper = makeWrapper(globalObject);
+exports.new = (globalObject, newTarget) => {
+  const wrapper = makeWrapper(globalObject, newTarget);
 
   exports._internalSetup(wrapper, globalObject);
   Object.defineProperty(wrapper, implSymbol, {
@@ -84,15 +84,19 @@ exports.install = (globalObject, globalNames) => {
   if (!globalNames.some(globalName => exposed.has(globalName))) {
     return;
   }
+
+  const ctorRegistry = utils.initCtorRegistry(globalObject);
   class External {
     constructor() {
-      throw new TypeError("Illegal constructor");
+      throw new globalObject.TypeError("Illegal constructor");
     }
 
     AddSearchProvider() {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'AddSearchProvider' called on an object that is not a valid instance of External.");
+        throw new globalObject.TypeError(
+          "'AddSearchProvider' called on an object that is not a valid instance of External."
+        );
       }
 
       return esValue[implSymbol].AddSearchProvider();
@@ -101,7 +105,7 @@ exports.install = (globalObject, globalNames) => {
     IsSearchProviderInstalled() {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError(
+        throw new globalObject.TypeError(
           "'IsSearchProviderInstalled' called on an object that is not a valid instance of External."
         );
       }
@@ -114,10 +118,7 @@ exports.install = (globalObject, globalNames) => {
     IsSearchProviderInstalled: { enumerable: true },
     [Symbol.toStringTag]: { value: "External", configurable: true }
   });
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    globalObject[ctorRegistrySymbol] = Object.create(null);
-  }
-  globalObject[ctorRegistrySymbol][interfaceName] = External;
+  ctorRegistry[interfaceName] = External;
 
   Object.defineProperty(globalObject, interfaceName, {
     configurable: true,

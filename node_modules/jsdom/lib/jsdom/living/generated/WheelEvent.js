@@ -16,24 +16,24 @@ exports.is = value => {
 exports.isImpl = value => {
   return utils.isObject(value) && value instanceof Impl.implementation;
 };
-exports.convert = (value, { context = "The provided value" } = {}) => {
+exports.convert = (globalObject, value, { context = "The provided value" } = {}) => {
   if (exports.is(value)) {
     return utils.implForWrapper(value);
   }
-  throw new TypeError(`${context} is not of type 'WheelEvent'.`);
+  throw new globalObject.TypeError(`${context} is not of type 'WheelEvent'.`);
 };
 
-function makeWrapper(globalObject) {
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    throw new Error("Internal error: invalid global object");
+function makeWrapper(globalObject, newTarget) {
+  let proto;
+  if (newTarget !== undefined) {
+    proto = newTarget.prototype;
   }
 
-  const ctor = globalObject[ctorRegistrySymbol]["WheelEvent"];
-  if (ctor === undefined) {
-    throw new Error("Internal error: constructor WheelEvent is not installed on the passed global object");
+  if (!utils.isObject(proto)) {
+    proto = globalObject[ctorRegistrySymbol]["WheelEvent"].prototype;
   }
 
-  return Object.create(ctor.prototype);
+  return Object.create(proto);
 }
 
 exports.create = (globalObject, constructorArgs, privateData) => {
@@ -66,8 +66,8 @@ exports.setup = (wrapper, globalObject, constructorArgs = [], privateData = {}) 
   return wrapper;
 };
 
-exports.new = globalObject => {
-  const wrapper = makeWrapper(globalObject);
+exports.new = (globalObject, newTarget) => {
+  const wrapper = makeWrapper(globalObject, newTarget);
 
   exports._internalSetup(wrapper, globalObject);
   Object.defineProperty(wrapper, implSymbol, {
@@ -89,25 +89,28 @@ exports.install = (globalObject, globalNames) => {
     return;
   }
 
-  if (globalObject.MouseEvent === undefined) {
-    throw new Error("Internal error: attempting to evaluate WheelEvent before MouseEvent");
-  }
+  const ctorRegistry = utils.initCtorRegistry(globalObject);
   class WheelEvent extends globalObject.MouseEvent {
     constructor(type) {
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to construct 'WheelEvent': 1 argument required, but only " + arguments.length + " present."
+        throw new globalObject.TypeError(
+          `Failed to construct 'WheelEvent': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
-        curArg = conversions["DOMString"](curArg, { context: "Failed to construct 'WheelEvent': parameter 1" });
+        curArg = conversions["DOMString"](curArg, {
+          context: "Failed to construct 'WheelEvent': parameter 1",
+          globals: globalObject
+        });
         args.push(curArg);
       }
       {
         let curArg = arguments[1];
-        curArg = WheelEventInit.convert(curArg, { context: "Failed to construct 'WheelEvent': parameter 2" });
+        curArg = WheelEventInit.convert(globalObject, curArg, {
+          context: "Failed to construct 'WheelEvent': parameter 2"
+        });
         args.push(curArg);
       }
       return exports.setup(Object.create(new.target.prototype), globalObject, args);
@@ -117,7 +120,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get deltaX' called on an object that is not a valid instance of WheelEvent.");
+        throw new globalObject.TypeError(
+          "'get deltaX' called on an object that is not a valid instance of WheelEvent."
+        );
       }
 
       return esValue[implSymbol]["deltaX"];
@@ -127,7 +132,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get deltaY' called on an object that is not a valid instance of WheelEvent.");
+        throw new globalObject.TypeError(
+          "'get deltaY' called on an object that is not a valid instance of WheelEvent."
+        );
       }
 
       return esValue[implSymbol]["deltaY"];
@@ -137,7 +144,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get deltaZ' called on an object that is not a valid instance of WheelEvent.");
+        throw new globalObject.TypeError(
+          "'get deltaZ' called on an object that is not a valid instance of WheelEvent."
+        );
       }
 
       return esValue[implSymbol]["deltaZ"];
@@ -147,7 +156,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get deltaMode' called on an object that is not a valid instance of WheelEvent.");
+        throw new globalObject.TypeError(
+          "'get deltaMode' called on an object that is not a valid instance of WheelEvent."
+        );
       }
 
       return esValue[implSymbol]["deltaMode"];
@@ -168,10 +179,7 @@ exports.install = (globalObject, globalNames) => {
     DOM_DELTA_LINE: { value: 0x01, enumerable: true },
     DOM_DELTA_PAGE: { value: 0x02, enumerable: true }
   });
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    globalObject[ctorRegistrySymbol] = Object.create(null);
-  }
-  globalObject[ctorRegistrySymbol][interfaceName] = WheelEvent;
+  ctorRegistry[interfaceName] = WheelEvent;
 
   Object.defineProperty(globalObject, interfaceName, {
     configurable: true,

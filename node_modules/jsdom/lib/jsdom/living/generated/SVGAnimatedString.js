@@ -14,24 +14,24 @@ exports.is = value => {
 exports.isImpl = value => {
   return utils.isObject(value) && value instanceof Impl.implementation;
 };
-exports.convert = (value, { context = "The provided value" } = {}) => {
+exports.convert = (globalObject, value, { context = "The provided value" } = {}) => {
   if (exports.is(value)) {
     return utils.implForWrapper(value);
   }
-  throw new TypeError(`${context} is not of type 'SVGAnimatedString'.`);
+  throw new globalObject.TypeError(`${context} is not of type 'SVGAnimatedString'.`);
 };
 
-function makeWrapper(globalObject) {
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    throw new Error("Internal error: invalid global object");
+function makeWrapper(globalObject, newTarget) {
+  let proto;
+  if (newTarget !== undefined) {
+    proto = newTarget.prototype;
   }
 
-  const ctor = globalObject[ctorRegistrySymbol]["SVGAnimatedString"];
-  if (ctor === undefined) {
-    throw new Error("Internal error: constructor SVGAnimatedString is not installed on the passed global object");
+  if (!utils.isObject(proto)) {
+    proto = globalObject[ctorRegistrySymbol]["SVGAnimatedString"].prototype;
   }
 
-  return Object.create(ctor.prototype);
+  return Object.create(proto);
 }
 
 exports.create = (globalObject, constructorArgs, privateData) => {
@@ -62,8 +62,8 @@ exports.setup = (wrapper, globalObject, constructorArgs = [], privateData = {}) 
   return wrapper;
 };
 
-exports.new = globalObject => {
-  const wrapper = makeWrapper(globalObject);
+exports.new = (globalObject, newTarget) => {
+  const wrapper = makeWrapper(globalObject, newTarget);
 
   exports._internalSetup(wrapper, globalObject);
   Object.defineProperty(wrapper, implSymbol, {
@@ -84,16 +84,20 @@ exports.install = (globalObject, globalNames) => {
   if (!globalNames.some(globalName => exposed.has(globalName))) {
     return;
   }
+
+  const ctorRegistry = utils.initCtorRegistry(globalObject);
   class SVGAnimatedString {
     constructor() {
-      throw new TypeError("Illegal constructor");
+      throw new globalObject.TypeError("Illegal constructor");
     }
 
     get baseVal() {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get baseVal' called on an object that is not a valid instance of SVGAnimatedString.");
+        throw new globalObject.TypeError(
+          "'get baseVal' called on an object that is not a valid instance of SVGAnimatedString."
+        );
       }
 
       return esValue[implSymbol]["baseVal"];
@@ -103,11 +107,14 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'set baseVal' called on an object that is not a valid instance of SVGAnimatedString.");
+        throw new globalObject.TypeError(
+          "'set baseVal' called on an object that is not a valid instance of SVGAnimatedString."
+        );
       }
 
       V = conversions["DOMString"](V, {
-        context: "Failed to set the 'baseVal' property on 'SVGAnimatedString': The provided value"
+        context: "Failed to set the 'baseVal' property on 'SVGAnimatedString': The provided value",
+        globals: globalObject
       });
 
       esValue[implSymbol]["baseVal"] = V;
@@ -117,7 +124,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get animVal' called on an object that is not a valid instance of SVGAnimatedString.");
+        throw new globalObject.TypeError(
+          "'get animVal' called on an object that is not a valid instance of SVGAnimatedString."
+        );
       }
 
       return esValue[implSymbol]["animVal"];
@@ -128,10 +137,7 @@ exports.install = (globalObject, globalNames) => {
     animVal: { enumerable: true },
     [Symbol.toStringTag]: { value: "SVGAnimatedString", configurable: true }
   });
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    globalObject[ctorRegistrySymbol] = Object.create(null);
-  }
-  globalObject[ctorRegistrySymbol][interfaceName] = SVGAnimatedString;
+  ctorRegistry[interfaceName] = SVGAnimatedString;
 
   Object.defineProperty(globalObject, interfaceName, {
     configurable: true,

@@ -16,24 +16,24 @@ exports.is = value => {
 exports.isImpl = value => {
   return utils.isObject(value) && value instanceof Impl.implementation;
 };
-exports.convert = (value, { context = "The provided value" } = {}) => {
+exports.convert = (globalObject, value, { context = "The provided value" } = {}) => {
   if (exports.is(value)) {
     return utils.implForWrapper(value);
   }
-  throw new TypeError(`${context} is not of type 'MessageEvent'.`);
+  throw new globalObject.TypeError(`${context} is not of type 'MessageEvent'.`);
 };
 
-function makeWrapper(globalObject) {
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    throw new Error("Internal error: invalid global object");
+function makeWrapper(globalObject, newTarget) {
+  let proto;
+  if (newTarget !== undefined) {
+    proto = newTarget.prototype;
   }
 
-  const ctor = globalObject[ctorRegistrySymbol]["MessageEvent"];
-  if (ctor === undefined) {
-    throw new Error("Internal error: constructor MessageEvent is not installed on the passed global object");
+  if (!utils.isObject(proto)) {
+    proto = globalObject[ctorRegistrySymbol]["MessageEvent"].prototype;
   }
 
-  return Object.create(ctor.prototype);
+  return Object.create(proto);
 }
 
 exports.create = (globalObject, constructorArgs, privateData) => {
@@ -66,8 +66,8 @@ exports.setup = (wrapper, globalObject, constructorArgs = [], privateData = {}) 
   return wrapper;
 };
 
-exports.new = globalObject => {
-  const wrapper = makeWrapper(globalObject);
+exports.new = (globalObject, newTarget) => {
+  const wrapper = makeWrapper(globalObject, newTarget);
 
   exports._internalSetup(wrapper, globalObject);
   Object.defineProperty(wrapper, implSymbol, {
@@ -89,25 +89,28 @@ exports.install = (globalObject, globalNames) => {
     return;
   }
 
-  if (globalObject.Event === undefined) {
-    throw new Error("Internal error: attempting to evaluate MessageEvent before Event");
-  }
+  const ctorRegistry = utils.initCtorRegistry(globalObject);
   class MessageEvent extends globalObject.Event {
     constructor(type) {
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to construct 'MessageEvent': 1 argument required, but only " + arguments.length + " present."
+        throw new globalObject.TypeError(
+          `Failed to construct 'MessageEvent': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
-        curArg = conversions["DOMString"](curArg, { context: "Failed to construct 'MessageEvent': parameter 1" });
+        curArg = conversions["DOMString"](curArg, {
+          context: "Failed to construct 'MessageEvent': parameter 1",
+          globals: globalObject
+        });
         args.push(curArg);
       }
       {
         let curArg = arguments[1];
-        curArg = MessageEventInit.convert(curArg, { context: "Failed to construct 'MessageEvent': parameter 2" });
+        curArg = MessageEventInit.convert(globalObject, curArg, {
+          context: "Failed to construct 'MessageEvent': parameter 2"
+        });
         args.push(curArg);
       }
       return exports.setup(Object.create(new.target.prototype), globalObject, args);
@@ -116,21 +119,22 @@ exports.install = (globalObject, globalNames) => {
     initMessageEvent(type) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'initMessageEvent' called on an object that is not a valid instance of MessageEvent.");
+        throw new globalObject.TypeError(
+          "'initMessageEvent' called on an object that is not a valid instance of MessageEvent."
+        );
       }
 
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to execute 'initMessageEvent' on 'MessageEvent': 1 argument required, but only " +
-            arguments.length +
-            " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'initMessageEvent' on 'MessageEvent': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
         curArg = conversions["DOMString"](curArg, {
-          context: "Failed to execute 'initMessageEvent' on 'MessageEvent': parameter 1"
+          context: "Failed to execute 'initMessageEvent' on 'MessageEvent': parameter 1",
+          globals: globalObject
         });
         args.push(curArg);
       }
@@ -138,7 +142,8 @@ exports.install = (globalObject, globalNames) => {
         let curArg = arguments[1];
         if (curArg !== undefined) {
           curArg = conversions["boolean"](curArg, {
-            context: "Failed to execute 'initMessageEvent' on 'MessageEvent': parameter 2"
+            context: "Failed to execute 'initMessageEvent' on 'MessageEvent': parameter 2",
+            globals: globalObject
           });
         } else {
           curArg = false;
@@ -149,7 +154,8 @@ exports.install = (globalObject, globalNames) => {
         let curArg = arguments[2];
         if (curArg !== undefined) {
           curArg = conversions["boolean"](curArg, {
-            context: "Failed to execute 'initMessageEvent' on 'MessageEvent': parameter 3"
+            context: "Failed to execute 'initMessageEvent' on 'MessageEvent': parameter 3",
+            globals: globalObject
           });
         } else {
           curArg = false;
@@ -160,7 +166,8 @@ exports.install = (globalObject, globalNames) => {
         let curArg = arguments[3];
         if (curArg !== undefined) {
           curArg = conversions["any"](curArg, {
-            context: "Failed to execute 'initMessageEvent' on 'MessageEvent': parameter 4"
+            context: "Failed to execute 'initMessageEvent' on 'MessageEvent': parameter 4",
+            globals: globalObject
           });
         } else {
           curArg = null;
@@ -171,7 +178,8 @@ exports.install = (globalObject, globalNames) => {
         let curArg = arguments[4];
         if (curArg !== undefined) {
           curArg = conversions["USVString"](curArg, {
-            context: "Failed to execute 'initMessageEvent' on 'MessageEvent': parameter 5"
+            context: "Failed to execute 'initMessageEvent' on 'MessageEvent': parameter 5",
+            globals: globalObject
           });
         } else {
           curArg = "";
@@ -182,7 +190,8 @@ exports.install = (globalObject, globalNames) => {
         let curArg = arguments[5];
         if (curArg !== undefined) {
           curArg = conversions["DOMString"](curArg, {
-            context: "Failed to execute 'initMessageEvent' on 'MessageEvent': parameter 6"
+            context: "Failed to execute 'initMessageEvent' on 'MessageEvent': parameter 6",
+            globals: globalObject
           });
         } else {
           curArg = "";
@@ -206,7 +215,7 @@ exports.install = (globalObject, globalNames) => {
         let curArg = arguments[7];
         if (curArg !== undefined) {
           if (!utils.isObject(curArg)) {
-            throw new TypeError(
+            throw new globalObject.TypeError(
               "Failed to execute 'initMessageEvent' on 'MessageEvent': parameter 8" + " is not an iterable object."
             );
           } else {
@@ -231,7 +240,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get data' called on an object that is not a valid instance of MessageEvent.");
+        throw new globalObject.TypeError(
+          "'get data' called on an object that is not a valid instance of MessageEvent."
+        );
       }
 
       return esValue[implSymbol]["data"];
@@ -241,7 +252,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get origin' called on an object that is not a valid instance of MessageEvent.");
+        throw new globalObject.TypeError(
+          "'get origin' called on an object that is not a valid instance of MessageEvent."
+        );
       }
 
       return esValue[implSymbol]["origin"];
@@ -251,7 +264,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get lastEventId' called on an object that is not a valid instance of MessageEvent.");
+        throw new globalObject.TypeError(
+          "'get lastEventId' called on an object that is not a valid instance of MessageEvent."
+        );
       }
 
       return esValue[implSymbol]["lastEventId"];
@@ -261,7 +276,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get source' called on an object that is not a valid instance of MessageEvent.");
+        throw new globalObject.TypeError(
+          "'get source' called on an object that is not a valid instance of MessageEvent."
+        );
       }
 
       return utils.tryWrapperForImpl(esValue[implSymbol]["source"]);
@@ -271,7 +288,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get ports' called on an object that is not a valid instance of MessageEvent.");
+        throw new globalObject.TypeError(
+          "'get ports' called on an object that is not a valid instance of MessageEvent."
+        );
       }
 
       return utils.tryWrapperForImpl(esValue[implSymbol]["ports"]);
@@ -286,10 +305,7 @@ exports.install = (globalObject, globalNames) => {
     ports: { enumerable: true },
     [Symbol.toStringTag]: { value: "MessageEvent", configurable: true }
   });
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    globalObject[ctorRegistrySymbol] = Object.create(null);
-  }
-  globalObject[ctorRegistrySymbol][interfaceName] = MessageEvent;
+  ctorRegistry[interfaceName] = MessageEvent;
 
   Object.defineProperty(globalObject, interfaceName, {
     configurable: true,

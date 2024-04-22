@@ -14,24 +14,24 @@ exports.is = value => {
 exports.isImpl = value => {
   return utils.isObject(value) && value instanceof Impl.implementation;
 };
-exports.convert = (value, { context = "The provided value" } = {}) => {
+exports.convert = (globalObject, value, { context = "The provided value" } = {}) => {
   if (exports.is(value)) {
     return utils.implForWrapper(value);
   }
-  throw new TypeError(`${context} is not of type 'MimeType'.`);
+  throw new globalObject.TypeError(`${context} is not of type 'MimeType'.`);
 };
 
-function makeWrapper(globalObject) {
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    throw new Error("Internal error: invalid global object");
+function makeWrapper(globalObject, newTarget) {
+  let proto;
+  if (newTarget !== undefined) {
+    proto = newTarget.prototype;
   }
 
-  const ctor = globalObject[ctorRegistrySymbol]["MimeType"];
-  if (ctor === undefined) {
-    throw new Error("Internal error: constructor MimeType is not installed on the passed global object");
+  if (!utils.isObject(proto)) {
+    proto = globalObject[ctorRegistrySymbol]["MimeType"].prototype;
   }
 
-  return Object.create(ctor.prototype);
+  return Object.create(proto);
 }
 
 exports.create = (globalObject, constructorArgs, privateData) => {
@@ -62,8 +62,8 @@ exports.setup = (wrapper, globalObject, constructorArgs = [], privateData = {}) 
   return wrapper;
 };
 
-exports.new = globalObject => {
-  const wrapper = makeWrapper(globalObject);
+exports.new = (globalObject, newTarget) => {
+  const wrapper = makeWrapper(globalObject, newTarget);
 
   exports._internalSetup(wrapper, globalObject);
   Object.defineProperty(wrapper, implSymbol, {
@@ -84,49 +84,57 @@ exports.install = (globalObject, globalNames) => {
   if (!globalNames.some(globalName => exposed.has(globalName))) {
     return;
   }
+
+  const ctorRegistry = utils.initCtorRegistry(globalObject);
   class MimeType {
     constructor() {
-      throw new TypeError("Illegal constructor");
+      throw new globalObject.TypeError("Illegal constructor");
     }
 
     get type() {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get type' called on an object that is not a valid instance of MimeType.");
+        throw new globalObject.TypeError("'get type' called on an object that is not a valid instance of MimeType.");
       }
 
-      return utils.tryWrapperForImpl(esValue[implSymbol]["type"]);
+      return esValue[implSymbol]["type"];
     }
 
     get description() {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get description' called on an object that is not a valid instance of MimeType.");
+        throw new globalObject.TypeError(
+          "'get description' called on an object that is not a valid instance of MimeType."
+        );
       }
 
-      return utils.tryWrapperForImpl(esValue[implSymbol]["description"]);
+      return esValue[implSymbol]["description"];
     }
 
     get suffixes() {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get suffixes' called on an object that is not a valid instance of MimeType.");
+        throw new globalObject.TypeError(
+          "'get suffixes' called on an object that is not a valid instance of MimeType."
+        );
       }
 
-      return utils.tryWrapperForImpl(esValue[implSymbol]["suffixes"]);
+      return esValue[implSymbol]["suffixes"];
     }
 
     get enabledPlugin() {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get enabledPlugin' called on an object that is not a valid instance of MimeType.");
+        throw new globalObject.TypeError(
+          "'get enabledPlugin' called on an object that is not a valid instance of MimeType."
+        );
       }
 
-      return utils.tryWrapperForImpl(esValue[implSymbol]["enabledPlugin"]);
+      return esValue[implSymbol]["enabledPlugin"];
     }
   }
   Object.defineProperties(MimeType.prototype, {
@@ -136,10 +144,7 @@ exports.install = (globalObject, globalNames) => {
     enabledPlugin: { enumerable: true },
     [Symbol.toStringTag]: { value: "MimeType", configurable: true }
   });
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    globalObject[ctorRegistrySymbol] = Object.create(null);
-  }
-  globalObject[ctorRegistrySymbol][interfaceName] = MimeType;
+  ctorRegistry[interfaceName] = MimeType;
 
   Object.defineProperty(globalObject, interfaceName, {
     configurable: true,

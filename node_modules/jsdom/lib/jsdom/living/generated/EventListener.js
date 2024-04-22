@@ -3,9 +3,9 @@
 const conversions = require("webidl-conversions");
 const utils = require("./utils.js");
 
-exports.convert = function convert(value, { context = "The provided value" } = {}) {
+exports.convert = (globalObject, value, { context = "The provided value" } = {}) => {
   if (!utils.isObject(value)) {
-    throw new TypeError(`${context} is not an object.`);
+    throw new globalObject.TypeError(`${context} is not an object.`);
   }
 
   function callTheUserObjectsOperation(event) {
@@ -16,7 +16,7 @@ exports.convert = function convert(value, { context = "The provided value" } = {
     if (typeof O !== "function") {
       X = O["handleEvent"];
       if (typeof X !== "function") {
-        throw new TypeError(`${context} does not correctly implement EventListener.`);
+        throw new globalObject.TypeError(`${context} does not correctly implement EventListener.`);
       }
       thisArg = O;
     }

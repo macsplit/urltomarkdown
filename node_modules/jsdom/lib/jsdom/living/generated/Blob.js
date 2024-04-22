@@ -15,24 +15,24 @@ exports.is = value => {
 exports.isImpl = value => {
   return utils.isObject(value) && value instanceof Impl.implementation;
 };
-exports.convert = (value, { context = "The provided value" } = {}) => {
+exports.convert = (globalObject, value, { context = "The provided value" } = {}) => {
   if (exports.is(value)) {
     return utils.implForWrapper(value);
   }
-  throw new TypeError(`${context} is not of type 'Blob'.`);
+  throw new globalObject.TypeError(`${context} is not of type 'Blob'.`);
 };
 
-function makeWrapper(globalObject) {
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    throw new Error("Internal error: invalid global object");
+function makeWrapper(globalObject, newTarget) {
+  let proto;
+  if (newTarget !== undefined) {
+    proto = newTarget.prototype;
   }
 
-  const ctor = globalObject[ctorRegistrySymbol]["Blob"];
-  if (ctor === undefined) {
-    throw new Error("Internal error: constructor Blob is not installed on the passed global object");
+  if (!utils.isObject(proto)) {
+    proto = globalObject[ctorRegistrySymbol]["Blob"].prototype;
   }
 
-  return Object.create(ctor.prototype);
+  return Object.create(proto);
 }
 
 exports.create = (globalObject, constructorArgs, privateData) => {
@@ -63,8 +63,8 @@ exports.setup = (wrapper, globalObject, constructorArgs = [], privateData = {}) 
   return wrapper;
 };
 
-exports.new = globalObject => {
-  const wrapper = makeWrapper(globalObject);
+exports.new = (globalObject, newTarget) => {
+  const wrapper = makeWrapper(globalObject, newTarget);
 
   exports._internalSetup(wrapper, globalObject);
   Object.defineProperty(wrapper, implSymbol, {
@@ -85,6 +85,8 @@ exports.install = (globalObject, globalNames) => {
   if (!globalNames.some(globalName => exposed.has(globalName))) {
     return;
   }
+
+  const ctorRegistry = utils.initCtorRegistry(globalObject);
   class Blob {
     constructor() {
       const args = [];
@@ -92,7 +94,7 @@ exports.install = (globalObject, globalNames) => {
         let curArg = arguments[0];
         if (curArg !== undefined) {
           if (!utils.isObject(curArg)) {
-            throw new TypeError("Failed to construct 'Blob': parameter 1" + " is not an iterable object.");
+            throw new globalObject.TypeError("Failed to construct 'Blob': parameter 1" + " is not an iterable object.");
           } else {
             const V = [];
             const tmp = curArg;
@@ -103,7 +105,8 @@ exports.install = (globalObject, globalNames) => {
               } else if (ArrayBuffer.isView(nextItem)) {
               } else {
                 nextItem = conversions["USVString"](nextItem, {
-                  context: "Failed to construct 'Blob': parameter 1" + "'s element"
+                  context: "Failed to construct 'Blob': parameter 1" + "'s element",
+                  globals: globalObject
                 });
               }
               V.push(nextItem);
@@ -115,7 +118,7 @@ exports.install = (globalObject, globalNames) => {
       }
       {
         let curArg = arguments[1];
-        curArg = BlobPropertyBag.convert(curArg, { context: "Failed to construct 'Blob': parameter 2" });
+        curArg = BlobPropertyBag.convert(globalObject, curArg, { context: "Failed to construct 'Blob': parameter 2" });
         args.push(curArg);
       }
       return exports.setup(Object.create(new.target.prototype), globalObject, args);
@@ -124,7 +127,7 @@ exports.install = (globalObject, globalNames) => {
     slice() {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'slice' called on an object that is not a valid instance of Blob.");
+        throw new globalObject.TypeError("'slice' called on an object that is not a valid instance of Blob.");
       }
       const args = [];
       {
@@ -132,6 +135,7 @@ exports.install = (globalObject, globalNames) => {
         if (curArg !== undefined) {
           curArg = conversions["long long"](curArg, {
             context: "Failed to execute 'slice' on 'Blob': parameter 1",
+            globals: globalObject,
             clamp: true
           });
         }
@@ -142,6 +146,7 @@ exports.install = (globalObject, globalNames) => {
         if (curArg !== undefined) {
           curArg = conversions["long long"](curArg, {
             context: "Failed to execute 'slice' on 'Blob': parameter 2",
+            globals: globalObject,
             clamp: true
           });
         }
@@ -150,7 +155,10 @@ exports.install = (globalObject, globalNames) => {
       {
         let curArg = arguments[2];
         if (curArg !== undefined) {
-          curArg = conversions["DOMString"](curArg, { context: "Failed to execute 'slice' on 'Blob': parameter 3" });
+          curArg = conversions["DOMString"](curArg, {
+            context: "Failed to execute 'slice' on 'Blob': parameter 3",
+            globals: globalObject
+          });
         }
         args.push(curArg);
       }
@@ -161,7 +169,7 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get size' called on an object that is not a valid instance of Blob.");
+        throw new globalObject.TypeError("'get size' called on an object that is not a valid instance of Blob.");
       }
 
       return esValue[implSymbol]["size"];
@@ -171,7 +179,7 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get type' called on an object that is not a valid instance of Blob.");
+        throw new globalObject.TypeError("'get type' called on an object that is not a valid instance of Blob.");
       }
 
       return esValue[implSymbol]["type"];
@@ -183,10 +191,7 @@ exports.install = (globalObject, globalNames) => {
     type: { enumerable: true },
     [Symbol.toStringTag]: { value: "Blob", configurable: true }
   });
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    globalObject[ctorRegistrySymbol] = Object.create(null);
-  }
-  globalObject[ctorRegistrySymbol][interfaceName] = Blob;
+  ctorRegistry[interfaceName] = Blob;
 
   Object.defineProperty(globalObject, interfaceName, {
     configurable: true,

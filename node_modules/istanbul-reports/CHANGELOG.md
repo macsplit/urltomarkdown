@@ -3,6 +3,20 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.1.7](https://github.com/istanbuljs/istanbuljs/compare/istanbul-reports-v3.1.6...istanbul-reports-v3.1.7) (2024-02-19)
+
+
+### Bug Fixes
+
+* **ux:** address bug with firefox event handling ([2207a87](https://github.com/istanbuljs/istanbuljs/commit/2207a87ec978b7637d8b55de2ff887e462bd48d3))
+
+## [3.1.6](https://github.com/istanbuljs/istanbuljs/compare/istanbul-reports-v3.1.5...istanbul-reports-v3.1.6) (2023-07-25)
+
+
+### Bug Fixes
+
+* **clover:** always close last open tag ([07c6ea6](https://github.com/istanbuljs/istanbuljs/commit/07c6ea6537261a19b117702b7362dee0bdc001ac))
+
 ## [3.1.5](https://github.com/istanbuljs/istanbuljs/compare/istanbul-reports-v3.1.4...istanbul-reports-v3.1.5) (2022-07-13)
 
 
@@ -249,7 +263,7 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 ### Bug Fixes
 
-* update dependendencies due to vulnerabilities ([#294](https://github.com/istanbuljs/istanbuljs/issues/294)) ([4c14fed](https://github.com/istanbuljs/istanbuljs/commit/4c14fed))
+* update dependencies due to vulnerabilities ([#294](https://github.com/istanbuljs/istanbuljs/issues/294)) ([4c14fed](https://github.com/istanbuljs/istanbuljs/commit/4c14fed))
 
 
 

@@ -10,7 +10,7 @@ var parsers = require('./parsers');
 var dashedProperties = [...allProperties, ...allExtraProperties];
 var allowedProperties = dashedProperties.map(parsers.dashedToCamelCase);
 implementedProperties = Array.from(implementedProperties).map(parsers.dashedToCamelCase);
-var invalidProperties = implementedProperties.filter(prop => !allowedProperties.includes(prop));
+var invalidProperties = implementedProperties.filter((prop) => !allowedProperties.includes(prop));
 
 describe('CSSStyleDeclaration', () => {
   test('has only valid properties implemented', () => {
@@ -19,7 +19,7 @@ describe('CSSStyleDeclaration', () => {
 
   test('has all properties', () => {
     var style = new CSSStyleDeclaration();
-    allProperties.forEach(property => {
+    allProperties.forEach((property) => {
       expect(style.__lookupGetter__(property)).toBeTruthy();
       expect(style.__lookupSetter__(property)).toBeTruthy();
     });
@@ -27,7 +27,7 @@ describe('CSSStyleDeclaration', () => {
 
   test('has dashed properties', () => {
     var style = new CSSStyleDeclaration();
-    dashedProperties.forEach(property => {
+    dashedProperties.forEach((property) => {
       expect(style.__lookupGetter__(property)).toBeTruthy();
       expect(style.__lookupSetter__(property)).toBeTruthy();
     });
@@ -302,7 +302,7 @@ describe('CSSStyleDeclaration', () => {
   test('padding and margin should set/clear shorthand properties', () => {
     var style = new CSSStyleDeclaration();
     var parts = ['Top', 'Right', 'Bottom', 'Left'];
-    var testParts = function(name, v, V) {
+    var testParts = function (name, v, V) {
       style[name] = v;
       for (var i = 0; i < 4; i++) {
         var part = name + parts[i];
@@ -329,7 +329,7 @@ describe('CSSStyleDeclaration', () => {
   test('padding and margin shorthands should set main properties', () => {
     var style = new CSSStyleDeclaration();
     var parts = ['Top', 'Right', 'Bottom', 'Left'];
-    var testParts = function(name, v, V) {
+    var testParts = function (name, v, V) {
       var expected;
       for (var i = 0; i < 4; i++) {
         style[name] = v;
@@ -346,6 +346,114 @@ describe('CSSStyleDeclaration', () => {
     testParts('margin', '1px 2px 3px 4px', 'auto');
   });
 
+  test('setting individual padding and margin properties to an empty string should clear them', () => {
+    var style = new CSSStyleDeclaration();
+
+    var properties = ['padding', 'margin'];
+    var parts = ['Top', 'Right', 'Bottom', 'Left'];
+    for (var i = 0; i < properties.length; i++) {
+      for (var j = 0; j < parts.length; j++) {
+        var property = properties[i] + parts[j];
+        style[property] = '12px';
+        expect(style[property]).toEqual('12px');
+
+        style[property] = '';
+        expect(style[property]).toEqual('');
+      }
+    }
+  });
+
+  test('removing and setting individual margin properties updates the combined property accordingly', () => {
+    var style = new CSSStyleDeclaration();
+    style.margin = '1px 2px 3px 4px';
+
+    style.marginTop = '';
+    expect(style.margin).toEqual('');
+    expect(style.marginRight).toEqual('2px');
+    expect(style.marginBottom).toEqual('3px');
+    expect(style.marginLeft).toEqual('4px');
+
+    style.marginBottom = '';
+    expect(style.margin).toEqual('');
+    expect(style.marginRight).toEqual('2px');
+    expect(style.marginLeft).toEqual('4px');
+
+    style.marginBottom = '5px';
+    expect(style.margin).toEqual('');
+    expect(style.marginRight).toEqual('2px');
+    expect(style.marginBottom).toEqual('5px');
+    expect(style.marginLeft).toEqual('4px');
+
+    style.marginTop = '6px';
+    expect(style.cssText).toEqual('margin: 6px 2px 5px 4px;');
+  });
+
+  test.each(['padding', 'margin'])(
+    'removing an individual %s property should remove the combined property and replace it with the remaining individual ones',
+    (property) => {
+      var style = new CSSStyleDeclaration();
+      var parts = ['Top', 'Right', 'Bottom', 'Left'];
+      var partValues = ['1px', '2px', '3px', '4px'];
+
+      for (var j = 0; j < parts.length; j++) {
+        var partToRemove = parts[j];
+        style[property] = partValues.join(' ');
+        style[property + partToRemove] = '';
+
+        // Main property should have been removed
+        expect(style[property]).toEqual('');
+
+        // Expect other parts to still be there
+        for (var k = 0; k < parts.length; k++) {
+          var propertyCss = property + '-' + parts[k].toLowerCase() + ': ' + partValues[k] + ';';
+          if (k === j) {
+            expect(style[property + parts[k]]).toEqual('');
+            expect(style.cssText).not.toContain(propertyCss);
+          } else {
+            expect(style[property + parts[k]]).toEqual(partValues[k]);
+            expect(style.cssText).toContain(propertyCss);
+          }
+        }
+      }
+    }
+  );
+
+  test.each(['margin', 'padding'])(
+    'setting additional %s properties keeps important status of others',
+    (property) => {
+      var style = new CSSStyleDeclaration();
+      var importantProperty = property + '-top: 3px !important;';
+      style.cssText = importantProperty;
+      expect(style.cssText).toContain(importantProperty);
+
+      style[property + 'Right'] = '4px';
+      style[property + 'Bottom'] = '5px';
+      style[property + 'Left'] = '6px';
+
+      expect(style.cssText).toContain(importantProperty);
+      expect(style.cssText).toContain(property + '-right: 4px;');
+      expect(style.cssText).toContain(property + '-bottom: 5px;');
+      expect(style.cssText).toContain(property + '-left: 6px;');
+      expect(style.cssText).not.toContain('margin:');
+    }
+  );
+
+  test.each(['margin', 'padding'])(
+    'setting individual %s keeps important status of others',
+    (property) => {
+      var style = new CSSStyleDeclaration();
+      style.cssText = property + ': 3px !important;';
+
+      style[property + 'Top'] = '4px';
+
+      expect(style.cssText).toContain(property + '-top: 4px;');
+      expect(style.cssText).toContain(property + '-right: 3px !important;');
+      expect(style.cssText).toContain(property + '-bottom: 3px !important;');
+      expect(style.cssText).toContain(property + '-left: 3px !important;');
+      expect(style.cssText).not.toContain('margin:');
+    }
+  );
+
   test('setting a value to 0 should return the string value', () => {
     var style = new CSSStyleDeclaration();
     style.setProperty('fill-opacity', 0);
@@ -353,10 +461,46 @@ describe('CSSStyleDeclaration', () => {
   });
 
   test('onchange callback should be called when the csstext changes', () => {
-    var style = new CSSStyleDeclaration(function(cssText) {
+    var called = 0;
+    var style = new CSSStyleDeclaration(function (cssText) {
+      called++;
       expect(cssText).toEqual('opacity: 0;');
     });
+    style.cssText = 'opacity: 0;';
+    expect(called).toEqual(1);
+    style.cssText = 'opacity: 0;';
+    expect(called).toEqual(2);
+  });
+
+  test('onchange callback should be called only once when multiple properties were added', () => {
+    var called = 0;
+    var style = new CSSStyleDeclaration(function (cssText) {
+      called++;
+      expect(cssText).toEqual('width: 100px; height: 100px;');
+    });
+    style.cssText = 'width: 100px;height:100px;';
+    expect(called).toEqual(1);
+  });
+
+  test('onchange callback should not be called when property is set to the same value', () => {
+    var called = 0;
+    var style = new CSSStyleDeclaration(function () {
+      called++;
+    });
+
     style.setProperty('opacity', 0);
+    expect(called).toEqual(1);
+    style.setProperty('opacity', 0);
+    expect(called).toEqual(1);
+  });
+
+  test('onchange callback should not be called when removeProperty was called on non-existing property', () => {
+    var called = 0;
+    var style = new CSSStyleDeclaration(function () {
+      called++;
+    });
+    style.removeProperty('opacity');
+    expect(called).toEqual(0);
   });
 
   test('setting float should work the same as cssfloat', () => {
@@ -400,6 +544,43 @@ describe('CSSStyleDeclaration', () => {
     style.margin = '1em';
     style.marginTop = '0.5ex';
     expect(style.marginTop).toEqual('0.5ex');
+  });
+
+  test('setting empty string and null to a padding or margin works', () => {
+    var style = new CSSStyleDeclaration();
+    var parts = ['Top', 'Right', 'Bottom', 'Left'];
+    function testParts(base, nullValue) {
+      var props = [base].concat(parts.map((part) => base + part));
+      for (let prop of props) {
+        expect(style[prop]).toEqual('');
+        style[prop] = '10px';
+        expect(style[prop]).toEqual('10px');
+        style[prop] = nullValue;
+        expect(style[prop]).toEqual('');
+      }
+    }
+
+    testParts('margin', '');
+    testParts('margin', null);
+    testParts('padding', '');
+    testParts('padding', null);
+  });
+
+  test('setting undefined to a padding or margin does nothing', () => {
+    var style = new CSSStyleDeclaration();
+    var parts = ['Top', 'Right', 'Bottom', 'Left'];
+    function testParts(base) {
+      var props = [base].concat(parts.map((part) => base + part));
+      for (let prop of props) {
+        style[prop] = '10px';
+        expect(style[prop]).toEqual('10px');
+        style[prop] = undefined;
+        expect(style[prop]).toEqual('10px');
+      }
+    }
+
+    testParts('margin');
+    testParts('padding');
   });
 
   test('setting null to background works', () => {

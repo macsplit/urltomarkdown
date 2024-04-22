@@ -16,24 +16,24 @@ exports.is = value => {
 exports.isImpl = value => {
   return utils.isObject(value) && value instanceof Impl.implementation;
 };
-exports.convert = (value, { context = "The provided value" } = {}) => {
+exports.convert = (globalObject, value, { context = "The provided value" } = {}) => {
   if (exports.is(value)) {
     return utils.implForWrapper(value);
   }
-  throw new TypeError(`${context} is not of type 'CompositionEvent'.`);
+  throw new globalObject.TypeError(`${context} is not of type 'CompositionEvent'.`);
 };
 
-function makeWrapper(globalObject) {
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    throw new Error("Internal error: invalid global object");
+function makeWrapper(globalObject, newTarget) {
+  let proto;
+  if (newTarget !== undefined) {
+    proto = newTarget.prototype;
   }
 
-  const ctor = globalObject[ctorRegistrySymbol]["CompositionEvent"];
-  if (ctor === undefined) {
-    throw new Error("Internal error: constructor CompositionEvent is not installed on the passed global object");
+  if (!utils.isObject(proto)) {
+    proto = globalObject[ctorRegistrySymbol]["CompositionEvent"].prototype;
   }
 
-  return Object.create(ctor.prototype);
+  return Object.create(proto);
 }
 
 exports.create = (globalObject, constructorArgs, privateData) => {
@@ -66,8 +66,8 @@ exports.setup = (wrapper, globalObject, constructorArgs = [], privateData = {}) 
   return wrapper;
 };
 
-exports.new = globalObject => {
-  const wrapper = makeWrapper(globalObject);
+exports.new = (globalObject, newTarget) => {
+  const wrapper = makeWrapper(globalObject, newTarget);
 
   exports._internalSetup(wrapper, globalObject);
   Object.defineProperty(wrapper, implSymbol, {
@@ -89,25 +89,26 @@ exports.install = (globalObject, globalNames) => {
     return;
   }
 
-  if (globalObject.UIEvent === undefined) {
-    throw new Error("Internal error: attempting to evaluate CompositionEvent before UIEvent");
-  }
+  const ctorRegistry = utils.initCtorRegistry(globalObject);
   class CompositionEvent extends globalObject.UIEvent {
     constructor(type) {
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to construct 'CompositionEvent': 1 argument required, but only " + arguments.length + " present."
+        throw new globalObject.TypeError(
+          `Failed to construct 'CompositionEvent': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
-        curArg = conversions["DOMString"](curArg, { context: "Failed to construct 'CompositionEvent': parameter 1" });
+        curArg = conversions["DOMString"](curArg, {
+          context: "Failed to construct 'CompositionEvent': parameter 1",
+          globals: globalObject
+        });
         args.push(curArg);
       }
       {
         let curArg = arguments[1];
-        curArg = CompositionEventInit.convert(curArg, {
+        curArg = CompositionEventInit.convert(globalObject, curArg, {
           context: "Failed to construct 'CompositionEvent': parameter 2"
         });
         args.push(curArg);
@@ -118,23 +119,22 @@ exports.install = (globalObject, globalNames) => {
     initCompositionEvent(typeArg) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError(
+        throw new globalObject.TypeError(
           "'initCompositionEvent' called on an object that is not a valid instance of CompositionEvent."
         );
       }
 
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to execute 'initCompositionEvent' on 'CompositionEvent': 1 argument required, but only " +
-            arguments.length +
-            " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'initCompositionEvent' on 'CompositionEvent': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
         curArg = conversions["DOMString"](curArg, {
-          context: "Failed to execute 'initCompositionEvent' on 'CompositionEvent': parameter 1"
+          context: "Failed to execute 'initCompositionEvent' on 'CompositionEvent': parameter 1",
+          globals: globalObject
         });
         args.push(curArg);
       }
@@ -142,7 +142,8 @@ exports.install = (globalObject, globalNames) => {
         let curArg = arguments[1];
         if (curArg !== undefined) {
           curArg = conversions["boolean"](curArg, {
-            context: "Failed to execute 'initCompositionEvent' on 'CompositionEvent': parameter 2"
+            context: "Failed to execute 'initCompositionEvent' on 'CompositionEvent': parameter 2",
+            globals: globalObject
           });
         } else {
           curArg = false;
@@ -153,7 +154,8 @@ exports.install = (globalObject, globalNames) => {
         let curArg = arguments[2];
         if (curArg !== undefined) {
           curArg = conversions["boolean"](curArg, {
-            context: "Failed to execute 'initCompositionEvent' on 'CompositionEvent': parameter 3"
+            context: "Failed to execute 'initCompositionEvent' on 'CompositionEvent': parameter 3",
+            globals: globalObject
           });
         } else {
           curArg = false;
@@ -177,7 +179,8 @@ exports.install = (globalObject, globalNames) => {
         let curArg = arguments[4];
         if (curArg !== undefined) {
           curArg = conversions["DOMString"](curArg, {
-            context: "Failed to execute 'initCompositionEvent' on 'CompositionEvent': parameter 5"
+            context: "Failed to execute 'initCompositionEvent' on 'CompositionEvent': parameter 5",
+            globals: globalObject
           });
         } else {
           curArg = "";
@@ -191,7 +194,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get data' called on an object that is not a valid instance of CompositionEvent.");
+        throw new globalObject.TypeError(
+          "'get data' called on an object that is not a valid instance of CompositionEvent."
+        );
       }
 
       return esValue[implSymbol]["data"];
@@ -202,10 +207,7 @@ exports.install = (globalObject, globalNames) => {
     data: { enumerable: true },
     [Symbol.toStringTag]: { value: "CompositionEvent", configurable: true }
   });
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    globalObject[ctorRegistrySymbol] = Object.create(null);
-  }
-  globalObject[ctorRegistrySymbol][interfaceName] = CompositionEvent;
+  ctorRegistry[interfaceName] = CompositionEvent;
 
   Object.defineProperty(globalObject, interfaceName, {
     configurable: true,

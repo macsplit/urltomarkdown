@@ -19,24 +19,24 @@ exports.is = value => {
 exports.isImpl = value => {
   return utils.isObject(value) && value instanceof Impl.implementation;
 };
-exports.convert = (value, { context = "The provided value" } = {}) => {
+exports.convert = (globalObject, value, { context = "The provided value" } = {}) => {
   if (exports.is(value)) {
     return utils.implForWrapper(value);
   }
-  throw new TypeError(`${context} is not of type 'CustomElementRegistry'.`);
+  throw new globalObject.TypeError(`${context} is not of type 'CustomElementRegistry'.`);
 };
 
-function makeWrapper(globalObject) {
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    throw new Error("Internal error: invalid global object");
+function makeWrapper(globalObject, newTarget) {
+  let proto;
+  if (newTarget !== undefined) {
+    proto = newTarget.prototype;
   }
 
-  const ctor = globalObject[ctorRegistrySymbol]["CustomElementRegistry"];
-  if (ctor === undefined) {
-    throw new Error("Internal error: constructor CustomElementRegistry is not installed on the passed global object");
+  if (!utils.isObject(proto)) {
+    proto = globalObject[ctorRegistrySymbol]["CustomElementRegistry"].prototype;
   }
 
-  return Object.create(ctor.prototype);
+  return Object.create(proto);
 }
 
 exports.create = (globalObject, constructorArgs, privateData) => {
@@ -67,8 +67,8 @@ exports.setup = (wrapper, globalObject, constructorArgs = [], privateData = {}) 
   return wrapper;
 };
 
-exports.new = globalObject => {
-  const wrapper = makeWrapper(globalObject);
+exports.new = (globalObject, newTarget) => {
+  const wrapper = makeWrapper(globalObject, newTarget);
 
   exports._internalSetup(wrapper, globalObject);
   Object.defineProperty(wrapper, implSymbol, {
@@ -89,42 +89,45 @@ exports.install = (globalObject, globalNames) => {
   if (!globalNames.some(globalName => exposed.has(globalName))) {
     return;
   }
+
+  const ctorRegistry = utils.initCtorRegistry(globalObject);
   class CustomElementRegistry {
     constructor() {
-      throw new TypeError("Illegal constructor");
+      throw new globalObject.TypeError("Illegal constructor");
     }
 
     define(name, constructor) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'define' called on an object that is not a valid instance of CustomElementRegistry.");
+        throw new globalObject.TypeError(
+          "'define' called on an object that is not a valid instance of CustomElementRegistry."
+        );
       }
 
       if (arguments.length < 2) {
-        throw new TypeError(
-          "Failed to execute 'define' on 'CustomElementRegistry': 2 arguments required, but only " +
-            arguments.length +
-            " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'define' on 'CustomElementRegistry': 2 arguments required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
         curArg = conversions["DOMString"](curArg, {
-          context: "Failed to execute 'define' on 'CustomElementRegistry': parameter 1"
+          context: "Failed to execute 'define' on 'CustomElementRegistry': parameter 1",
+          globals: globalObject
         });
         args.push(curArg);
       }
       {
         let curArg = arguments[1];
-        curArg = CustomElementConstructor.convert(curArg, {
+        curArg = CustomElementConstructor.convert(globalObject, curArg, {
           context: "Failed to execute 'define' on 'CustomElementRegistry': parameter 2"
         });
         args.push(curArg);
       }
       {
         let curArg = arguments[2];
-        curArg = ElementDefinitionOptions.convert(curArg, {
+        curArg = ElementDefinitionOptions.convert(globalObject, curArg, {
           context: "Failed to execute 'define' on 'CustomElementRegistry': parameter 3"
         });
         args.push(curArg);
@@ -140,21 +143,22 @@ exports.install = (globalObject, globalNames) => {
     get(name) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'get' called on an object that is not a valid instance of CustomElementRegistry.");
+        throw new globalObject.TypeError(
+          "'get' called on an object that is not a valid instance of CustomElementRegistry."
+        );
       }
 
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to execute 'get' on 'CustomElementRegistry': 1 argument required, but only " +
-            arguments.length +
-            " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'get' on 'CustomElementRegistry': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
         curArg = conversions["DOMString"](curArg, {
-          context: "Failed to execute 'get' on 'CustomElementRegistry': parameter 1"
+          context: "Failed to execute 'get' on 'CustomElementRegistry': parameter 1",
+          globals: globalObject
         });
         args.push(curArg);
       }
@@ -165,49 +169,48 @@ exports.install = (globalObject, globalNames) => {
       try {
         const esValue = this !== null && this !== undefined ? this : globalObject;
         if (!exports.is(esValue)) {
-          throw new TypeError(
+          throw new globalObject.TypeError(
             "'whenDefined' called on an object that is not a valid instance of CustomElementRegistry."
           );
         }
 
         if (arguments.length < 1) {
-          throw new TypeError(
-            "Failed to execute 'whenDefined' on 'CustomElementRegistry': 1 argument required, but only " +
-              arguments.length +
-              " present."
+          throw new globalObject.TypeError(
+            `Failed to execute 'whenDefined' on 'CustomElementRegistry': 1 argument required, but only ${arguments.length} present.`
           );
         }
         const args = [];
         {
           let curArg = arguments[0];
           curArg = conversions["DOMString"](curArg, {
-            context: "Failed to execute 'whenDefined' on 'CustomElementRegistry': parameter 1"
+            context: "Failed to execute 'whenDefined' on 'CustomElementRegistry': parameter 1",
+            globals: globalObject
           });
           args.push(curArg);
         }
         return utils.tryWrapperForImpl(esValue[implSymbol].whenDefined(...args));
       } catch (e) {
-        return Promise.reject(e);
+        return globalObject.Promise.reject(e);
       }
     }
 
     upgrade(root) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'upgrade' called on an object that is not a valid instance of CustomElementRegistry.");
+        throw new globalObject.TypeError(
+          "'upgrade' called on an object that is not a valid instance of CustomElementRegistry."
+        );
       }
 
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to execute 'upgrade' on 'CustomElementRegistry': 1 argument required, but only " +
-            arguments.length +
-            " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'upgrade' on 'CustomElementRegistry': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
-        curArg = Node.convert(curArg, {
+        curArg = Node.convert(globalObject, curArg, {
           context: "Failed to execute 'upgrade' on 'CustomElementRegistry': parameter 1"
         });
         args.push(curArg);
@@ -227,10 +230,7 @@ exports.install = (globalObject, globalNames) => {
     upgrade: { enumerable: true },
     [Symbol.toStringTag]: { value: "CustomElementRegistry", configurable: true }
   });
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    globalObject[ctorRegistrySymbol] = Object.create(null);
-  }
-  globalObject[ctorRegistrySymbol][interfaceName] = CustomElementRegistry;
+  ctorRegistry[interfaceName] = CustomElementRegistry;
 
   Object.defineProperty(globalObject, interfaceName, {
     configurable: true,

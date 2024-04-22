@@ -16,24 +16,24 @@ exports.is = value => {
 exports.isImpl = value => {
   return utils.isObject(value) && value instanceof Impl.implementation;
 };
-exports.convert = (value, { context = "The provided value" } = {}) => {
+exports.convert = (globalObject, value, { context = "The provided value" } = {}) => {
   if (exports.is(value)) {
     return utils.implForWrapper(value);
   }
-  throw new TypeError(`${context} is not of type 'HTMLTemplateElement'.`);
+  throw new globalObject.TypeError(`${context} is not of type 'HTMLTemplateElement'.`);
 };
 
-function makeWrapper(globalObject) {
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    throw new Error("Internal error: invalid global object");
+function makeWrapper(globalObject, newTarget) {
+  let proto;
+  if (newTarget !== undefined) {
+    proto = newTarget.prototype;
   }
 
-  const ctor = globalObject[ctorRegistrySymbol]["HTMLTemplateElement"];
-  if (ctor === undefined) {
-    throw new Error("Internal error: constructor HTMLTemplateElement is not installed on the passed global object");
+  if (!utils.isObject(proto)) {
+    proto = globalObject[ctorRegistrySymbol]["HTMLTemplateElement"].prototype;
   }
 
-  return Object.create(ctor.prototype);
+  return Object.create(proto);
 }
 
 exports.create = (globalObject, constructorArgs, privateData) => {
@@ -66,8 +66,8 @@ exports.setup = (wrapper, globalObject, constructorArgs = [], privateData = {}) 
   return wrapper;
 };
 
-exports.new = globalObject => {
-  const wrapper = makeWrapper(globalObject);
+exports.new = (globalObject, newTarget) => {
+  const wrapper = makeWrapper(globalObject, newTarget);
 
   exports._internalSetup(wrapper, globalObject);
   Object.defineProperty(wrapper, implSymbol, {
@@ -89,9 +89,7 @@ exports.install = (globalObject, globalNames) => {
     return;
   }
 
-  if (globalObject.HTMLElement === undefined) {
-    throw new Error("Internal error: attempting to evaluate HTMLTemplateElement before HTMLElement");
-  }
+  const ctorRegistry = utils.initCtorRegistry(globalObject);
   class HTMLTemplateElement extends globalObject.HTMLElement {
     constructor() {
       return HTMLConstructor_helpers_html_constructor(globalObject, interfaceName, new.target);
@@ -101,7 +99,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get content' called on an object that is not a valid instance of HTMLTemplateElement.");
+        throw new globalObject.TypeError(
+          "'get content' called on an object that is not a valid instance of HTMLTemplateElement."
+        );
       }
 
       return utils.tryWrapperForImpl(esValue[implSymbol]["content"]);
@@ -111,10 +111,7 @@ exports.install = (globalObject, globalNames) => {
     content: { enumerable: true },
     [Symbol.toStringTag]: { value: "HTMLTemplateElement", configurable: true }
   });
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    globalObject[ctorRegistrySymbol] = Object.create(null);
-  }
-  globalObject[ctorRegistrySymbol][interfaceName] = HTMLTemplateElement;
+  ctorRegistry[interfaceName] = HTMLTemplateElement;
 
   Object.defineProperty(globalObject, interfaceName, {
     configurable: true,

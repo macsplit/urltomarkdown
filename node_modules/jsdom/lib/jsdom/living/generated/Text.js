@@ -15,24 +15,24 @@ exports.is = value => {
 exports.isImpl = value => {
   return utils.isObject(value) && value instanceof Impl.implementation;
 };
-exports.convert = (value, { context = "The provided value" } = {}) => {
+exports.convert = (globalObject, value, { context = "The provided value" } = {}) => {
   if (exports.is(value)) {
     return utils.implForWrapper(value);
   }
-  throw new TypeError(`${context} is not of type 'Text'.`);
+  throw new globalObject.TypeError(`${context} is not of type 'Text'.`);
 };
 
-function makeWrapper(globalObject) {
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    throw new Error("Internal error: invalid global object");
+function makeWrapper(globalObject, newTarget) {
+  let proto;
+  if (newTarget !== undefined) {
+    proto = newTarget.prototype;
   }
 
-  const ctor = globalObject[ctorRegistrySymbol]["Text"];
-  if (ctor === undefined) {
-    throw new Error("Internal error: constructor Text is not installed on the passed global object");
+  if (!utils.isObject(proto)) {
+    proto = globalObject[ctorRegistrySymbol]["Text"].prototype;
   }
 
-  return Object.create(ctor.prototype);
+  return Object.create(proto);
 }
 
 exports.create = (globalObject, constructorArgs, privateData) => {
@@ -65,8 +65,8 @@ exports.setup = (wrapper, globalObject, constructorArgs = [], privateData = {}) 
   return wrapper;
 };
 
-exports.new = globalObject => {
-  const wrapper = makeWrapper(globalObject);
+exports.new = (globalObject, newTarget) => {
+  const wrapper = makeWrapper(globalObject, newTarget);
 
   exports._internalSetup(wrapper, globalObject);
   Object.defineProperty(wrapper, implSymbol, {
@@ -88,16 +88,17 @@ exports.install = (globalObject, globalNames) => {
     return;
   }
 
-  if (globalObject.CharacterData === undefined) {
-    throw new Error("Internal error: attempting to evaluate Text before CharacterData");
-  }
+  const ctorRegistry = utils.initCtorRegistry(globalObject);
   class Text extends globalObject.CharacterData {
     constructor() {
       const args = [];
       {
         let curArg = arguments[0];
         if (curArg !== undefined) {
-          curArg = conversions["DOMString"](curArg, { context: "Failed to construct 'Text': parameter 1" });
+          curArg = conversions["DOMString"](curArg, {
+            context: "Failed to construct 'Text': parameter 1",
+            globals: globalObject
+          });
         } else {
           curArg = "";
         }
@@ -109,19 +110,20 @@ exports.install = (globalObject, globalNames) => {
     splitText(offset) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'splitText' called on an object that is not a valid instance of Text.");
+        throw new globalObject.TypeError("'splitText' called on an object that is not a valid instance of Text.");
       }
 
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to execute 'splitText' on 'Text': 1 argument required, but only " + arguments.length + " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'splitText' on 'Text': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
         curArg = conversions["unsigned long"](curArg, {
-          context: "Failed to execute 'splitText' on 'Text': parameter 1"
+          context: "Failed to execute 'splitText' on 'Text': parameter 1",
+          globals: globalObject
         });
         args.push(curArg);
       }
@@ -132,7 +134,7 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get wholeText' called on an object that is not a valid instance of Text.");
+        throw new globalObject.TypeError("'get wholeText' called on an object that is not a valid instance of Text.");
       }
 
       return esValue[implSymbol]["wholeText"];
@@ -142,7 +144,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get assignedSlot' called on an object that is not a valid instance of Text.");
+        throw new globalObject.TypeError(
+          "'get assignedSlot' called on an object that is not a valid instance of Text."
+        );
       }
 
       return utils.tryWrapperForImpl(esValue[implSymbol]["assignedSlot"]);
@@ -154,10 +158,7 @@ exports.install = (globalObject, globalNames) => {
     assignedSlot: { enumerable: true },
     [Symbol.toStringTag]: { value: "Text", configurable: true }
   });
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    globalObject[ctorRegistrySymbol] = Object.create(null);
-  }
-  globalObject[ctorRegistrySymbol][interfaceName] = Text;
+  ctorRegistry[interfaceName] = Text;
 
   Object.defineProperty(globalObject, interfaceName, {
     configurable: true,

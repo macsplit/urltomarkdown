@@ -16,24 +16,24 @@ exports.is = value => {
 exports.isImpl = value => {
   return utils.isObject(value) && value instanceof Impl.implementation;
 };
-exports.convert = (value, { context = "The provided value" } = {}) => {
+exports.convert = (globalObject, value, { context = "The provided value" } = {}) => {
   if (exports.is(value)) {
     return utils.implForWrapper(value);
   }
-  throw new TypeError(`${context} is not of type 'UIEvent'.`);
+  throw new globalObject.TypeError(`${context} is not of type 'UIEvent'.`);
 };
 
-function makeWrapper(globalObject) {
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    throw new Error("Internal error: invalid global object");
+function makeWrapper(globalObject, newTarget) {
+  let proto;
+  if (newTarget !== undefined) {
+    proto = newTarget.prototype;
   }
 
-  const ctor = globalObject[ctorRegistrySymbol]["UIEvent"];
-  if (ctor === undefined) {
-    throw new Error("Internal error: constructor UIEvent is not installed on the passed global object");
+  if (!utils.isObject(proto)) {
+    proto = globalObject[ctorRegistrySymbol]["UIEvent"].prototype;
   }
 
-  return Object.create(ctor.prototype);
+  return Object.create(proto);
 }
 
 exports.create = (globalObject, constructorArgs, privateData) => {
@@ -66,8 +66,8 @@ exports.setup = (wrapper, globalObject, constructorArgs = [], privateData = {}) 
   return wrapper;
 };
 
-exports.new = globalObject => {
-  const wrapper = makeWrapper(globalObject);
+exports.new = (globalObject, newTarget) => {
+  const wrapper = makeWrapper(globalObject, newTarget);
 
   exports._internalSetup(wrapper, globalObject);
   Object.defineProperty(wrapper, implSymbol, {
@@ -89,25 +89,26 @@ exports.install = (globalObject, globalNames) => {
     return;
   }
 
-  if (globalObject.Event === undefined) {
-    throw new Error("Internal error: attempting to evaluate UIEvent before Event");
-  }
+  const ctorRegistry = utils.initCtorRegistry(globalObject);
   class UIEvent extends globalObject.Event {
     constructor(type) {
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to construct 'UIEvent': 1 argument required, but only " + arguments.length + " present."
+        throw new globalObject.TypeError(
+          `Failed to construct 'UIEvent': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
-        curArg = conversions["DOMString"](curArg, { context: "Failed to construct 'UIEvent': parameter 1" });
+        curArg = conversions["DOMString"](curArg, {
+          context: "Failed to construct 'UIEvent': parameter 1",
+          globals: globalObject
+        });
         args.push(curArg);
       }
       {
         let curArg = arguments[1];
-        curArg = UIEventInit.convert(curArg, { context: "Failed to construct 'UIEvent': parameter 2" });
+        curArg = UIEventInit.convert(globalObject, curArg, { context: "Failed to construct 'UIEvent': parameter 2" });
         args.push(curArg);
       }
       return exports.setup(Object.create(new.target.prototype), globalObject, args);
@@ -116,21 +117,20 @@ exports.install = (globalObject, globalNames) => {
     initUIEvent(typeArg) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'initUIEvent' called on an object that is not a valid instance of UIEvent.");
+        throw new globalObject.TypeError("'initUIEvent' called on an object that is not a valid instance of UIEvent.");
       }
 
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to execute 'initUIEvent' on 'UIEvent': 1 argument required, but only " +
-            arguments.length +
-            " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'initUIEvent' on 'UIEvent': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
         curArg = conversions["DOMString"](curArg, {
-          context: "Failed to execute 'initUIEvent' on 'UIEvent': parameter 1"
+          context: "Failed to execute 'initUIEvent' on 'UIEvent': parameter 1",
+          globals: globalObject
         });
         args.push(curArg);
       }
@@ -138,7 +138,8 @@ exports.install = (globalObject, globalNames) => {
         let curArg = arguments[1];
         if (curArg !== undefined) {
           curArg = conversions["boolean"](curArg, {
-            context: "Failed to execute 'initUIEvent' on 'UIEvent': parameter 2"
+            context: "Failed to execute 'initUIEvent' on 'UIEvent': parameter 2",
+            globals: globalObject
           });
         } else {
           curArg = false;
@@ -149,7 +150,8 @@ exports.install = (globalObject, globalNames) => {
         let curArg = arguments[2];
         if (curArg !== undefined) {
           curArg = conversions["boolean"](curArg, {
-            context: "Failed to execute 'initUIEvent' on 'UIEvent': parameter 3"
+            context: "Failed to execute 'initUIEvent' on 'UIEvent': parameter 3",
+            globals: globalObject
           });
         } else {
           curArg = false;
@@ -173,7 +175,8 @@ exports.install = (globalObject, globalNames) => {
         let curArg = arguments[4];
         if (curArg !== undefined) {
           curArg = conversions["long"](curArg, {
-            context: "Failed to execute 'initUIEvent' on 'UIEvent': parameter 5"
+            context: "Failed to execute 'initUIEvent' on 'UIEvent': parameter 5",
+            globals: globalObject
           });
         } else {
           curArg = 0;
@@ -187,7 +190,7 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get view' called on an object that is not a valid instance of UIEvent.");
+        throw new globalObject.TypeError("'get view' called on an object that is not a valid instance of UIEvent.");
       }
 
       return utils.tryWrapperForImpl(esValue[implSymbol]["view"]);
@@ -197,7 +200,7 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get detail' called on an object that is not a valid instance of UIEvent.");
+        throw new globalObject.TypeError("'get detail' called on an object that is not a valid instance of UIEvent.");
       }
 
       return esValue[implSymbol]["detail"];
@@ -207,7 +210,7 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get which' called on an object that is not a valid instance of UIEvent.");
+        throw new globalObject.TypeError("'get which' called on an object that is not a valid instance of UIEvent.");
       }
 
       return esValue[implSymbol]["which"];
@@ -220,10 +223,7 @@ exports.install = (globalObject, globalNames) => {
     which: { enumerable: true },
     [Symbol.toStringTag]: { value: "UIEvent", configurable: true }
   });
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    globalObject[ctorRegistrySymbol] = Object.create(null);
-  }
-  globalObject[ctorRegistrySymbol][interfaceName] = UIEvent;
+  ctorRegistry[interfaceName] = UIEvent;
 
   Object.defineProperty(globalObject, interfaceName, {
     configurable: true,

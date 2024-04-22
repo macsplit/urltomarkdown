@@ -17,24 +17,24 @@ exports.is = value => {
 exports.isImpl = value => {
   return utils.isObject(value) && value instanceof Impl.implementation;
 };
-exports.convert = (value, { context = "The provided value" } = {}) => {
+exports.convert = (globalObject, value, { context = "The provided value" } = {}) => {
   if (exports.is(value)) {
     return utils.implForWrapper(value);
   }
-  throw new TypeError(`${context} is not of type 'CharacterData'.`);
+  throw new globalObject.TypeError(`${context} is not of type 'CharacterData'.`);
 };
 
-function makeWrapper(globalObject) {
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    throw new Error("Internal error: invalid global object");
+function makeWrapper(globalObject, newTarget) {
+  let proto;
+  if (newTarget !== undefined) {
+    proto = newTarget.prototype;
   }
 
-  const ctor = globalObject[ctorRegistrySymbol]["CharacterData"];
-  if (ctor === undefined) {
-    throw new Error("Internal error: constructor CharacterData is not installed on the passed global object");
+  if (!utils.isObject(proto)) {
+    proto = globalObject[ctorRegistrySymbol]["CharacterData"].prototype;
   }
 
-  return Object.create(ctor.prototype);
+  return Object.create(proto);
 }
 
 exports.create = (globalObject, constructorArgs, privateData) => {
@@ -67,8 +67,8 @@ exports.setup = (wrapper, globalObject, constructorArgs = [], privateData = {}) 
   return wrapper;
 };
 
-exports.new = globalObject => {
-  const wrapper = makeWrapper(globalObject);
+exports.new = (globalObject, newTarget) => {
+  const wrapper = makeWrapper(globalObject, newTarget);
 
   exports._internalSetup(wrapper, globalObject);
   Object.defineProperty(wrapper, implSymbol, {
@@ -90,39 +90,39 @@ exports.install = (globalObject, globalNames) => {
     return;
   }
 
-  if (globalObject.Node === undefined) {
-    throw new Error("Internal error: attempting to evaluate CharacterData before Node");
-  }
+  const ctorRegistry = utils.initCtorRegistry(globalObject);
   class CharacterData extends globalObject.Node {
     constructor() {
-      throw new TypeError("Illegal constructor");
+      throw new globalObject.TypeError("Illegal constructor");
     }
 
     substringData(offset, count) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'substringData' called on an object that is not a valid instance of CharacterData.");
+        throw new globalObject.TypeError(
+          "'substringData' called on an object that is not a valid instance of CharacterData."
+        );
       }
 
       if (arguments.length < 2) {
-        throw new TypeError(
-          "Failed to execute 'substringData' on 'CharacterData': 2 arguments required, but only " +
-            arguments.length +
-            " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'substringData' on 'CharacterData': 2 arguments required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
         curArg = conversions["unsigned long"](curArg, {
-          context: "Failed to execute 'substringData' on 'CharacterData': parameter 1"
+          context: "Failed to execute 'substringData' on 'CharacterData': parameter 1",
+          globals: globalObject
         });
         args.push(curArg);
       }
       {
         let curArg = arguments[1];
         curArg = conversions["unsigned long"](curArg, {
-          context: "Failed to execute 'substringData' on 'CharacterData': parameter 2"
+          context: "Failed to execute 'substringData' on 'CharacterData': parameter 2",
+          globals: globalObject
         });
         args.push(curArg);
       }
@@ -132,21 +132,22 @@ exports.install = (globalObject, globalNames) => {
     appendData(data) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'appendData' called on an object that is not a valid instance of CharacterData.");
+        throw new globalObject.TypeError(
+          "'appendData' called on an object that is not a valid instance of CharacterData."
+        );
       }
 
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to execute 'appendData' on 'CharacterData': 1 argument required, but only " +
-            arguments.length +
-            " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'appendData' on 'CharacterData': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
         curArg = conversions["DOMString"](curArg, {
-          context: "Failed to execute 'appendData' on 'CharacterData': parameter 1"
+          context: "Failed to execute 'appendData' on 'CharacterData': parameter 1",
+          globals: globalObject
         });
         args.push(curArg);
       }
@@ -156,28 +157,30 @@ exports.install = (globalObject, globalNames) => {
     insertData(offset, data) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'insertData' called on an object that is not a valid instance of CharacterData.");
+        throw new globalObject.TypeError(
+          "'insertData' called on an object that is not a valid instance of CharacterData."
+        );
       }
 
       if (arguments.length < 2) {
-        throw new TypeError(
-          "Failed to execute 'insertData' on 'CharacterData': 2 arguments required, but only " +
-            arguments.length +
-            " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'insertData' on 'CharacterData': 2 arguments required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
         curArg = conversions["unsigned long"](curArg, {
-          context: "Failed to execute 'insertData' on 'CharacterData': parameter 1"
+          context: "Failed to execute 'insertData' on 'CharacterData': parameter 1",
+          globals: globalObject
         });
         args.push(curArg);
       }
       {
         let curArg = arguments[1];
         curArg = conversions["DOMString"](curArg, {
-          context: "Failed to execute 'insertData' on 'CharacterData': parameter 2"
+          context: "Failed to execute 'insertData' on 'CharacterData': parameter 2",
+          globals: globalObject
         });
         args.push(curArg);
       }
@@ -187,28 +190,30 @@ exports.install = (globalObject, globalNames) => {
     deleteData(offset, count) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'deleteData' called on an object that is not a valid instance of CharacterData.");
+        throw new globalObject.TypeError(
+          "'deleteData' called on an object that is not a valid instance of CharacterData."
+        );
       }
 
       if (arguments.length < 2) {
-        throw new TypeError(
-          "Failed to execute 'deleteData' on 'CharacterData': 2 arguments required, but only " +
-            arguments.length +
-            " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'deleteData' on 'CharacterData': 2 arguments required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
         curArg = conversions["unsigned long"](curArg, {
-          context: "Failed to execute 'deleteData' on 'CharacterData': parameter 1"
+          context: "Failed to execute 'deleteData' on 'CharacterData': parameter 1",
+          globals: globalObject
         });
         args.push(curArg);
       }
       {
         let curArg = arguments[1];
         curArg = conversions["unsigned long"](curArg, {
-          context: "Failed to execute 'deleteData' on 'CharacterData': parameter 2"
+          context: "Failed to execute 'deleteData' on 'CharacterData': parameter 2",
+          globals: globalObject
         });
         args.push(curArg);
       }
@@ -218,35 +223,38 @@ exports.install = (globalObject, globalNames) => {
     replaceData(offset, count, data) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'replaceData' called on an object that is not a valid instance of CharacterData.");
+        throw new globalObject.TypeError(
+          "'replaceData' called on an object that is not a valid instance of CharacterData."
+        );
       }
 
       if (arguments.length < 3) {
-        throw new TypeError(
-          "Failed to execute 'replaceData' on 'CharacterData': 3 arguments required, but only " +
-            arguments.length +
-            " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'replaceData' on 'CharacterData': 3 arguments required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
         curArg = conversions["unsigned long"](curArg, {
-          context: "Failed to execute 'replaceData' on 'CharacterData': parameter 1"
+          context: "Failed to execute 'replaceData' on 'CharacterData': parameter 1",
+          globals: globalObject
         });
         args.push(curArg);
       }
       {
         let curArg = arguments[1];
         curArg = conversions["unsigned long"](curArg, {
-          context: "Failed to execute 'replaceData' on 'CharacterData': parameter 2"
+          context: "Failed to execute 'replaceData' on 'CharacterData': parameter 2",
+          globals: globalObject
         });
         args.push(curArg);
       }
       {
         let curArg = arguments[2];
         curArg = conversions["DOMString"](curArg, {
-          context: "Failed to execute 'replaceData' on 'CharacterData': parameter 3"
+          context: "Failed to execute 'replaceData' on 'CharacterData': parameter 3",
+          globals: globalObject
         });
         args.push(curArg);
       }
@@ -256,7 +264,7 @@ exports.install = (globalObject, globalNames) => {
     before() {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'before' called on an object that is not a valid instance of CharacterData.");
+        throw new globalObject.TypeError("'before' called on an object that is not a valid instance of CharacterData.");
       }
       const args = [];
       for (let i = 0; i < arguments.length; i++) {
@@ -265,7 +273,8 @@ exports.install = (globalObject, globalNames) => {
           curArg = utils.implForWrapper(curArg);
         } else {
           curArg = conversions["DOMString"](curArg, {
-            context: "Failed to execute 'before' on 'CharacterData': parameter " + (i + 1)
+            context: "Failed to execute 'before' on 'CharacterData': parameter " + (i + 1),
+            globals: globalObject
           });
         }
         args.push(curArg);
@@ -281,7 +290,7 @@ exports.install = (globalObject, globalNames) => {
     after() {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'after' called on an object that is not a valid instance of CharacterData.");
+        throw new globalObject.TypeError("'after' called on an object that is not a valid instance of CharacterData.");
       }
       const args = [];
       for (let i = 0; i < arguments.length; i++) {
@@ -290,7 +299,8 @@ exports.install = (globalObject, globalNames) => {
           curArg = utils.implForWrapper(curArg);
         } else {
           curArg = conversions["DOMString"](curArg, {
-            context: "Failed to execute 'after' on 'CharacterData': parameter " + (i + 1)
+            context: "Failed to execute 'after' on 'CharacterData': parameter " + (i + 1),
+            globals: globalObject
           });
         }
         args.push(curArg);
@@ -306,7 +316,9 @@ exports.install = (globalObject, globalNames) => {
     replaceWith() {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'replaceWith' called on an object that is not a valid instance of CharacterData.");
+        throw new globalObject.TypeError(
+          "'replaceWith' called on an object that is not a valid instance of CharacterData."
+        );
       }
       const args = [];
       for (let i = 0; i < arguments.length; i++) {
@@ -315,7 +327,8 @@ exports.install = (globalObject, globalNames) => {
           curArg = utils.implForWrapper(curArg);
         } else {
           curArg = conversions["DOMString"](curArg, {
-            context: "Failed to execute 'replaceWith' on 'CharacterData': parameter " + (i + 1)
+            context: "Failed to execute 'replaceWith' on 'CharacterData': parameter " + (i + 1),
+            globals: globalObject
           });
         }
         args.push(curArg);
@@ -331,7 +344,7 @@ exports.install = (globalObject, globalNames) => {
     remove() {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'remove' called on an object that is not a valid instance of CharacterData.");
+        throw new globalObject.TypeError("'remove' called on an object that is not a valid instance of CharacterData.");
       }
 
       ceReactionsPreSteps_helpers_custom_elements(globalObject);
@@ -346,7 +359,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get data' called on an object that is not a valid instance of CharacterData.");
+        throw new globalObject.TypeError(
+          "'get data' called on an object that is not a valid instance of CharacterData."
+        );
       }
 
       return esValue[implSymbol]["data"];
@@ -356,11 +371,14 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'set data' called on an object that is not a valid instance of CharacterData.");
+        throw new globalObject.TypeError(
+          "'set data' called on an object that is not a valid instance of CharacterData."
+        );
       }
 
       V = conversions["DOMString"](V, {
         context: "Failed to set the 'data' property on 'CharacterData': The provided value",
+        globals: globalObject,
         treatNullAsEmptyString: true
       });
 
@@ -371,7 +389,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get length' called on an object that is not a valid instance of CharacterData.");
+        throw new globalObject.TypeError(
+          "'get length' called on an object that is not a valid instance of CharacterData."
+        );
       }
 
       return esValue[implSymbol]["length"];
@@ -381,7 +401,7 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError(
+        throw new globalObject.TypeError(
           "'get previousElementSibling' called on an object that is not a valid instance of CharacterData."
         );
       }
@@ -393,7 +413,7 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError(
+        throw new globalObject.TypeError(
           "'get nextElementSibling' called on an object that is not a valid instance of CharacterData."
         );
       }
@@ -421,10 +441,7 @@ exports.install = (globalObject, globalNames) => {
       configurable: true
     }
   });
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    globalObject[ctorRegistrySymbol] = Object.create(null);
-  }
-  globalObject[ctorRegistrySymbol][interfaceName] = CharacterData;
+  ctorRegistry[interfaceName] = CharacterData;
 
   Object.defineProperty(globalObject, interfaceName, {
     configurable: true,

@@ -7,18 +7,18 @@ const parseDataURL = require("data-urls");
 
 const textExample = parseDataURL("data:,Hello%2C%20World!");
 console.log(textExample.mimeType.toString()); // "text/plain;charset=US-ASCII"
-console.log(textExample.body.toString());     // "Hello, World!"
+console.log(textExample.body);                // Uint8Array(13) [ 72, 101, 108, 108, 111, 44, … ]
 
-const htmlExample = dataURL("data:text/html,%3Ch1%3EHello%2C%20World!%3C%2Fh1%3E");
+const htmlExample = parseDataURL("data:text/html,%3Ch1%3EHello%2C%20World!%3C%2Fh1%3E");
 console.log(htmlExample.mimeType.toString()); // "text/html"
-console.log(htmlExample.body.toString());     // <h1>Hello, World!</h1>
+console.log(htmlExample.body);                // Uint8Array(22) [ 60, 104, 49, 62, 72, 101, … ]
 
 const pngExample = parseDataURL("data:image/png;base64,iVBORw0KGgoAAA" +
                                 "ANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4" +
                                 "//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU" +
                                 "5ErkJggg==");
 console.log(pngExample.mimeType.toString()); // "image/png"
-console.log(pngExample.body);                // <Buffer 89 50 4e 47 0d ... >
+console.log(pngExample.body);                // Uint8Array(85) [ 137, 80, 78, 71, 13, 10, … ]
 ```
 
 ## API
@@ -26,28 +26,26 @@ console.log(pngExample.body);                // <Buffer 89 50 4e 47 0d ... >
 This package's main module's default export is a function that accepts a string and returns a `{ mimeType, body }` object, or `null` if the result cannot be parsed as a `data:` URL.
 
 - The `mimeType` property is an instance of [whatwg-mimetype](https://www.npmjs.com/package/whatwg-mimetype)'s `MIMEType` class.
-- The `body` property is a Node.js [`Buffer`](https://nodejs.org/docs/latest/api/buffer.html) instance.
+- The `body` property is a `Uint8Array` instance.
 
-As shown in the examples above, both of these have useful `toString()` methods for manipulating them as string values. However…
+As shown in the examples above, you can easily get a stringified version of the MIME type using its `toString()` method. Read on for more on getting the stringified version of the body.
 
-### A word of caution on string decoding
+### Decoding the body
 
-Because Node.js's `Buffer.prototype.toString()` assumes a UTF-8 encoding, simply doing `dataURL.body.toString()` may not work correctly if the `data:` URL's contents were not originally written in UTF-8. This includes if the encoding is "US-ASCII", [aka windows-1252](https://encoding.spec.whatwg.org/#names-and-labels), which is notable for being the default in many cases.
-
-A more complete decoding example would use the [whatwg-encoding](https://www.npmjs.com/package/whatwg-encoding) package as follows:
+To decode the body bytes of a parsed data URL, you'll need to use the `charset` parameter of the MIME type, if any. This contains an encoding [label](https://encoding.spec.whatwg.org/#label); there are [various possible labels](https://encoding.spec.whatwg.org/#names-and-labels) for a given encoding. We suggest using the [whatwg-encoding](https://www.npmjs.com/package/whatwg-encoding) package as follows:
 
 ```js
 const parseDataURL = require("data-urls");
 const { labelToName, decode } = require("whatwg-encoding");
 
 const dataURL = parseDataURL(arbitraryString);
-const encodingName = labelToName(dataURL.mimeType.parameters.get("charset"));
+
+// If there's no charset parameter, let's just hope it's UTF-8; that seems like a good guess.
+const encodingName = labelToName(dataURL.mimeType.parameters.get("charset") || "utf-8");
 const bodyDecoded = decode(dataURL.body, encodingName);
 ```
 
-For example, given an `arbitraryString` of `data:,Hello!`, this will produce a `bodyDecoded` of `"Hello!"`, as expected. But given an `arbitraryString` of `"data:,Héllo!"`, this will correctly produce a `bodyDecoded` of `"Héllo!"`, whereas just doing `dataURL.body.toString()` will give back `"HÃ©llo!"`.
-
-In summary, only use `dataURL.body.toString()` when you are very certain your data is inside the ASCII range (i.e. code points within the range U+0000 to U+007F).
+This is especially important since the default, if no parseable MIME type is given, is "US-ASCII", [aka windows-1252](https://encoding.spec.whatwg.org/#names-and-labels), not UTF-8 like you might asume. So for example given an `arbitraryString` of `"data:,Héllo!"`, the above code snippet will correctly produce a `bodyDecoded` of `"Héllo!"` by using the windows-1252 decoder, whereas if you used a UTF-8 decoder you'd get back `"HÃ©llo!"`.
 
 ### Advanced functionality: parsing from a URL record
 

@@ -14,24 +14,24 @@ exports.is = value => {
 exports.isImpl = value => {
   return utils.isObject(value) && value instanceof Impl.implementation;
 };
-exports.convert = (value, { context = "The provided value" } = {}) => {
+exports.convert = (globalObject, value, { context = "The provided value" } = {}) => {
   if (exports.is(value)) {
     return utils.implForWrapper(value);
   }
-  throw new TypeError(`${context} is not of type 'Screen'.`);
+  throw new globalObject.TypeError(`${context} is not of type 'Screen'.`);
 };
 
-function makeWrapper(globalObject) {
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    throw new Error("Internal error: invalid global object");
+function makeWrapper(globalObject, newTarget) {
+  let proto;
+  if (newTarget !== undefined) {
+    proto = newTarget.prototype;
   }
 
-  const ctor = globalObject[ctorRegistrySymbol]["Screen"];
-  if (ctor === undefined) {
-    throw new Error("Internal error: constructor Screen is not installed on the passed global object");
+  if (!utils.isObject(proto)) {
+    proto = globalObject[ctorRegistrySymbol]["Screen"].prototype;
   }
 
-  return Object.create(ctor.prototype);
+  return Object.create(proto);
 }
 
 exports.create = (globalObject, constructorArgs, privateData) => {
@@ -62,8 +62,8 @@ exports.setup = (wrapper, globalObject, constructorArgs = [], privateData = {}) 
   return wrapper;
 };
 
-exports.new = globalObject => {
-  const wrapper = makeWrapper(globalObject);
+exports.new = (globalObject, newTarget) => {
+  const wrapper = makeWrapper(globalObject, newTarget);
 
   exports._internalSetup(wrapper, globalObject);
   Object.defineProperty(wrapper, implSymbol, {
@@ -84,16 +84,20 @@ exports.install = (globalObject, globalNames) => {
   if (!globalNames.some(globalName => exposed.has(globalName))) {
     return;
   }
+
+  const ctorRegistry = utils.initCtorRegistry(globalObject);
   class Screen {
     constructor() {
-      throw new TypeError("Illegal constructor");
+      throw new globalObject.TypeError("Illegal constructor");
     }
 
     get availWidth() {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get availWidth' called on an object that is not a valid instance of Screen.");
+        throw new globalObject.TypeError(
+          "'get availWidth' called on an object that is not a valid instance of Screen."
+        );
       }
 
       return esValue[implSymbol]["availWidth"];
@@ -103,7 +107,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get availHeight' called on an object that is not a valid instance of Screen.");
+        throw new globalObject.TypeError(
+          "'get availHeight' called on an object that is not a valid instance of Screen."
+        );
       }
 
       return esValue[implSymbol]["availHeight"];
@@ -113,7 +119,7 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get width' called on an object that is not a valid instance of Screen.");
+        throw new globalObject.TypeError("'get width' called on an object that is not a valid instance of Screen.");
       }
 
       return esValue[implSymbol]["width"];
@@ -123,7 +129,7 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get height' called on an object that is not a valid instance of Screen.");
+        throw new globalObject.TypeError("'get height' called on an object that is not a valid instance of Screen.");
       }
 
       return esValue[implSymbol]["height"];
@@ -133,7 +139,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get colorDepth' called on an object that is not a valid instance of Screen.");
+        throw new globalObject.TypeError(
+          "'get colorDepth' called on an object that is not a valid instance of Screen."
+        );
       }
 
       return esValue[implSymbol]["colorDepth"];
@@ -143,7 +151,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get pixelDepth' called on an object that is not a valid instance of Screen.");
+        throw new globalObject.TypeError(
+          "'get pixelDepth' called on an object that is not a valid instance of Screen."
+        );
       }
 
       return esValue[implSymbol]["pixelDepth"];
@@ -158,10 +168,7 @@ exports.install = (globalObject, globalNames) => {
     pixelDepth: { enumerable: true },
     [Symbol.toStringTag]: { value: "Screen", configurable: true }
   });
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    globalObject[ctorRegistrySymbol] = Object.create(null);
-  }
-  globalObject[ctorRegistrySymbol][interfaceName] = Screen;
+  ctorRegistry[interfaceName] = Screen;
 
   Object.defineProperty(globalObject, interfaceName, {
     configurable: true,

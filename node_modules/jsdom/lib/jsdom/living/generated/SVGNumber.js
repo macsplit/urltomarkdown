@@ -14,24 +14,24 @@ exports.is = value => {
 exports.isImpl = value => {
   return utils.isObject(value) && value instanceof Impl.implementation;
 };
-exports.convert = (value, { context = "The provided value" } = {}) => {
+exports.convert = (globalObject, value, { context = "The provided value" } = {}) => {
   if (exports.is(value)) {
     return utils.implForWrapper(value);
   }
-  throw new TypeError(`${context} is not of type 'SVGNumber'.`);
+  throw new globalObject.TypeError(`${context} is not of type 'SVGNumber'.`);
 };
 
-function makeWrapper(globalObject) {
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    throw new Error("Internal error: invalid global object");
+function makeWrapper(globalObject, newTarget) {
+  let proto;
+  if (newTarget !== undefined) {
+    proto = newTarget.prototype;
   }
 
-  const ctor = globalObject[ctorRegistrySymbol]["SVGNumber"];
-  if (ctor === undefined) {
-    throw new Error("Internal error: constructor SVGNumber is not installed on the passed global object");
+  if (!utils.isObject(proto)) {
+    proto = globalObject[ctorRegistrySymbol]["SVGNumber"].prototype;
   }
 
-  return Object.create(ctor.prototype);
+  return Object.create(proto);
 }
 
 exports.create = (globalObject, constructorArgs, privateData) => {
@@ -62,8 +62,8 @@ exports.setup = (wrapper, globalObject, constructorArgs = [], privateData = {}) 
   return wrapper;
 };
 
-exports.new = globalObject => {
-  const wrapper = makeWrapper(globalObject);
+exports.new = (globalObject, newTarget) => {
+  const wrapper = makeWrapper(globalObject, newTarget);
 
   exports._internalSetup(wrapper, globalObject);
   Object.defineProperty(wrapper, implSymbol, {
@@ -84,16 +84,18 @@ exports.install = (globalObject, globalNames) => {
   if (!globalNames.some(globalName => exposed.has(globalName))) {
     return;
   }
+
+  const ctorRegistry = utils.initCtorRegistry(globalObject);
   class SVGNumber {
     constructor() {
-      throw new TypeError("Illegal constructor");
+      throw new globalObject.TypeError("Illegal constructor");
     }
 
     get value() {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get value' called on an object that is not a valid instance of SVGNumber.");
+        throw new globalObject.TypeError("'get value' called on an object that is not a valid instance of SVGNumber.");
       }
 
       return esValue[implSymbol]["value"];
@@ -103,10 +105,13 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'set value' called on an object that is not a valid instance of SVGNumber.");
+        throw new globalObject.TypeError("'set value' called on an object that is not a valid instance of SVGNumber.");
       }
 
-      V = conversions["float"](V, { context: "Failed to set the 'value' property on 'SVGNumber': The provided value" });
+      V = conversions["float"](V, {
+        context: "Failed to set the 'value' property on 'SVGNumber': The provided value",
+        globals: globalObject
+      });
 
       esValue[implSymbol]["value"] = V;
     }
@@ -115,10 +120,7 @@ exports.install = (globalObject, globalNames) => {
     value: { enumerable: true },
     [Symbol.toStringTag]: { value: "SVGNumber", configurable: true }
   });
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    globalObject[ctorRegistrySymbol] = Object.create(null);
-  }
-  globalObject[ctorRegistrySymbol][interfaceName] = SVGNumber;
+  ctorRegistry[interfaceName] = SVGNumber;
 
   Object.defineProperty(globalObject, interfaceName, {
     configurable: true,

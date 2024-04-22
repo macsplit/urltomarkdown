@@ -5,14 +5,14 @@ const utils = require("./utils.js");
 
 const EventInit = require("./EventInit.js");
 
-exports._convertInherit = (obj, ret, { context = "The provided value" } = {}) => {
-  EventInit._convertInherit(obj, ret, { context });
+exports._convertInherit = (globalObject, obj, ret, { context = "The provided value" } = {}) => {
+  EventInit._convertInherit(globalObject, obj, ret, { context });
 
   {
     const key = "data";
     let value = obj === undefined || obj === null ? undefined : obj[key];
     if (value !== undefined) {
-      value = conversions["any"](value, { context: context + " has member 'data' that" });
+      value = conversions["any"](value, { context: context + " has member 'data' that", globals: globalObject });
 
       ret[key] = value;
     } else {
@@ -24,7 +24,10 @@ exports._convertInherit = (obj, ret, { context = "The provided value" } = {}) =>
     const key = "lastEventId";
     let value = obj === undefined || obj === null ? undefined : obj[key];
     if (value !== undefined) {
-      value = conversions["DOMString"](value, { context: context + " has member 'lastEventId' that" });
+      value = conversions["DOMString"](value, {
+        context: context + " has member 'lastEventId' that",
+        globals: globalObject
+      });
 
       ret[key] = value;
     } else {
@@ -36,7 +39,10 @@ exports._convertInherit = (obj, ret, { context = "The provided value" } = {}) =>
     const key = "origin";
     let value = obj === undefined || obj === null ? undefined : obj[key];
     if (value !== undefined) {
-      value = conversions["USVString"](value, { context: context + " has member 'origin' that" });
+      value = conversions["USVString"](value, {
+        context: context + " has member 'origin' that",
+        globals: globalObject
+      });
 
       ret[key] = value;
     } else {
@@ -49,7 +55,7 @@ exports._convertInherit = (obj, ret, { context = "The provided value" } = {}) =>
     let value = obj === undefined || obj === null ? undefined : obj[key];
     if (value !== undefined) {
       if (!utils.isObject(value)) {
-        throw new TypeError(context + " has member 'ports' that" + " is not an iterable object.");
+        throw new globalObject.TypeError(context + " has member 'ports' that" + " is not an iterable object.");
       } else {
         const V = [];
         const tmp = value;
@@ -83,12 +89,12 @@ exports._convertInherit = (obj, ret, { context = "The provided value" } = {}) =>
   }
 };
 
-exports.convert = function convert(obj, { context = "The provided value" } = {}) {
+exports.convert = (globalObject, obj, { context = "The provided value" } = {}) => {
   if (obj !== undefined && typeof obj !== "object" && typeof obj !== "function") {
-    throw new TypeError(`${context} is not an object.`);
+    throw new globalObject.TypeError(`${context} is not an object.`);
   }
 
   const ret = Object.create(null);
-  exports._convertInherit(obj, ret, { context });
+  exports._convertInherit(globalObject, obj, ret, { context });
   return ret;
 };

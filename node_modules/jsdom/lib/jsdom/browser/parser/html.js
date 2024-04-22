@@ -18,32 +18,6 @@ const {
   customElementReactionsStack, invokeCEReactions, lookupCEDefinition
 } = require("../../living/helpers/custom-elements");
 
-// Horrible monkey-patch to implement https://github.com/inikulin/parse5/issues/237 and
-// https://github.com/inikulin/parse5/issues/285.
-const OpenElementStack = require("parse5/lib/parser/open-element-stack");
-
-const openElementStackOriginalPush = OpenElementStack.prototype.push;
-OpenElementStack.prototype.push = function (...args) {
-  openElementStackOriginalPush.apply(this, args);
-  this.treeAdapter._currentElement = this.current;
-
-  const after = this.items[this.stackTop];
-  if (after._pushedOnStackOfOpenElements) {
-    after._pushedOnStackOfOpenElements();
-  }
-};
-
-const openElementStackOriginalPop = OpenElementStack.prototype.pop;
-OpenElementStack.prototype.pop = function (...args) {
-  const before = this.items[this.stackTop];
-
-  openElementStackOriginalPop.apply(this, args);
-  this.treeAdapter._currentElement = this.current;
-
-  if (before._poppedOffStackOfOpenElements) {
-    before._poppedOffStackOfOpenElements();
-  }
-};
 
 class JSDOMParse5Adapter {
   constructor(documentImpl, options = {}) {
@@ -52,7 +26,7 @@ class JSDOMParse5Adapter {
     this._fragment = options.fragment || false;
 
     // Since the createElement hook doesn't provide the parent element, we keep track of this using _currentElement:
-    // https://github.com/inikulin/parse5/issues/285. See above horrible monkey-patch for how this is maintained.
+    // https://github.com/inikulin/parse5/issues/285.
     this._currentElement = undefined;
   }
 
@@ -190,6 +164,16 @@ class JSDOMParse5Adapter {
       attributes.setAttributeValue(element, attr.name, attr.value, prefix, attr.namespace);
     }
   }
+
+  onItemPush(after) {
+    this._currentElement = after;
+    after._pushedOnStackOfOpenElements?.();
+  }
+
+  onItemPop(before, newTop) {
+    this._currentElement = newTop;
+    before._poppedOffStackOfOpenElements?.();
+  }
 }
 
 // Assign shared adapters with serializer.
@@ -202,6 +186,7 @@ function parseFragment(markup, contextElement) {
 
   const config = {
     ...ownerDocument._parseOptions,
+    sourceCodeLocationInfo: false,
     treeAdapter: new JSDOMParse5Adapter(ownerDocument, { fragment: true })
   };
 

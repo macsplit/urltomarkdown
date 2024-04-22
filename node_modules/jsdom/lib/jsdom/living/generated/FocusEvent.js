@@ -16,24 +16,24 @@ exports.is = value => {
 exports.isImpl = value => {
   return utils.isObject(value) && value instanceof Impl.implementation;
 };
-exports.convert = (value, { context = "The provided value" } = {}) => {
+exports.convert = (globalObject, value, { context = "The provided value" } = {}) => {
   if (exports.is(value)) {
     return utils.implForWrapper(value);
   }
-  throw new TypeError(`${context} is not of type 'FocusEvent'.`);
+  throw new globalObject.TypeError(`${context} is not of type 'FocusEvent'.`);
 };
 
-function makeWrapper(globalObject) {
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    throw new Error("Internal error: invalid global object");
+function makeWrapper(globalObject, newTarget) {
+  let proto;
+  if (newTarget !== undefined) {
+    proto = newTarget.prototype;
   }
 
-  const ctor = globalObject[ctorRegistrySymbol]["FocusEvent"];
-  if (ctor === undefined) {
-    throw new Error("Internal error: constructor FocusEvent is not installed on the passed global object");
+  if (!utils.isObject(proto)) {
+    proto = globalObject[ctorRegistrySymbol]["FocusEvent"].prototype;
   }
 
-  return Object.create(ctor.prototype);
+  return Object.create(proto);
 }
 
 exports.create = (globalObject, constructorArgs, privateData) => {
@@ -66,8 +66,8 @@ exports.setup = (wrapper, globalObject, constructorArgs = [], privateData = {}) 
   return wrapper;
 };
 
-exports.new = globalObject => {
-  const wrapper = makeWrapper(globalObject);
+exports.new = (globalObject, newTarget) => {
+  const wrapper = makeWrapper(globalObject, newTarget);
 
   exports._internalSetup(wrapper, globalObject);
   Object.defineProperty(wrapper, implSymbol, {
@@ -89,25 +89,28 @@ exports.install = (globalObject, globalNames) => {
     return;
   }
 
-  if (globalObject.UIEvent === undefined) {
-    throw new Error("Internal error: attempting to evaluate FocusEvent before UIEvent");
-  }
+  const ctorRegistry = utils.initCtorRegistry(globalObject);
   class FocusEvent extends globalObject.UIEvent {
     constructor(type) {
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to construct 'FocusEvent': 1 argument required, but only " + arguments.length + " present."
+        throw new globalObject.TypeError(
+          `Failed to construct 'FocusEvent': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
-        curArg = conversions["DOMString"](curArg, { context: "Failed to construct 'FocusEvent': parameter 1" });
+        curArg = conversions["DOMString"](curArg, {
+          context: "Failed to construct 'FocusEvent': parameter 1",
+          globals: globalObject
+        });
         args.push(curArg);
       }
       {
         let curArg = arguments[1];
-        curArg = FocusEventInit.convert(curArg, { context: "Failed to construct 'FocusEvent': parameter 2" });
+        curArg = FocusEventInit.convert(globalObject, curArg, {
+          context: "Failed to construct 'FocusEvent': parameter 2"
+        });
         args.push(curArg);
       }
       return exports.setup(Object.create(new.target.prototype), globalObject, args);
@@ -117,7 +120,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get relatedTarget' called on an object that is not a valid instance of FocusEvent.");
+        throw new globalObject.TypeError(
+          "'get relatedTarget' called on an object that is not a valid instance of FocusEvent."
+        );
       }
 
       return utils.tryWrapperForImpl(esValue[implSymbol]["relatedTarget"]);
@@ -127,10 +132,7 @@ exports.install = (globalObject, globalNames) => {
     relatedTarget: { enumerable: true },
     [Symbol.toStringTag]: { value: "FocusEvent", configurable: true }
   });
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    globalObject[ctorRegistrySymbol] = Object.create(null);
-  }
-  globalObject[ctorRegistrySymbol][interfaceName] = FocusEvent;
+  ctorRegistry[interfaceName] = FocusEvent;
 
   Object.defineProperty(globalObject, interfaceName, {
     configurable: true,

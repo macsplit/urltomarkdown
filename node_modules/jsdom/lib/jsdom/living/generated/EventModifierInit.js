@@ -5,14 +5,14 @@ const utils = require("./utils.js");
 
 const UIEventInit = require("./UIEventInit.js");
 
-exports._convertInherit = (obj, ret, { context = "The provided value" } = {}) => {
-  UIEventInit._convertInherit(obj, ret, { context });
+exports._convertInherit = (globalObject, obj, ret, { context = "The provided value" } = {}) => {
+  UIEventInit._convertInherit(globalObject, obj, ret, { context });
 
   {
     const key = "altKey";
     let value = obj === undefined || obj === null ? undefined : obj[key];
     if (value !== undefined) {
-      value = conversions["boolean"](value, { context: context + " has member 'altKey' that" });
+      value = conversions["boolean"](value, { context: context + " has member 'altKey' that", globals: globalObject });
 
       ret[key] = value;
     } else {
@@ -24,7 +24,7 @@ exports._convertInherit = (obj, ret, { context = "The provided value" } = {}) =>
     const key = "ctrlKey";
     let value = obj === undefined || obj === null ? undefined : obj[key];
     if (value !== undefined) {
-      value = conversions["boolean"](value, { context: context + " has member 'ctrlKey' that" });
+      value = conversions["boolean"](value, { context: context + " has member 'ctrlKey' that", globals: globalObject });
 
       ret[key] = value;
     } else {
@@ -36,7 +36,7 @@ exports._convertInherit = (obj, ret, { context = "The provided value" } = {}) =>
     const key = "metaKey";
     let value = obj === undefined || obj === null ? undefined : obj[key];
     if (value !== undefined) {
-      value = conversions["boolean"](value, { context: context + " has member 'metaKey' that" });
+      value = conversions["boolean"](value, { context: context + " has member 'metaKey' that", globals: globalObject });
 
       ret[key] = value;
     } else {
@@ -48,7 +48,10 @@ exports._convertInherit = (obj, ret, { context = "The provided value" } = {}) =>
     const key = "modifierAltGraph";
     let value = obj === undefined || obj === null ? undefined : obj[key];
     if (value !== undefined) {
-      value = conversions["boolean"](value, { context: context + " has member 'modifierAltGraph' that" });
+      value = conversions["boolean"](value, {
+        context: context + " has member 'modifierAltGraph' that",
+        globals: globalObject
+      });
 
       ret[key] = value;
     } else {
@@ -60,7 +63,10 @@ exports._convertInherit = (obj, ret, { context = "The provided value" } = {}) =>
     const key = "modifierCapsLock";
     let value = obj === undefined || obj === null ? undefined : obj[key];
     if (value !== undefined) {
-      value = conversions["boolean"](value, { context: context + " has member 'modifierCapsLock' that" });
+      value = conversions["boolean"](value, {
+        context: context + " has member 'modifierCapsLock' that",
+        globals: globalObject
+      });
 
       ret[key] = value;
     } else {
@@ -72,7 +78,10 @@ exports._convertInherit = (obj, ret, { context = "The provided value" } = {}) =>
     const key = "modifierFn";
     let value = obj === undefined || obj === null ? undefined : obj[key];
     if (value !== undefined) {
-      value = conversions["boolean"](value, { context: context + " has member 'modifierFn' that" });
+      value = conversions["boolean"](value, {
+        context: context + " has member 'modifierFn' that",
+        globals: globalObject
+      });
 
       ret[key] = value;
     } else {
@@ -84,7 +93,10 @@ exports._convertInherit = (obj, ret, { context = "The provided value" } = {}) =>
     const key = "modifierFnLock";
     let value = obj === undefined || obj === null ? undefined : obj[key];
     if (value !== undefined) {
-      value = conversions["boolean"](value, { context: context + " has member 'modifierFnLock' that" });
+      value = conversions["boolean"](value, {
+        context: context + " has member 'modifierFnLock' that",
+        globals: globalObject
+      });
 
       ret[key] = value;
     } else {
@@ -96,7 +108,10 @@ exports._convertInherit = (obj, ret, { context = "The provided value" } = {}) =>
     const key = "modifierHyper";
     let value = obj === undefined || obj === null ? undefined : obj[key];
     if (value !== undefined) {
-      value = conversions["boolean"](value, { context: context + " has member 'modifierHyper' that" });
+      value = conversions["boolean"](value, {
+        context: context + " has member 'modifierHyper' that",
+        globals: globalObject
+      });
 
       ret[key] = value;
     } else {
@@ -108,7 +123,10 @@ exports._convertInherit = (obj, ret, { context = "The provided value" } = {}) =>
     const key = "modifierNumLock";
     let value = obj === undefined || obj === null ? undefined : obj[key];
     if (value !== undefined) {
-      value = conversions["boolean"](value, { context: context + " has member 'modifierNumLock' that" });
+      value = conversions["boolean"](value, {
+        context: context + " has member 'modifierNumLock' that",
+        globals: globalObject
+      });
 
       ret[key] = value;
     } else {
@@ -120,7 +138,10 @@ exports._convertInherit = (obj, ret, { context = "The provided value" } = {}) =>
     const key = "modifierScrollLock";
     let value = obj === undefined || obj === null ? undefined : obj[key];
     if (value !== undefined) {
-      value = conversions["boolean"](value, { context: context + " has member 'modifierScrollLock' that" });
+      value = conversions["boolean"](value, {
+        context: context + " has member 'modifierScrollLock' that",
+        globals: globalObject
+      });
 
       ret[key] = value;
     } else {
@@ -132,7 +153,10 @@ exports._convertInherit = (obj, ret, { context = "The provided value" } = {}) =>
     const key = "modifierSuper";
     let value = obj === undefined || obj === null ? undefined : obj[key];
     if (value !== undefined) {
-      value = conversions["boolean"](value, { context: context + " has member 'modifierSuper' that" });
+      value = conversions["boolean"](value, {
+        context: context + " has member 'modifierSuper' that",
+        globals: globalObject
+      });
 
       ret[key] = value;
     } else {
@@ -144,7 +168,10 @@ exports._convertInherit = (obj, ret, { context = "The provided value" } = {}) =>
     const key = "modifierSymbol";
     let value = obj === undefined || obj === null ? undefined : obj[key];
     if (value !== undefined) {
-      value = conversions["boolean"](value, { context: context + " has member 'modifierSymbol' that" });
+      value = conversions["boolean"](value, {
+        context: context + " has member 'modifierSymbol' that",
+        globals: globalObject
+      });
 
       ret[key] = value;
     } else {
@@ -156,7 +183,10 @@ exports._convertInherit = (obj, ret, { context = "The provided value" } = {}) =>
     const key = "modifierSymbolLock";
     let value = obj === undefined || obj === null ? undefined : obj[key];
     if (value !== undefined) {
-      value = conversions["boolean"](value, { context: context + " has member 'modifierSymbolLock' that" });
+      value = conversions["boolean"](value, {
+        context: context + " has member 'modifierSymbolLock' that",
+        globals: globalObject
+      });
 
       ret[key] = value;
     } else {
@@ -168,7 +198,10 @@ exports._convertInherit = (obj, ret, { context = "The provided value" } = {}) =>
     const key = "shiftKey";
     let value = obj === undefined || obj === null ? undefined : obj[key];
     if (value !== undefined) {
-      value = conversions["boolean"](value, { context: context + " has member 'shiftKey' that" });
+      value = conversions["boolean"](value, {
+        context: context + " has member 'shiftKey' that",
+        globals: globalObject
+      });
 
       ret[key] = value;
     } else {
@@ -177,12 +210,12 @@ exports._convertInherit = (obj, ret, { context = "The provided value" } = {}) =>
   }
 };
 
-exports.convert = function convert(obj, { context = "The provided value" } = {}) {
+exports.convert = (globalObject, obj, { context = "The provided value" } = {}) => {
   if (obj !== undefined && typeof obj !== "object" && typeof obj !== "function") {
-    throw new TypeError(`${context} is not an object.`);
+    throw new globalObject.TypeError(`${context} is not an object.`);
   }
 
   const ret = Object.create(null);
-  exports._convertInherit(obj, ret, { context });
+  exports._convertInherit(globalObject, obj, ret, { context });
   return ret;
 };

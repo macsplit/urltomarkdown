@@ -1,12 +1,7 @@
 "use strict";
 const MIMEType = require("whatwg-mimetype");
-const { parseURL, serializeURL } = require("whatwg-url");
-const {
-  stripLeadingAndTrailingASCIIWhitespace,
-  stringPercentDecode,
-  isomorphicDecode,
-  forgivingBase64Decode
-} = require("./utils.js");
+const { parseURL, serializeURL, percentDecodeString } = require("whatwg-url");
+const { stripLeadingAndTrailingASCIIWhitespace, isomorphicDecode, forgivingBase64Decode } = require("./utils.js");
 
 module.exports = stringInput => {
   const urlRecord = parseURL(stringInput);
@@ -42,10 +37,10 @@ module.exports.fromURLRecord = urlRecord => {
 
   const encodedBody = input.substring(position);
 
-  let body = stringPercentDecode(encodedBody);
+  let body = percentDecodeString(encodedBody);
 
   // Can't use /i regexp flag because it isn't restricted to ASCII.
-  const mimeTypeBase64MatchResult = /(.*); *[Bb][Aa][Ss][Ee]64$/.exec(mimeType);
+  const mimeTypeBase64MatchResult = /(.*); *[Bb][Aa][Ss][Ee]64$/u.exec(mimeType);
   if (mimeTypeBase64MatchResult) {
     const stringBody = isomorphicDecode(body);
     body = forgivingBase64Decode(stringBody);
@@ -57,7 +52,7 @@ module.exports.fromURLRecord = urlRecord => {
   }
 
   if (mimeType.startsWith(";")) {
-    mimeType = "text/plain" + mimeType;
+    mimeType = `text/plain${mimeType}`;
   }
 
   let mimeTypeRecord;

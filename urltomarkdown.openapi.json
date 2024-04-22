@@ -75,7 +75,7 @@
                 "properties": {
                   "url": {
                     "type": "string",
-                    "description": "The original URL of the web page, which is expected in either the request body or the query string."
+                    "description": "The original URL of the web page."
                   },
                   "html": {
                     "type": "string",
@@ -87,14 +87,6 @@
           }
         },
         "parameters": [
-          {
-            "in": "query",
-            "name": "url",
-            "description": "The original URL of the web page, which is expected in either the request body or the query string.",
-            "schema": {
-              "type": "string"
-            }
-          },
           {
             "in": "query",
             "name": "title",

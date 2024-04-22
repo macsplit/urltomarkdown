@@ -17,24 +17,24 @@ exports.is = value => {
 exports.isImpl = value => {
   return utils.isObject(value) && value instanceof Impl.implementation;
 };
-exports.convert = (value, { context = "The provided value" } = {}) => {
+exports.convert = (globalObject, value, { context = "The provided value" } = {}) => {
   if (exports.is(value)) {
     return utils.implForWrapper(value);
   }
-  throw new TypeError(`${context} is not of type 'MutationObserver'.`);
+  throw new globalObject.TypeError(`${context} is not of type 'MutationObserver'.`);
 };
 
-function makeWrapper(globalObject) {
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    throw new Error("Internal error: invalid global object");
+function makeWrapper(globalObject, newTarget) {
+  let proto;
+  if (newTarget !== undefined) {
+    proto = newTarget.prototype;
   }
 
-  const ctor = globalObject[ctorRegistrySymbol]["MutationObserver"];
-  if (ctor === undefined) {
-    throw new Error("Internal error: constructor MutationObserver is not installed on the passed global object");
+  if (!utils.isObject(proto)) {
+    proto = globalObject[ctorRegistrySymbol]["MutationObserver"].prototype;
   }
 
-  return Object.create(ctor.prototype);
+  return Object.create(proto);
 }
 
 exports.create = (globalObject, constructorArgs, privateData) => {
@@ -65,8 +65,8 @@ exports.setup = (wrapper, globalObject, constructorArgs = [], privateData = {}) 
   return wrapper;
 };
 
-exports.new = globalObject => {
-  const wrapper = makeWrapper(globalObject);
+exports.new = (globalObject, newTarget) => {
+  const wrapper = makeWrapper(globalObject, newTarget);
 
   exports._internalSetup(wrapper, globalObject);
   Object.defineProperty(wrapper, implSymbol, {
@@ -87,17 +87,21 @@ exports.install = (globalObject, globalNames) => {
   if (!globalNames.some(globalName => exposed.has(globalName))) {
     return;
   }
+
+  const ctorRegistry = utils.initCtorRegistry(globalObject);
   class MutationObserver {
     constructor(callback) {
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to construct 'MutationObserver': 1 argument required, but only " + arguments.length + " present."
+        throw new globalObject.TypeError(
+          `Failed to construct 'MutationObserver': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
-        curArg = MutationCallback.convert(curArg, { context: "Failed to construct 'MutationObserver': parameter 1" });
+        curArg = MutationCallback.convert(globalObject, curArg, {
+          context: "Failed to construct 'MutationObserver': parameter 1"
+        });
         args.push(curArg);
       }
       return exports.setup(Object.create(new.target.prototype), globalObject, args);
@@ -106,25 +110,27 @@ exports.install = (globalObject, globalNames) => {
     observe(target) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'observe' called on an object that is not a valid instance of MutationObserver.");
+        throw new globalObject.TypeError(
+          "'observe' called on an object that is not a valid instance of MutationObserver."
+        );
       }
 
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to execute 'observe' on 'MutationObserver': 1 argument required, but only " +
-            arguments.length +
-            " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'observe' on 'MutationObserver': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
-        curArg = Node.convert(curArg, { context: "Failed to execute 'observe' on 'MutationObserver': parameter 1" });
+        curArg = Node.convert(globalObject, curArg, {
+          context: "Failed to execute 'observe' on 'MutationObserver': parameter 1"
+        });
         args.push(curArg);
       }
       {
         let curArg = arguments[1];
-        curArg = MutationObserverInit.convert(curArg, {
+        curArg = MutationObserverInit.convert(globalObject, curArg, {
           context: "Failed to execute 'observe' on 'MutationObserver': parameter 2"
         });
         args.push(curArg);
@@ -135,7 +141,9 @@ exports.install = (globalObject, globalNames) => {
     disconnect() {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'disconnect' called on an object that is not a valid instance of MutationObserver.");
+        throw new globalObject.TypeError(
+          "'disconnect' called on an object that is not a valid instance of MutationObserver."
+        );
       }
 
       return esValue[implSymbol].disconnect();
@@ -144,7 +152,9 @@ exports.install = (globalObject, globalNames) => {
     takeRecords() {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'takeRecords' called on an object that is not a valid instance of MutationObserver.");
+        throw new globalObject.TypeError(
+          "'takeRecords' called on an object that is not a valid instance of MutationObserver."
+        );
       }
 
       return utils.tryWrapperForImpl(esValue[implSymbol].takeRecords());
@@ -156,10 +166,7 @@ exports.install = (globalObject, globalNames) => {
     takeRecords: { enumerable: true },
     [Symbol.toStringTag]: { value: "MutationObserver", configurable: true }
   });
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    globalObject[ctorRegistrySymbol] = Object.create(null);
-  }
-  globalObject[ctorRegistrySymbol][interfaceName] = MutationObserver;
+  ctorRegistry[interfaceName] = MutationObserver;
 
   Object.defineProperty(globalObject, interfaceName, {
     configurable: true,

@@ -14,24 +14,33 @@ exports.is = value => {
 exports.isImpl = value => {
   return utils.isObject(value) && value instanceof Impl.implementation;
 };
-exports.convert = (value, { context = "The provided value" } = {}) => {
+exports.convert = (globalObject, value, { context = "The provided value" } = {}) => {
   if (exports.is(value)) {
     return utils.implForWrapper(value);
   }
-  throw new TypeError(`${context} is not of type 'NodeList'.`);
+  throw new globalObject.TypeError(`${context} is not of type 'NodeList'.`);
 };
 
-function makeWrapper(globalObject) {
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    throw new Error("Internal error: invalid global object");
+function makeWrapper(globalObject, newTarget) {
+  let proto;
+  if (newTarget !== undefined) {
+    proto = newTarget.prototype;
   }
 
-  const ctor = globalObject[ctorRegistrySymbol]["NodeList"];
-  if (ctor === undefined) {
-    throw new Error("Internal error: constructor NodeList is not installed on the passed global object");
+  if (!utils.isObject(proto)) {
+    proto = globalObject[ctorRegistrySymbol]["NodeList"].prototype;
   }
 
-  return Object.create(ctor.prototype);
+  return Object.create(proto);
+}
+
+function makeProxy(wrapper, globalObject) {
+  let proxyHandler = proxyHandlerCache.get(globalObject);
+  if (proxyHandler === undefined) {
+    proxyHandler = new ProxyHandler(globalObject);
+    proxyHandlerCache.set(globalObject, proxyHandler);
+  }
+  return new Proxy(wrapper, proxyHandler);
 }
 
 exports.create = (globalObject, constructorArgs, privateData) => {
@@ -55,7 +64,7 @@ exports.setup = (wrapper, globalObject, constructorArgs = [], privateData = {}) 
     configurable: true
   });
 
-  wrapper = new Proxy(wrapper, proxyHandler);
+  wrapper = makeProxy(wrapper, globalObject);
 
   wrapper[implSymbol][utils.wrapperSymbol] = wrapper;
   if (Impl.init) {
@@ -64,8 +73,8 @@ exports.setup = (wrapper, globalObject, constructorArgs = [], privateData = {}) 
   return wrapper;
 };
 
-exports.new = globalObject => {
-  let wrapper = makeWrapper(globalObject);
+exports.new = (globalObject, newTarget) => {
+  let wrapper = makeWrapper(globalObject, newTarget);
 
   exports._internalSetup(wrapper, globalObject);
   Object.defineProperty(wrapper, implSymbol, {
@@ -73,7 +82,7 @@ exports.new = globalObject => {
     configurable: true
   });
 
-  wrapper = new Proxy(wrapper, proxyHandler);
+  wrapper = makeProxy(wrapper, globalObject);
 
   wrapper[implSymbol][utils.wrapperSymbol] = wrapper;
   if (Impl.init) {
@@ -88,27 +97,30 @@ exports.install = (globalObject, globalNames) => {
   if (!globalNames.some(globalName => exposed.has(globalName))) {
     return;
   }
+
+  const ctorRegistry = utils.initCtorRegistry(globalObject);
   class NodeList {
     constructor() {
-      throw new TypeError("Illegal constructor");
+      throw new globalObject.TypeError("Illegal constructor");
     }
 
     item(index) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'item' called on an object that is not a valid instance of NodeList.");
+        throw new globalObject.TypeError("'item' called on an object that is not a valid instance of NodeList.");
       }
 
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to execute 'item' on 'NodeList': 1 argument required, but only " + arguments.length + " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'item' on 'NodeList': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
         curArg = conversions["unsigned long"](curArg, {
-          context: "Failed to execute 'item' on 'NodeList': parameter 1"
+          context: "Failed to execute 'item' on 'NodeList': parameter 1",
+          globals: globalObject
         });
         args.push(curArg);
       }
@@ -119,7 +131,7 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get length' called on an object that is not a valid instance of NodeList.");
+        throw new globalObject.TypeError("'get length' called on an object that is not a valid instance of NodeList.");
       }
 
       return esValue[implSymbol]["length"];
@@ -129,16 +141,13 @@ exports.install = (globalObject, globalNames) => {
     item: { enumerable: true },
     length: { enumerable: true },
     [Symbol.toStringTag]: { value: "NodeList", configurable: true },
-    [Symbol.iterator]: { value: Array.prototype[Symbol.iterator], configurable: true, writable: true },
-    keys: { value: Array.prototype.keys, configurable: true, enumerable: true, writable: true },
-    values: { value: Array.prototype[Symbol.iterator], configurable: true, enumerable: true, writable: true },
-    entries: { value: Array.prototype.entries, configurable: true, enumerable: true, writable: true },
-    forEach: { value: Array.prototype.forEach, configurable: true, enumerable: true, writable: true }
+    [Symbol.iterator]: { value: globalObject.Array.prototype[Symbol.iterator], configurable: true, writable: true },
+    keys: { value: globalObject.Array.prototype.keys, configurable: true, enumerable: true, writable: true },
+    values: { value: globalObject.Array.prototype.values, configurable: true, enumerable: true, writable: true },
+    entries: { value: globalObject.Array.prototype.entries, configurable: true, enumerable: true, writable: true },
+    forEach: { value: globalObject.Array.prototype.forEach, configurable: true, enumerable: true, writable: true }
   });
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    globalObject[ctorRegistrySymbol] = Object.create(null);
-  }
-  globalObject[ctorRegistrySymbol][interfaceName] = NodeList;
+  ctorRegistry[interfaceName] = NodeList;
 
   Object.defineProperty(globalObject, interfaceName, {
     configurable: true,
@@ -147,7 +156,12 @@ exports.install = (globalObject, globalNames) => {
   });
 };
 
-const proxyHandler = {
+const proxyHandlerCache = new WeakMap();
+class ProxyHandler {
+  constructor(globalObject) {
+    this._globalObject = globalObject;
+  }
+
   get(target, P, receiver) {
     if (typeof P === "symbol") {
       return Reflect.get(target, P, receiver);
@@ -168,7 +182,7 @@ const proxyHandler = {
       return undefined;
     }
     return Reflect.apply(getter, receiver, []);
-  },
+  }
 
   has(target, P) {
     if (typeof P === "symbol") {
@@ -183,7 +197,7 @@ const proxyHandler = {
       return Reflect.has(parent, P);
     }
     return false;
-  },
+  }
 
   ownKeys(target) {
     const keys = new Set();
@@ -196,7 +210,7 @@ const proxyHandler = {
       keys.add(key);
     }
     return [...keys];
-  },
+  }
 
   getOwnPropertyDescriptor(target, P) {
     if (typeof P === "symbol") {
@@ -219,7 +233,7 @@ const proxyHandler = {
     }
 
     return Reflect.getOwnPropertyDescriptor(target, P);
-  },
+  }
 
   set(target, P, V, receiver) {
     if (typeof P === "symbol") {
@@ -228,6 +242,7 @@ const proxyHandler = {
     // The `receiver` argument refers to the Proxy exotic object or an object
     // that inherits from it, whereas `target` refers to the Proxy target:
     if (target[implSymbol][utils.wrapperSymbol] === receiver) {
+      const globalObject = this._globalObject;
     }
     let ownDesc;
 
@@ -274,24 +289,28 @@ const proxyHandler = {
       valueDesc = { writable: true, enumerable: true, configurable: true, value: V };
     }
     return Reflect.defineProperty(receiver, P, valueDesc);
-  },
+  }
 
   defineProperty(target, P, desc) {
     if (typeof P === "symbol") {
       return Reflect.defineProperty(target, P, desc);
     }
 
+    const globalObject = this._globalObject;
+
     if (utils.isArrayIndexPropName(P)) {
       return false;
     }
 
     return Reflect.defineProperty(target, P, desc);
-  },
+  }
 
   deleteProperty(target, P) {
     if (typeof P === "symbol") {
       return Reflect.deleteProperty(target, P);
     }
+
+    const globalObject = this._globalObject;
 
     if (utils.isArrayIndexPropName(P)) {
       const index = P >>> 0;
@@ -299,11 +318,11 @@ const proxyHandler = {
     }
 
     return Reflect.deleteProperty(target, P);
-  },
+  }
 
   preventExtensions() {
     return false;
   }
-};
+}
 
 const Impl = require("../nodes/NodeList-impl.js");

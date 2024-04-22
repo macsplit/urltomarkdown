@@ -4,20 +4,18 @@
     (global = typeof globalThis !== 'undefined' ? globalThis : global || self, global.remapping = factory(global.traceMapping, global.genMapping));
 })(this, (function (traceMapping, genMapping) { 'use strict';
 
-    const SOURCELESS_MAPPING = {
-        source: null,
-        column: null,
-        line: null,
-        name: null,
-        content: null,
-    };
+    const SOURCELESS_MAPPING = /* #__PURE__ */ SegmentObject('', -1, -1, '', null, false);
     const EMPTY_SOURCES = [];
-    function Source(map, sources, source, content) {
+    function SegmentObject(source, line, column, name, content, ignore) {
+        return { source, line, column, name, content, ignore };
+    }
+    function Source(map, sources, source, content, ignore) {
         return {
             map,
             sources,
             source,
             content,
+            ignore,
         };
     }
     /**
@@ -25,29 +23,28 @@
      * (which may themselves be SourceMapTrees).
      */
     function MapSource(map, sources) {
-        return Source(map, sources, '', null);
+        return Source(map, sources, '', null, false);
     }
     /**
      * A "leaf" node in the sourcemap tree, representing an original, unmodified source file. Recursive
      * segment tracing ends at the `OriginalSource`.
      */
-    function OriginalSource(source, content) {
-        return Source(null, EMPTY_SOURCES, source, content);
+    function OriginalSource(source, content, ignore) {
+        return Source(null, EMPTY_SOURCES, source, content, ignore);
     }
     /**
      * traceMappings is only called on the root level SourceMapTree, and begins the process of
      * resolving each mapping in terms of the original source files.
      */
     function traceMappings(tree) {
+        // TODO: Eventually support sourceRoot, which has to be removed because the sources are already
+        // fully resolved. We'll need to make sources relative to the sourceRoot before adding them.
         const gen = new genMapping.GenMapping({ file: tree.map.file });
         const { sources: rootSources, map } = tree;
         const rootNames = map.names;
         const rootMappings = traceMapping.decodedMappings(map);
         for (let i = 0; i < rootMappings.length; i++) {
             const segments = rootMappings[i];
-            let lastSource = null;
-            let lastSourceLine = null;
-            let lastSourceColumn = null;
             for (let j = 0; j < segments.length; j++) {
                 const segment = segments[j];
                 const genCol = segment[0];
@@ -62,19 +59,12 @@
                     if (traced == null)
                         continue;
                 }
-                // So we traced a segment down into its original source file. Now push a
-                // new segment pointing to this location.
-                const { column, line, name, content, source } = traced;
-                if (line === lastSourceLine && column === lastSourceColumn && source === lastSource) {
-                    continue;
-                }
-                lastSourceLine = line;
-                lastSourceColumn = column;
-                lastSource = source;
-                // Sigh, TypeScript can't figure out source/line/column are either all null, or all non-null...
-                genMapping.addSegment(gen, i, genCol, source, line, column, name);
-                if (content != null)
+                const { column, line, name, content, source, ignore } = traced;
+                genMapping.maybeAddSegment(gen, i, genCol, source, line, column, name);
+                if (source && content != null)
                     genMapping.setSourceContent(gen, source, content);
+                if (ignore)
+                    genMapping.setIgnore(gen, source, true);
             }
         }
         return gen;
@@ -85,7 +75,7 @@
      */
     function originalPositionFor(source, line, column, name) {
         if (!source.map) {
-            return { column, line, name, source: source.source, content: source.content };
+            return SegmentObject(source.source, line, column, name, source.content, source.ignore);
         }
         const segment = traceMapping.traceSegment(source.map, line, column);
         // If we couldn't find a segment, then this doesn't exist in the sourcemap.
@@ -130,7 +120,7 @@
         return tree;
     }
     function build(map, loader, importer, importerDepth) {
-        const { resolvedSources, sourcesContent } = map;
+        const { resolvedSources, sourcesContent, ignoreList } = map;
         const depth = importerDepth + 1;
         const children = resolvedSources.map((sourceFile, i) => {
             // The loading context gives the loader more information about why this file is being loaded
@@ -142,20 +132,22 @@
                 depth,
                 source: sourceFile || '',
                 content: undefined,
+                ignore: undefined,
             };
             // Use the provided loader callback to retrieve the file's sourcemap.
             // TODO: We should eventually support async loading of sourcemap files.
             const sourceMap = loader(ctx.source, ctx);
-            const { source, content } = ctx;
+            const { source, content, ignore } = ctx;
             // If there is a sourcemap, then we need to recurse into it to load its source files.
             if (sourceMap)
                 return build(new traceMapping.TraceMap(sourceMap, source), loader, source, depth);
-            // Else, it's an an unmodified source file.
+            // Else, it's an unmodified source file.
             // The contents of this unmodified source file can be overridden via the loader context,
             // allowing it to be explicitly null or a string. If it remains undefined, we fall back to
             // the importing sourcemap's `sourcesContent` field.
             const sourceContent = content !== undefined ? content : sourcesContent ? sourcesContent[i] : null;
-            return OriginalSource(source, sourceContent);
+            const ignored = ignore !== undefined ? ignore : ignoreList ? ignoreList.includes(i) : false;
+            return OriginalSource(source, sourceContent, ignored);
         });
         return MapSource(map, children);
     }
@@ -166,11 +158,12 @@
      */
     class SourceMap {
         constructor(map, options) {
-            const out = options.decodedMappings ? genMapping.decodedMap(map) : genMapping.encodedMap(map);
+            const out = options.decodedMappings ? genMapping.toDecodedMap(map) : genMapping.toEncodedMap(map);
             this.version = out.version; // SourceMap spec says this should be first.
             this.file = out.file;
             this.mappings = out.mappings;
             this.names = out.names;
+            this.ignoreList = out.ignoreList;
             this.sourceRoot = out.sourceRoot;
             this.sources = out.sources;
             if (!options.excludeContent) {

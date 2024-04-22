@@ -14,24 +14,24 @@ exports.is = value => {
 exports.isImpl = value => {
   return utils.isObject(value) && value instanceof Impl.implementation;
 };
-exports.convert = (value, { context = "The provided value" } = {}) => {
+exports.convert = (globalObject, value, { context = "The provided value" } = {}) => {
   if (exports.is(value)) {
     return utils.implForWrapper(value);
   }
-  throw new TypeError(`${context} is not of type 'AbstractRange'.`);
+  throw new globalObject.TypeError(`${context} is not of type 'AbstractRange'.`);
 };
 
-function makeWrapper(globalObject) {
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    throw new Error("Internal error: invalid global object");
+function makeWrapper(globalObject, newTarget) {
+  let proto;
+  if (newTarget !== undefined) {
+    proto = newTarget.prototype;
   }
 
-  const ctor = globalObject[ctorRegistrySymbol]["AbstractRange"];
-  if (ctor === undefined) {
-    throw new Error("Internal error: constructor AbstractRange is not installed on the passed global object");
+  if (!utils.isObject(proto)) {
+    proto = globalObject[ctorRegistrySymbol]["AbstractRange"].prototype;
   }
 
-  return Object.create(ctor.prototype);
+  return Object.create(proto);
 }
 
 exports.create = (globalObject, constructorArgs, privateData) => {
@@ -62,8 +62,8 @@ exports.setup = (wrapper, globalObject, constructorArgs = [], privateData = {}) 
   return wrapper;
 };
 
-exports.new = globalObject => {
-  const wrapper = makeWrapper(globalObject);
+exports.new = (globalObject, newTarget) => {
+  const wrapper = makeWrapper(globalObject, newTarget);
 
   exports._internalSetup(wrapper, globalObject);
   Object.defineProperty(wrapper, implSymbol, {
@@ -84,16 +84,20 @@ exports.install = (globalObject, globalNames) => {
   if (!globalNames.some(globalName => exposed.has(globalName))) {
     return;
   }
+
+  const ctorRegistry = utils.initCtorRegistry(globalObject);
   class AbstractRange {
     constructor() {
-      throw new TypeError("Illegal constructor");
+      throw new globalObject.TypeError("Illegal constructor");
     }
 
     get startContainer() {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get startContainer' called on an object that is not a valid instance of AbstractRange.");
+        throw new globalObject.TypeError(
+          "'get startContainer' called on an object that is not a valid instance of AbstractRange."
+        );
       }
 
       return utils.tryWrapperForImpl(esValue[implSymbol]["startContainer"]);
@@ -103,7 +107,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get startOffset' called on an object that is not a valid instance of AbstractRange.");
+        throw new globalObject.TypeError(
+          "'get startOffset' called on an object that is not a valid instance of AbstractRange."
+        );
       }
 
       return esValue[implSymbol]["startOffset"];
@@ -113,7 +119,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get endContainer' called on an object that is not a valid instance of AbstractRange.");
+        throw new globalObject.TypeError(
+          "'get endContainer' called on an object that is not a valid instance of AbstractRange."
+        );
       }
 
       return utils.tryWrapperForImpl(esValue[implSymbol]["endContainer"]);
@@ -123,7 +131,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get endOffset' called on an object that is not a valid instance of AbstractRange.");
+        throw new globalObject.TypeError(
+          "'get endOffset' called on an object that is not a valid instance of AbstractRange."
+        );
       }
 
       return esValue[implSymbol]["endOffset"];
@@ -133,7 +143,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get collapsed' called on an object that is not a valid instance of AbstractRange.");
+        throw new globalObject.TypeError(
+          "'get collapsed' called on an object that is not a valid instance of AbstractRange."
+        );
       }
 
       return esValue[implSymbol]["collapsed"];
@@ -147,10 +159,7 @@ exports.install = (globalObject, globalNames) => {
     collapsed: { enumerable: true },
     [Symbol.toStringTag]: { value: "AbstractRange", configurable: true }
   });
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    globalObject[ctorRegistrySymbol] = Object.create(null);
-  }
-  globalObject[ctorRegistrySymbol][interfaceName] = AbstractRange;
+  ctorRegistry[interfaceName] = AbstractRange;
 
   Object.defineProperty(globalObject, interfaceName, {
     configurable: true,

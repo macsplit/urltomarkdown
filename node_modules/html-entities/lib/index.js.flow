@@ -13,6 +13,7 @@ export type EncodeMode =
   | "specialChars"
   | "nonAscii"
   | "nonAsciiPrintable"
+  | "nonAsciiPrintableOnly"
   | "extensive";
 export type EncodeOptions = {
   mode?: EncodeMode,

@@ -16,18 +16,18 @@ console.assert(whatwgEncoding.isSupported("UTF-32") === false);
 // In the Encoding Standard, but this package can't decode it
 console.assert(whatwgEncoding.isSupported("x-mac-cyrillic") === false);
 
-console.assert(whatwgEncoding.getBOMEncoding(new Buffer([0xFE, 0xFF])) === "UTF-16BE");
-console.assert(whatwgEncoding.getBOMEncoding(new Buffer([0x48, 0x69])) === null);
+console.assert(whatwgEncoding.getBOMEncoding(new Uint8Array([0xFE, 0xFF])) === "UTF-16BE");
+console.assert(whatwgEncoding.getBOMEncoding(new Uint8Array([0x48, 0x69])) === null);
 
-console.assert(whatwgEncoding.decode(new Buffer([0x48, 0x69]), "UTF-8") === "Hi");
+console.assert(whatwgEncoding.decode(new Uint8Array([0x48, 0x69]), "UTF-8") === "Hi");
 ```
 
 ## API
 
-- `decode(buffer, fallbackEncodingName)`: performs the [decode](https://encoding.spec.whatwg.org/#decode) algorithm (in which any BOM will override the passed fallback encoding), and returns the resulting string
+- `decode(uint8Array, fallbackEncodingName)`: performs the [decode](https://encoding.spec.whatwg.org/#decode) algorithm (in which any BOM will override the passed fallback encoding), and returns the resulting string
 - `labelToName(label)`: performs the [get an encoding](https://encoding.spec.whatwg.org/#concept-encoding-get) algorithm and returns the resulting encoding's name, or `null` for failure
 - `isSupported(name)`: returns whether the encoding is one of [the encodings](https://encoding.spec.whatwg.org/#names-and-labels) of the Encoding Standard, _and_ is an encoding that this package can decode (via iconv-lite)
-- `getBOMEncoding(buffer)`: sniffs the first 2–3 bytes of the supplied `Buffer`, returning one of the encoding names `"UTF-8"`, `"UTF-16LE"`, or `"UTF-16BE"` if the appropriate BOM is present, or `null` if no BOM is present
+- `getBOMEncoding(uint8Array)`: sniffs the first 2–3 bytes of the supplied `Uint8Array`, returning one of the encoding names `"UTF-8"`, `"UTF-16LE"`, or `"UTF-16BE"` if the appropriate BOM is present, or `null` if no BOM is present
 
 ## Unsupported encodings
 
@@ -47,4 +47,4 @@ This package was originally based on the excellent work of [@nicolashenry](https
 
 ## Alternatives
 
-If you are looking for a JavaScript implementation of the Encoding Standard's `TextEncoder` and `TextDecoder` APIs, you'll want [@inexorabletash](https://github.com/inexorabletash)'s [text-encoding](https://github.com/inexorabletash/text-encoding) package.
+If you are looking for a JavaScript implementation of the Encoding Standard's `TextEncoder` and `TextDecoder` APIs, you'll want [@inexorabletash](https://github.com/inexorabletash)'s [text-encoding](https://github.com/inexorabletash/text-encoding) package. Node.js also has them [built-in](https://nodejs.org/dist/latest/docs/api/globals.html#globals_textdecoder).

@@ -18,24 +18,24 @@ exports.is = value => {
 exports.isImpl = value => {
   return utils.isObject(value) && value instanceof Impl.implementation;
 };
-exports.convert = (value, { context = "The provided value" } = {}) => {
+exports.convert = (globalObject, value, { context = "The provided value" } = {}) => {
   if (exports.is(value)) {
     return utils.implForWrapper(value);
   }
-  throw new TypeError(`${context} is not of type 'Node'.`);
+  throw new globalObject.TypeError(`${context} is not of type 'Node'.`);
 };
 
-function makeWrapper(globalObject) {
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    throw new Error("Internal error: invalid global object");
+function makeWrapper(globalObject, newTarget) {
+  let proto;
+  if (newTarget !== undefined) {
+    proto = newTarget.prototype;
   }
 
-  const ctor = globalObject[ctorRegistrySymbol]["Node"];
-  if (ctor === undefined) {
-    throw new Error("Internal error: constructor Node is not installed on the passed global object");
+  if (!utils.isObject(proto)) {
+    proto = globalObject[ctorRegistrySymbol]["Node"].prototype;
   }
 
-  return Object.create(ctor.prototype);
+  return Object.create(proto);
 }
 
 exports.create = (globalObject, constructorArgs, privateData) => {
@@ -68,8 +68,8 @@ exports.setup = (wrapper, globalObject, constructorArgs = [], privateData = {}) 
   return wrapper;
 };
 
-exports.new = globalObject => {
-  const wrapper = makeWrapper(globalObject);
+exports.new = (globalObject, newTarget) => {
+  const wrapper = makeWrapper(globalObject, newTarget);
 
   exports._internalSetup(wrapper, globalObject);
   Object.defineProperty(wrapper, implSymbol, {
@@ -91,23 +91,21 @@ exports.install = (globalObject, globalNames) => {
     return;
   }
 
-  if (globalObject.EventTarget === undefined) {
-    throw new Error("Internal error: attempting to evaluate Node before EventTarget");
-  }
+  const ctorRegistry = utils.initCtorRegistry(globalObject);
   class Node extends globalObject.EventTarget {
     constructor() {
-      throw new TypeError("Illegal constructor");
+      throw new globalObject.TypeError("Illegal constructor");
     }
 
     getRootNode() {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'getRootNode' called on an object that is not a valid instance of Node.");
+        throw new globalObject.TypeError("'getRootNode' called on an object that is not a valid instance of Node.");
       }
       const args = [];
       {
         let curArg = arguments[0];
-        curArg = GetRootNodeOptions.convert(curArg, {
+        curArg = GetRootNodeOptions.convert(globalObject, curArg, {
           context: "Failed to execute 'getRootNode' on 'Node': parameter 1"
         });
         args.push(curArg);
@@ -118,7 +116,7 @@ exports.install = (globalObject, globalNames) => {
     hasChildNodes() {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'hasChildNodes' called on an object that is not a valid instance of Node.");
+        throw new globalObject.TypeError("'hasChildNodes' called on an object that is not a valid instance of Node.");
       }
 
       return esValue[implSymbol].hasChildNodes();
@@ -127,7 +125,7 @@ exports.install = (globalObject, globalNames) => {
     normalize() {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'normalize' called on an object that is not a valid instance of Node.");
+        throw new globalObject.TypeError("'normalize' called on an object that is not a valid instance of Node.");
       }
 
       ceReactionsPreSteps_helpers_custom_elements(globalObject);
@@ -141,13 +139,16 @@ exports.install = (globalObject, globalNames) => {
     cloneNode() {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'cloneNode' called on an object that is not a valid instance of Node.");
+        throw new globalObject.TypeError("'cloneNode' called on an object that is not a valid instance of Node.");
       }
       const args = [];
       {
         let curArg = arguments[0];
         if (curArg !== undefined) {
-          curArg = conversions["boolean"](curArg, { context: "Failed to execute 'cloneNode' on 'Node': parameter 1" });
+          curArg = conversions["boolean"](curArg, {
+            context: "Failed to execute 'cloneNode' on 'Node': parameter 1",
+            globals: globalObject
+          });
         } else {
           curArg = false;
         }
@@ -164,12 +165,12 @@ exports.install = (globalObject, globalNames) => {
     isEqualNode(otherNode) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'isEqualNode' called on an object that is not a valid instance of Node.");
+        throw new globalObject.TypeError("'isEqualNode' called on an object that is not a valid instance of Node.");
       }
 
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to execute 'isEqualNode' on 'Node': 1 argument required, but only " + arguments.length + " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'isEqualNode' on 'Node': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
@@ -178,7 +179,9 @@ exports.install = (globalObject, globalNames) => {
         if (curArg === null || curArg === undefined) {
           curArg = null;
         } else {
-          curArg = exports.convert(curArg, { context: "Failed to execute 'isEqualNode' on 'Node': parameter 1" });
+          curArg = exports.convert(globalObject, curArg, {
+            context: "Failed to execute 'isEqualNode' on 'Node': parameter 1"
+          });
         }
         args.push(curArg);
       }
@@ -188,12 +191,12 @@ exports.install = (globalObject, globalNames) => {
     isSameNode(otherNode) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'isSameNode' called on an object that is not a valid instance of Node.");
+        throw new globalObject.TypeError("'isSameNode' called on an object that is not a valid instance of Node.");
       }
 
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to execute 'isSameNode' on 'Node': 1 argument required, but only " + arguments.length + " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'isSameNode' on 'Node': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
@@ -202,7 +205,9 @@ exports.install = (globalObject, globalNames) => {
         if (curArg === null || curArg === undefined) {
           curArg = null;
         } else {
-          curArg = exports.convert(curArg, { context: "Failed to execute 'isSameNode' on 'Node': parameter 1" });
+          curArg = exports.convert(globalObject, curArg, {
+            context: "Failed to execute 'isSameNode' on 'Node': parameter 1"
+          });
         }
         args.push(curArg);
       }
@@ -212,20 +217,20 @@ exports.install = (globalObject, globalNames) => {
     compareDocumentPosition(other) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'compareDocumentPosition' called on an object that is not a valid instance of Node.");
+        throw new globalObject.TypeError(
+          "'compareDocumentPosition' called on an object that is not a valid instance of Node."
+        );
       }
 
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to execute 'compareDocumentPosition' on 'Node': 1 argument required, but only " +
-            arguments.length +
-            " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'compareDocumentPosition' on 'Node': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
-        curArg = exports.convert(curArg, {
+        curArg = exports.convert(globalObject, curArg, {
           context: "Failed to execute 'compareDocumentPosition' on 'Node': parameter 1"
         });
         args.push(curArg);
@@ -236,12 +241,12 @@ exports.install = (globalObject, globalNames) => {
     contains(other) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'contains' called on an object that is not a valid instance of Node.");
+        throw new globalObject.TypeError("'contains' called on an object that is not a valid instance of Node.");
       }
 
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to execute 'contains' on 'Node': 1 argument required, but only " + arguments.length + " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'contains' on 'Node': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
@@ -250,7 +255,9 @@ exports.install = (globalObject, globalNames) => {
         if (curArg === null || curArg === undefined) {
           curArg = null;
         } else {
-          curArg = exports.convert(curArg, { context: "Failed to execute 'contains' on 'Node': parameter 1" });
+          curArg = exports.convert(globalObject, curArg, {
+            context: "Failed to execute 'contains' on 'Node': parameter 1"
+          });
         }
         args.push(curArg);
       }
@@ -260,12 +267,12 @@ exports.install = (globalObject, globalNames) => {
     lookupPrefix(namespace) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'lookupPrefix' called on an object that is not a valid instance of Node.");
+        throw new globalObject.TypeError("'lookupPrefix' called on an object that is not a valid instance of Node.");
       }
 
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to execute 'lookupPrefix' on 'Node': 1 argument required, but only " + arguments.length + " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'lookupPrefix' on 'Node': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
@@ -275,7 +282,8 @@ exports.install = (globalObject, globalNames) => {
           curArg = null;
         } else {
           curArg = conversions["DOMString"](curArg, {
-            context: "Failed to execute 'lookupPrefix' on 'Node': parameter 1"
+            context: "Failed to execute 'lookupPrefix' on 'Node': parameter 1",
+            globals: globalObject
           });
         }
         args.push(curArg);
@@ -286,14 +294,14 @@ exports.install = (globalObject, globalNames) => {
     lookupNamespaceURI(prefix) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'lookupNamespaceURI' called on an object that is not a valid instance of Node.");
+        throw new globalObject.TypeError(
+          "'lookupNamespaceURI' called on an object that is not a valid instance of Node."
+        );
       }
 
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to execute 'lookupNamespaceURI' on 'Node': 1 argument required, but only " +
-            arguments.length +
-            " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'lookupNamespaceURI' on 'Node': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
@@ -303,7 +311,8 @@ exports.install = (globalObject, globalNames) => {
           curArg = null;
         } else {
           curArg = conversions["DOMString"](curArg, {
-            context: "Failed to execute 'lookupNamespaceURI' on 'Node': parameter 1"
+            context: "Failed to execute 'lookupNamespaceURI' on 'Node': parameter 1",
+            globals: globalObject
           });
         }
         args.push(curArg);
@@ -314,14 +323,14 @@ exports.install = (globalObject, globalNames) => {
     isDefaultNamespace(namespace) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'isDefaultNamespace' called on an object that is not a valid instance of Node.");
+        throw new globalObject.TypeError(
+          "'isDefaultNamespace' called on an object that is not a valid instance of Node."
+        );
       }
 
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to execute 'isDefaultNamespace' on 'Node': 1 argument required, but only " +
-            arguments.length +
-            " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'isDefaultNamespace' on 'Node': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
@@ -331,7 +340,8 @@ exports.install = (globalObject, globalNames) => {
           curArg = null;
         } else {
           curArg = conversions["DOMString"](curArg, {
-            context: "Failed to execute 'isDefaultNamespace' on 'Node': parameter 1"
+            context: "Failed to execute 'isDefaultNamespace' on 'Node': parameter 1",
+            globals: globalObject
           });
         }
         args.push(curArg);
@@ -342,18 +352,20 @@ exports.install = (globalObject, globalNames) => {
     insertBefore(node, child) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'insertBefore' called on an object that is not a valid instance of Node.");
+        throw new globalObject.TypeError("'insertBefore' called on an object that is not a valid instance of Node.");
       }
 
       if (arguments.length < 2) {
-        throw new TypeError(
-          "Failed to execute 'insertBefore' on 'Node': 2 arguments required, but only " + arguments.length + " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'insertBefore' on 'Node': 2 arguments required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
-        curArg = exports.convert(curArg, { context: "Failed to execute 'insertBefore' on 'Node': parameter 1" });
+        curArg = exports.convert(globalObject, curArg, {
+          context: "Failed to execute 'insertBefore' on 'Node': parameter 1"
+        });
         args.push(curArg);
       }
       {
@@ -361,7 +373,9 @@ exports.install = (globalObject, globalNames) => {
         if (curArg === null || curArg === undefined) {
           curArg = null;
         } else {
-          curArg = exports.convert(curArg, { context: "Failed to execute 'insertBefore' on 'Node': parameter 2" });
+          curArg = exports.convert(globalObject, curArg, {
+            context: "Failed to execute 'insertBefore' on 'Node': parameter 2"
+          });
         }
         args.push(curArg);
       }
@@ -376,18 +390,20 @@ exports.install = (globalObject, globalNames) => {
     appendChild(node) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'appendChild' called on an object that is not a valid instance of Node.");
+        throw new globalObject.TypeError("'appendChild' called on an object that is not a valid instance of Node.");
       }
 
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to execute 'appendChild' on 'Node': 1 argument required, but only " + arguments.length + " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'appendChild' on 'Node': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
-        curArg = exports.convert(curArg, { context: "Failed to execute 'appendChild' on 'Node': parameter 1" });
+        curArg = exports.convert(globalObject, curArg, {
+          context: "Failed to execute 'appendChild' on 'Node': parameter 1"
+        });
         args.push(curArg);
       }
       ceReactionsPreSteps_helpers_custom_elements(globalObject);
@@ -401,23 +417,27 @@ exports.install = (globalObject, globalNames) => {
     replaceChild(node, child) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'replaceChild' called on an object that is not a valid instance of Node.");
+        throw new globalObject.TypeError("'replaceChild' called on an object that is not a valid instance of Node.");
       }
 
       if (arguments.length < 2) {
-        throw new TypeError(
-          "Failed to execute 'replaceChild' on 'Node': 2 arguments required, but only " + arguments.length + " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'replaceChild' on 'Node': 2 arguments required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
-        curArg = exports.convert(curArg, { context: "Failed to execute 'replaceChild' on 'Node': parameter 1" });
+        curArg = exports.convert(globalObject, curArg, {
+          context: "Failed to execute 'replaceChild' on 'Node': parameter 1"
+        });
         args.push(curArg);
       }
       {
         let curArg = arguments[1];
-        curArg = exports.convert(curArg, { context: "Failed to execute 'replaceChild' on 'Node': parameter 2" });
+        curArg = exports.convert(globalObject, curArg, {
+          context: "Failed to execute 'replaceChild' on 'Node': parameter 2"
+        });
         args.push(curArg);
       }
       ceReactionsPreSteps_helpers_custom_elements(globalObject);
@@ -431,18 +451,20 @@ exports.install = (globalObject, globalNames) => {
     removeChild(child) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'removeChild' called on an object that is not a valid instance of Node.");
+        throw new globalObject.TypeError("'removeChild' called on an object that is not a valid instance of Node.");
       }
 
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to execute 'removeChild' on 'Node': 1 argument required, but only " + arguments.length + " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'removeChild' on 'Node': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
-        curArg = exports.convert(curArg, { context: "Failed to execute 'removeChild' on 'Node': parameter 1" });
+        curArg = exports.convert(globalObject, curArg, {
+          context: "Failed to execute 'removeChild' on 'Node': parameter 1"
+        });
         args.push(curArg);
       }
       ceReactionsPreSteps_helpers_custom_elements(globalObject);
@@ -457,7 +479,7 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get nodeType' called on an object that is not a valid instance of Node.");
+        throw new globalObject.TypeError("'get nodeType' called on an object that is not a valid instance of Node.");
       }
 
       return esValue[implSymbol]["nodeType"];
@@ -467,7 +489,7 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get nodeName' called on an object that is not a valid instance of Node.");
+        throw new globalObject.TypeError("'get nodeName' called on an object that is not a valid instance of Node.");
       }
 
       return esValue[implSymbol]["nodeName"];
@@ -477,7 +499,7 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get baseURI' called on an object that is not a valid instance of Node.");
+        throw new globalObject.TypeError("'get baseURI' called on an object that is not a valid instance of Node.");
       }
 
       return esValue[implSymbol]["baseURI"];
@@ -487,7 +509,7 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get isConnected' called on an object that is not a valid instance of Node.");
+        throw new globalObject.TypeError("'get isConnected' called on an object that is not a valid instance of Node.");
       }
 
       return esValue[implSymbol]["isConnected"];
@@ -497,7 +519,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get ownerDocument' called on an object that is not a valid instance of Node.");
+        throw new globalObject.TypeError(
+          "'get ownerDocument' called on an object that is not a valid instance of Node."
+        );
       }
 
       return utils.tryWrapperForImpl(esValue[implSymbol]["ownerDocument"]);
@@ -507,7 +531,7 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get parentNode' called on an object that is not a valid instance of Node.");
+        throw new globalObject.TypeError("'get parentNode' called on an object that is not a valid instance of Node.");
       }
 
       return utils.tryWrapperForImpl(esValue[implSymbol]["parentNode"]);
@@ -517,7 +541,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get parentElement' called on an object that is not a valid instance of Node.");
+        throw new globalObject.TypeError(
+          "'get parentElement' called on an object that is not a valid instance of Node."
+        );
       }
 
       return utils.tryWrapperForImpl(esValue[implSymbol]["parentElement"]);
@@ -527,7 +553,7 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get childNodes' called on an object that is not a valid instance of Node.");
+        throw new globalObject.TypeError("'get childNodes' called on an object that is not a valid instance of Node.");
       }
 
       return utils.getSameObject(this, "childNodes", () => {
@@ -539,7 +565,7 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get firstChild' called on an object that is not a valid instance of Node.");
+        throw new globalObject.TypeError("'get firstChild' called on an object that is not a valid instance of Node.");
       }
 
       return utils.tryWrapperForImpl(esValue[implSymbol]["firstChild"]);
@@ -549,7 +575,7 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get lastChild' called on an object that is not a valid instance of Node.");
+        throw new globalObject.TypeError("'get lastChild' called on an object that is not a valid instance of Node.");
       }
 
       return utils.tryWrapperForImpl(esValue[implSymbol]["lastChild"]);
@@ -559,7 +585,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get previousSibling' called on an object that is not a valid instance of Node.");
+        throw new globalObject.TypeError(
+          "'get previousSibling' called on an object that is not a valid instance of Node."
+        );
       }
 
       return utils.tryWrapperForImpl(esValue[implSymbol]["previousSibling"]);
@@ -569,7 +597,7 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get nextSibling' called on an object that is not a valid instance of Node.");
+        throw new globalObject.TypeError("'get nextSibling' called on an object that is not a valid instance of Node.");
       }
 
       return utils.tryWrapperForImpl(esValue[implSymbol]["nextSibling"]);
@@ -579,7 +607,7 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get nodeValue' called on an object that is not a valid instance of Node.");
+        throw new globalObject.TypeError("'get nodeValue' called on an object that is not a valid instance of Node.");
       }
 
       ceReactionsPreSteps_helpers_custom_elements(globalObject);
@@ -594,14 +622,15 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'set nodeValue' called on an object that is not a valid instance of Node.");
+        throw new globalObject.TypeError("'set nodeValue' called on an object that is not a valid instance of Node.");
       }
 
       if (V === null || V === undefined) {
         V = null;
       } else {
         V = conversions["DOMString"](V, {
-          context: "Failed to set the 'nodeValue' property on 'Node': The provided value"
+          context: "Failed to set the 'nodeValue' property on 'Node': The provided value",
+          globals: globalObject
         });
       }
 
@@ -617,7 +646,7 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get textContent' called on an object that is not a valid instance of Node.");
+        throw new globalObject.TypeError("'get textContent' called on an object that is not a valid instance of Node.");
       }
 
       ceReactionsPreSteps_helpers_custom_elements(globalObject);
@@ -632,14 +661,15 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'set textContent' called on an object that is not a valid instance of Node.");
+        throw new globalObject.TypeError("'set textContent' called on an object that is not a valid instance of Node.");
       }
 
       if (V === null || V === undefined) {
         V = null;
       } else {
         V = conversions["DOMString"](V, {
-          context: "Failed to set the 'textContent' property on 'Node': The provided value"
+          context: "Failed to set the 'textContent' property on 'Node': The provided value",
+          globals: globalObject
         });
       }
 
@@ -721,10 +751,7 @@ exports.install = (globalObject, globalNames) => {
     DOCUMENT_POSITION_CONTAINED_BY: { value: 0x10, enumerable: true },
     DOCUMENT_POSITION_IMPLEMENTATION_SPECIFIC: { value: 0x20, enumerable: true }
   });
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    globalObject[ctorRegistrySymbol] = Object.create(null);
-  }
-  globalObject[ctorRegistrySymbol][interfaceName] = Node;
+  ctorRegistry[interfaceName] = Node;
 
   Object.defineProperty(globalObject, interfaceName, {
     configurable: true,

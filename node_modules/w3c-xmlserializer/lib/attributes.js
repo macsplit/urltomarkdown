@@ -5,7 +5,7 @@ const xnv = require("xml-name-validator");
 const { NAMESPACES } = require("./constants");
 
 function generatePrefix(map, newNamespace, prefixIndex) {
-  const generatedPrefix = "ns" + prefixIndex;
+  const generatedPrefix = `ns${prefixIndex}`;
   map[newNamespace] = [generatedPrefix];
   return generatedPrefix;
 }
@@ -27,13 +27,13 @@ function serializeAttributeValue(value/* , requireWellFormed*/) {
   }
   // TODO: Check well-formedness
   return value
-    .replace(/&/g, "&amp;")
-    .replace(/"/g, "&quot;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/\t/g, "&#x9;")
-    .replace(/\n/g, "&#xA;")
-    .replace(/\r/g, "&#xD;");
+    .replace(/&/ug, "&amp;")
+    .replace(/"/ug, "&quot;")
+    .replace(/</ug, "&lt;")
+    .replace(/>/ug, "&gt;")
+    .replace(/\t/ug, "&#x9;")
+    .replace(/\n/ug, "&#xA;")
+    .replace(/\r/ug, "&#xD;");
 }
 
 function serializeAttributes(
@@ -104,7 +104,7 @@ function serializeAttributes(
 
     result += " ";
     if (candidatePrefix !== null) {
-      result += candidatePrefix + ":";
+      result += `${candidatePrefix}:`;
     }
     if (
       requireWellFormed &&
@@ -114,10 +114,7 @@ function serializeAttributes(
     ) {
       throw new Error("Invalid attribute localName value");
     }
-    result += `${attr.localName}="${serializeAttributeValue(
-      attr.value,
-      requireWellFormed
-    )}"`;
+    result += `${attr.localName}="${serializeAttributeValue(attr.value, requireWellFormed)}"`;
   }
   return result;
 }

@@ -18,24 +18,24 @@ exports.is = value => {
 exports.isImpl = value => {
   return utils.isObject(value) && value instanceof Impl.implementation;
 };
-exports.convert = (value, { context = "The provided value" } = {}) => {
+exports.convert = (globalObject, value, { context = "The provided value" } = {}) => {
   if (exports.is(value)) {
     return utils.implForWrapper(value);
   }
-  throw new TypeError(`${context} is not of type 'Range'.`);
+  throw new globalObject.TypeError(`${context} is not of type 'Range'.`);
 };
 
-function makeWrapper(globalObject) {
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    throw new Error("Internal error: invalid global object");
+function makeWrapper(globalObject, newTarget) {
+  let proto;
+  if (newTarget !== undefined) {
+    proto = newTarget.prototype;
   }
 
-  const ctor = globalObject[ctorRegistrySymbol]["Range"];
-  if (ctor === undefined) {
-    throw new Error("Internal error: constructor Range is not installed on the passed global object");
+  if (!utils.isObject(proto)) {
+    proto = globalObject[ctorRegistrySymbol]["Range"].prototype;
   }
 
-  return Object.create(ctor.prototype);
+  return Object.create(proto);
 }
 
 exports.create = (globalObject, constructorArgs, privateData) => {
@@ -68,8 +68,8 @@ exports.setup = (wrapper, globalObject, constructorArgs = [], privateData = {}) 
   return wrapper;
 };
 
-exports.new = globalObject => {
-  const wrapper = makeWrapper(globalObject);
+exports.new = (globalObject, newTarget) => {
+  const wrapper = makeWrapper(globalObject, newTarget);
 
   exports._internalSetup(wrapper, globalObject);
   Object.defineProperty(wrapper, implSymbol, {
@@ -91,9 +91,7 @@ exports.install = (globalObject, globalNames) => {
     return;
   }
 
-  if (globalObject.AbstractRange === undefined) {
-    throw new Error("Internal error: attempting to evaluate Range before AbstractRange");
-  }
+  const ctorRegistry = utils.initCtorRegistry(globalObject);
   class Range extends globalObject.AbstractRange {
     constructor() {
       return exports.setup(Object.create(new.target.prototype), globalObject, undefined);
@@ -102,24 +100,27 @@ exports.install = (globalObject, globalNames) => {
     setStart(node, offset) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'setStart' called on an object that is not a valid instance of Range.");
+        throw new globalObject.TypeError("'setStart' called on an object that is not a valid instance of Range.");
       }
 
       if (arguments.length < 2) {
-        throw new TypeError(
-          "Failed to execute 'setStart' on 'Range': 2 arguments required, but only " + arguments.length + " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'setStart' on 'Range': 2 arguments required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
-        curArg = Node.convert(curArg, { context: "Failed to execute 'setStart' on 'Range': parameter 1" });
+        curArg = Node.convert(globalObject, curArg, {
+          context: "Failed to execute 'setStart' on 'Range': parameter 1"
+        });
         args.push(curArg);
       }
       {
         let curArg = arguments[1];
         curArg = conversions["unsigned long"](curArg, {
-          context: "Failed to execute 'setStart' on 'Range': parameter 2"
+          context: "Failed to execute 'setStart' on 'Range': parameter 2",
+          globals: globalObject
         });
         args.push(curArg);
       }
@@ -129,24 +130,25 @@ exports.install = (globalObject, globalNames) => {
     setEnd(node, offset) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'setEnd' called on an object that is not a valid instance of Range.");
+        throw new globalObject.TypeError("'setEnd' called on an object that is not a valid instance of Range.");
       }
 
       if (arguments.length < 2) {
-        throw new TypeError(
-          "Failed to execute 'setEnd' on 'Range': 2 arguments required, but only " + arguments.length + " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'setEnd' on 'Range': 2 arguments required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
-        curArg = Node.convert(curArg, { context: "Failed to execute 'setEnd' on 'Range': parameter 1" });
+        curArg = Node.convert(globalObject, curArg, { context: "Failed to execute 'setEnd' on 'Range': parameter 1" });
         args.push(curArg);
       }
       {
         let curArg = arguments[1];
         curArg = conversions["unsigned long"](curArg, {
-          context: "Failed to execute 'setEnd' on 'Range': parameter 2"
+          context: "Failed to execute 'setEnd' on 'Range': parameter 2",
+          globals: globalObject
         });
         args.push(curArg);
       }
@@ -156,20 +158,20 @@ exports.install = (globalObject, globalNames) => {
     setStartBefore(node) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'setStartBefore' called on an object that is not a valid instance of Range.");
+        throw new globalObject.TypeError("'setStartBefore' called on an object that is not a valid instance of Range.");
       }
 
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to execute 'setStartBefore' on 'Range': 1 argument required, but only " +
-            arguments.length +
-            " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'setStartBefore' on 'Range': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
-        curArg = Node.convert(curArg, { context: "Failed to execute 'setStartBefore' on 'Range': parameter 1" });
+        curArg = Node.convert(globalObject, curArg, {
+          context: "Failed to execute 'setStartBefore' on 'Range': parameter 1"
+        });
         args.push(curArg);
       }
       return esValue[implSymbol].setStartBefore(...args);
@@ -178,20 +180,20 @@ exports.install = (globalObject, globalNames) => {
     setStartAfter(node) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'setStartAfter' called on an object that is not a valid instance of Range.");
+        throw new globalObject.TypeError("'setStartAfter' called on an object that is not a valid instance of Range.");
       }
 
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to execute 'setStartAfter' on 'Range': 1 argument required, but only " +
-            arguments.length +
-            " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'setStartAfter' on 'Range': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
-        curArg = Node.convert(curArg, { context: "Failed to execute 'setStartAfter' on 'Range': parameter 1" });
+        curArg = Node.convert(globalObject, curArg, {
+          context: "Failed to execute 'setStartAfter' on 'Range': parameter 1"
+        });
         args.push(curArg);
       }
       return esValue[implSymbol].setStartAfter(...args);
@@ -200,18 +202,20 @@ exports.install = (globalObject, globalNames) => {
     setEndBefore(node) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'setEndBefore' called on an object that is not a valid instance of Range.");
+        throw new globalObject.TypeError("'setEndBefore' called on an object that is not a valid instance of Range.");
       }
 
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to execute 'setEndBefore' on 'Range': 1 argument required, but only " + arguments.length + " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'setEndBefore' on 'Range': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
-        curArg = Node.convert(curArg, { context: "Failed to execute 'setEndBefore' on 'Range': parameter 1" });
+        curArg = Node.convert(globalObject, curArg, {
+          context: "Failed to execute 'setEndBefore' on 'Range': parameter 1"
+        });
         args.push(curArg);
       }
       return esValue[implSymbol].setEndBefore(...args);
@@ -220,18 +224,20 @@ exports.install = (globalObject, globalNames) => {
     setEndAfter(node) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'setEndAfter' called on an object that is not a valid instance of Range.");
+        throw new globalObject.TypeError("'setEndAfter' called on an object that is not a valid instance of Range.");
       }
 
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to execute 'setEndAfter' on 'Range': 1 argument required, but only " + arguments.length + " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'setEndAfter' on 'Range': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
-        curArg = Node.convert(curArg, { context: "Failed to execute 'setEndAfter' on 'Range': parameter 1" });
+        curArg = Node.convert(globalObject, curArg, {
+          context: "Failed to execute 'setEndAfter' on 'Range': parameter 1"
+        });
         args.push(curArg);
       }
       return esValue[implSymbol].setEndAfter(...args);
@@ -240,13 +246,16 @@ exports.install = (globalObject, globalNames) => {
     collapse() {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'collapse' called on an object that is not a valid instance of Range.");
+        throw new globalObject.TypeError("'collapse' called on an object that is not a valid instance of Range.");
       }
       const args = [];
       {
         let curArg = arguments[0];
         if (curArg !== undefined) {
-          curArg = conversions["boolean"](curArg, { context: "Failed to execute 'collapse' on 'Range': parameter 1" });
+          curArg = conversions["boolean"](curArg, {
+            context: "Failed to execute 'collapse' on 'Range': parameter 1",
+            globals: globalObject
+          });
         } else {
           curArg = false;
         }
@@ -258,18 +267,20 @@ exports.install = (globalObject, globalNames) => {
     selectNode(node) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'selectNode' called on an object that is not a valid instance of Range.");
+        throw new globalObject.TypeError("'selectNode' called on an object that is not a valid instance of Range.");
       }
 
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to execute 'selectNode' on 'Range': 1 argument required, but only " + arguments.length + " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'selectNode' on 'Range': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
-        curArg = Node.convert(curArg, { context: "Failed to execute 'selectNode' on 'Range': parameter 1" });
+        curArg = Node.convert(globalObject, curArg, {
+          context: "Failed to execute 'selectNode' on 'Range': parameter 1"
+        });
         args.push(curArg);
       }
       return esValue[implSymbol].selectNode(...args);
@@ -278,20 +289,22 @@ exports.install = (globalObject, globalNames) => {
     selectNodeContents(node) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'selectNodeContents' called on an object that is not a valid instance of Range.");
+        throw new globalObject.TypeError(
+          "'selectNodeContents' called on an object that is not a valid instance of Range."
+        );
       }
 
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to execute 'selectNodeContents' on 'Range': 1 argument required, but only " +
-            arguments.length +
-            " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'selectNodeContents' on 'Range': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
-        curArg = Node.convert(curArg, { context: "Failed to execute 'selectNodeContents' on 'Range': parameter 1" });
+        curArg = Node.convert(globalObject, curArg, {
+          context: "Failed to execute 'selectNodeContents' on 'Range': parameter 1"
+        });
         args.push(curArg);
       }
       return esValue[implSymbol].selectNodeContents(...args);
@@ -300,27 +313,28 @@ exports.install = (globalObject, globalNames) => {
     compareBoundaryPoints(how, sourceRange) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'compareBoundaryPoints' called on an object that is not a valid instance of Range.");
+        throw new globalObject.TypeError(
+          "'compareBoundaryPoints' called on an object that is not a valid instance of Range."
+        );
       }
 
       if (arguments.length < 2) {
-        throw new TypeError(
-          "Failed to execute 'compareBoundaryPoints' on 'Range': 2 arguments required, but only " +
-            arguments.length +
-            " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'compareBoundaryPoints' on 'Range': 2 arguments required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
         curArg = conversions["unsigned short"](curArg, {
-          context: "Failed to execute 'compareBoundaryPoints' on 'Range': parameter 1"
+          context: "Failed to execute 'compareBoundaryPoints' on 'Range': parameter 1",
+          globals: globalObject
         });
         args.push(curArg);
       }
       {
         let curArg = arguments[1];
-        curArg = exports.convert(curArg, {
+        curArg = exports.convert(globalObject, curArg, {
           context: "Failed to execute 'compareBoundaryPoints' on 'Range': parameter 2"
         });
         args.push(curArg);
@@ -331,7 +345,7 @@ exports.install = (globalObject, globalNames) => {
     deleteContents() {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'deleteContents' called on an object that is not a valid instance of Range.");
+        throw new globalObject.TypeError("'deleteContents' called on an object that is not a valid instance of Range.");
       }
 
       ceReactionsPreSteps_helpers_custom_elements(globalObject);
@@ -345,7 +359,9 @@ exports.install = (globalObject, globalNames) => {
     extractContents() {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'extractContents' called on an object that is not a valid instance of Range.");
+        throw new globalObject.TypeError(
+          "'extractContents' called on an object that is not a valid instance of Range."
+        );
       }
 
       ceReactionsPreSteps_helpers_custom_elements(globalObject);
@@ -359,7 +375,7 @@ exports.install = (globalObject, globalNames) => {
     cloneContents() {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'cloneContents' called on an object that is not a valid instance of Range.");
+        throw new globalObject.TypeError("'cloneContents' called on an object that is not a valid instance of Range.");
       }
 
       ceReactionsPreSteps_helpers_custom_elements(globalObject);
@@ -373,18 +389,20 @@ exports.install = (globalObject, globalNames) => {
     insertNode(node) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'insertNode' called on an object that is not a valid instance of Range.");
+        throw new globalObject.TypeError("'insertNode' called on an object that is not a valid instance of Range.");
       }
 
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to execute 'insertNode' on 'Range': 1 argument required, but only " + arguments.length + " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'insertNode' on 'Range': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
-        curArg = Node.convert(curArg, { context: "Failed to execute 'insertNode' on 'Range': parameter 1" });
+        curArg = Node.convert(globalObject, curArg, {
+          context: "Failed to execute 'insertNode' on 'Range': parameter 1"
+        });
         args.push(curArg);
       }
       ceReactionsPreSteps_helpers_custom_elements(globalObject);
@@ -398,20 +416,22 @@ exports.install = (globalObject, globalNames) => {
     surroundContents(newParent) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'surroundContents' called on an object that is not a valid instance of Range.");
+        throw new globalObject.TypeError(
+          "'surroundContents' called on an object that is not a valid instance of Range."
+        );
       }
 
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to execute 'surroundContents' on 'Range': 1 argument required, but only " +
-            arguments.length +
-            " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'surroundContents' on 'Range': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
-        curArg = Node.convert(curArg, { context: "Failed to execute 'surroundContents' on 'Range': parameter 1" });
+        curArg = Node.convert(globalObject, curArg, {
+          context: "Failed to execute 'surroundContents' on 'Range': parameter 1"
+        });
         args.push(curArg);
       }
       ceReactionsPreSteps_helpers_custom_elements(globalObject);
@@ -425,7 +445,7 @@ exports.install = (globalObject, globalNames) => {
     cloneRange() {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'cloneRange' called on an object that is not a valid instance of Range.");
+        throw new globalObject.TypeError("'cloneRange' called on an object that is not a valid instance of Range.");
       }
 
       return utils.tryWrapperForImpl(esValue[implSymbol].cloneRange());
@@ -434,7 +454,7 @@ exports.install = (globalObject, globalNames) => {
     detach() {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'detach' called on an object that is not a valid instance of Range.");
+        throw new globalObject.TypeError("'detach' called on an object that is not a valid instance of Range.");
       }
 
       return esValue[implSymbol].detach();
@@ -443,26 +463,27 @@ exports.install = (globalObject, globalNames) => {
     isPointInRange(node, offset) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'isPointInRange' called on an object that is not a valid instance of Range.");
+        throw new globalObject.TypeError("'isPointInRange' called on an object that is not a valid instance of Range.");
       }
 
       if (arguments.length < 2) {
-        throw new TypeError(
-          "Failed to execute 'isPointInRange' on 'Range': 2 arguments required, but only " +
-            arguments.length +
-            " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'isPointInRange' on 'Range': 2 arguments required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
-        curArg = Node.convert(curArg, { context: "Failed to execute 'isPointInRange' on 'Range': parameter 1" });
+        curArg = Node.convert(globalObject, curArg, {
+          context: "Failed to execute 'isPointInRange' on 'Range': parameter 1"
+        });
         args.push(curArg);
       }
       {
         let curArg = arguments[1];
         curArg = conversions["unsigned long"](curArg, {
-          context: "Failed to execute 'isPointInRange' on 'Range': parameter 2"
+          context: "Failed to execute 'isPointInRange' on 'Range': parameter 2",
+          globals: globalObject
         });
         args.push(curArg);
       }
@@ -472,26 +493,27 @@ exports.install = (globalObject, globalNames) => {
     comparePoint(node, offset) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'comparePoint' called on an object that is not a valid instance of Range.");
+        throw new globalObject.TypeError("'comparePoint' called on an object that is not a valid instance of Range.");
       }
 
       if (arguments.length < 2) {
-        throw new TypeError(
-          "Failed to execute 'comparePoint' on 'Range': 2 arguments required, but only " +
-            arguments.length +
-            " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'comparePoint' on 'Range': 2 arguments required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
-        curArg = Node.convert(curArg, { context: "Failed to execute 'comparePoint' on 'Range': parameter 1" });
+        curArg = Node.convert(globalObject, curArg, {
+          context: "Failed to execute 'comparePoint' on 'Range': parameter 1"
+        });
         args.push(curArg);
       }
       {
         let curArg = arguments[1];
         curArg = conversions["unsigned long"](curArg, {
-          context: "Failed to execute 'comparePoint' on 'Range': parameter 2"
+          context: "Failed to execute 'comparePoint' on 'Range': parameter 2",
+          globals: globalObject
         });
         args.push(curArg);
       }
@@ -501,20 +523,20 @@ exports.install = (globalObject, globalNames) => {
     intersectsNode(node) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'intersectsNode' called on an object that is not a valid instance of Range.");
+        throw new globalObject.TypeError("'intersectsNode' called on an object that is not a valid instance of Range.");
       }
 
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to execute 'intersectsNode' on 'Range': 1 argument required, but only " +
-            arguments.length +
-            " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'intersectsNode' on 'Range': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
-        curArg = Node.convert(curArg, { context: "Failed to execute 'intersectsNode' on 'Range': parameter 1" });
+        curArg = Node.convert(globalObject, curArg, {
+          context: "Failed to execute 'intersectsNode' on 'Range': parameter 1"
+        });
         args.push(curArg);
       }
       return esValue[implSymbol].intersectsNode(...args);
@@ -523,7 +545,7 @@ exports.install = (globalObject, globalNames) => {
     toString() {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'toString' called on an object that is not a valid instance of Range.");
+        throw new globalObject.TypeError("'toString' called on an object that is not a valid instance of Range.");
       }
 
       return esValue[implSymbol].toString();
@@ -532,21 +554,22 @@ exports.install = (globalObject, globalNames) => {
     createContextualFragment(fragment) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'createContextualFragment' called on an object that is not a valid instance of Range.");
+        throw new globalObject.TypeError(
+          "'createContextualFragment' called on an object that is not a valid instance of Range."
+        );
       }
 
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to execute 'createContextualFragment' on 'Range': 1 argument required, but only " +
-            arguments.length +
-            " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'createContextualFragment' on 'Range': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
         curArg = conversions["DOMString"](curArg, {
-          context: "Failed to execute 'createContextualFragment' on 'Range': parameter 1"
+          context: "Failed to execute 'createContextualFragment' on 'Range': parameter 1",
+          globals: globalObject
         });
         args.push(curArg);
       }
@@ -562,7 +585,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get commonAncestorContainer' called on an object that is not a valid instance of Range.");
+        throw new globalObject.TypeError(
+          "'get commonAncestorContainer' called on an object that is not a valid instance of Range."
+        );
       }
 
       return utils.tryWrapperForImpl(esValue[implSymbol]["commonAncestorContainer"]);
@@ -604,10 +629,7 @@ exports.install = (globalObject, globalNames) => {
     END_TO_END: { value: 2, enumerable: true },
     END_TO_START: { value: 3, enumerable: true }
   });
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    globalObject[ctorRegistrySymbol] = Object.create(null);
-  }
-  globalObject[ctorRegistrySymbol][interfaceName] = Range;
+  ctorRegistry[interfaceName] = Range;
 
   Object.defineProperty(globalObject, interfaceName, {
     configurable: true,

@@ -5,15 +5,15 @@ const utils = require("./utils.js");
 
 const EventModifierInit = require("./EventModifierInit.js");
 
-exports._convertInherit = (obj, ret, { context = "The provided value" } = {}) => {
-  EventModifierInit._convertInherit(obj, ret, { context });
+exports._convertInherit = (globalObject, obj, ret, { context = "The provided value" } = {}) => {
+  EventModifierInit._convertInherit(globalObject, obj, ret, { context });
 
   {
     const key = "changedTouches";
     let value = obj === undefined || obj === null ? undefined : obj[key];
     if (value !== undefined) {
       if (!utils.isObject(value)) {
-        throw new TypeError(context + " has member 'changedTouches' that" + " is not an iterable object.");
+        throw new globalObject.TypeError(context + " has member 'changedTouches' that" + " is not an iterable object.");
       } else {
         const V = [];
         const tmp = value;
@@ -36,7 +36,7 @@ exports._convertInherit = (obj, ret, { context = "The provided value" } = {}) =>
     let value = obj === undefined || obj === null ? undefined : obj[key];
     if (value !== undefined) {
       if (!utils.isObject(value)) {
-        throw new TypeError(context + " has member 'targetTouches' that" + " is not an iterable object.");
+        throw new globalObject.TypeError(context + " has member 'targetTouches' that" + " is not an iterable object.");
       } else {
         const V = [];
         const tmp = value;
@@ -59,7 +59,7 @@ exports._convertInherit = (obj, ret, { context = "The provided value" } = {}) =>
     let value = obj === undefined || obj === null ? undefined : obj[key];
     if (value !== undefined) {
       if (!utils.isObject(value)) {
-        throw new TypeError(context + " has member 'touches' that" + " is not an iterable object.");
+        throw new globalObject.TypeError(context + " has member 'touches' that" + " is not an iterable object.");
       } else {
         const V = [];
         const tmp = value;
@@ -78,12 +78,12 @@ exports._convertInherit = (obj, ret, { context = "The provided value" } = {}) =>
   }
 };
 
-exports.convert = function convert(obj, { context = "The provided value" } = {}) {
+exports.convert = (globalObject, obj, { context = "The provided value" } = {}) => {
   if (obj !== undefined && typeof obj !== "object" && typeof obj !== "function") {
-    throw new TypeError(`${context} is not an object.`);
+    throw new globalObject.TypeError(`${context} is not an object.`);
   }
 
   const ret = Object.create(null);
-  exports._convertInherit(obj, ret, { context });
+  exports._convertInherit(globalObject, obj, ret, { context });
   return ret;
 };

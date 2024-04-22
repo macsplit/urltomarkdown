@@ -14,24 +14,24 @@ exports.is = value => {
 exports.isImpl = value => {
   return utils.isObject(value) && value instanceof Impl.implementation;
 };
-exports.convert = (value, { context = "The provided value" } = {}) => {
+exports.convert = (globalObject, value, { context = "The provided value" } = {}) => {
   if (exports.is(value)) {
     return utils.implForWrapper(value);
   }
-  throw new TypeError(`${context} is not of type 'AbortController'.`);
+  throw new globalObject.TypeError(`${context} is not of type 'AbortController'.`);
 };
 
-function makeWrapper(globalObject) {
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    throw new Error("Internal error: invalid global object");
+function makeWrapper(globalObject, newTarget) {
+  let proto;
+  if (newTarget !== undefined) {
+    proto = newTarget.prototype;
   }
 
-  const ctor = globalObject[ctorRegistrySymbol]["AbortController"];
-  if (ctor === undefined) {
-    throw new Error("Internal error: constructor AbortController is not installed on the passed global object");
+  if (!utils.isObject(proto)) {
+    proto = globalObject[ctorRegistrySymbol]["AbortController"].prototype;
   }
 
-  return Object.create(ctor.prototype);
+  return Object.create(proto);
 }
 
 exports.create = (globalObject, constructorArgs, privateData) => {
@@ -62,8 +62,8 @@ exports.setup = (wrapper, globalObject, constructorArgs = [], privateData = {}) 
   return wrapper;
 };
 
-exports.new = globalObject => {
-  const wrapper = makeWrapper(globalObject);
+exports.new = (globalObject, newTarget) => {
+  const wrapper = makeWrapper(globalObject, newTarget);
 
   exports._internalSetup(wrapper, globalObject);
   Object.defineProperty(wrapper, implSymbol, {
@@ -84,6 +84,8 @@ exports.install = (globalObject, globalNames) => {
   if (!globalNames.some(globalName => exposed.has(globalName))) {
     return;
   }
+
+  const ctorRegistry = utils.initCtorRegistry(globalObject);
   class AbortController {
     constructor() {
       return exports.setup(Object.create(new.target.prototype), globalObject, undefined);
@@ -92,17 +94,31 @@ exports.install = (globalObject, globalNames) => {
     abort() {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'abort' called on an object that is not a valid instance of AbortController.");
+        throw new globalObject.TypeError(
+          "'abort' called on an object that is not a valid instance of AbortController."
+        );
       }
-
-      return esValue[implSymbol].abort();
+      const args = [];
+      {
+        let curArg = arguments[0];
+        if (curArg !== undefined) {
+          curArg = conversions["any"](curArg, {
+            context: "Failed to execute 'abort' on 'AbortController': parameter 1",
+            globals: globalObject
+          });
+        }
+        args.push(curArg);
+      }
+      return esValue[implSymbol].abort(...args);
     }
 
     get signal() {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get signal' called on an object that is not a valid instance of AbortController.");
+        throw new globalObject.TypeError(
+          "'get signal' called on an object that is not a valid instance of AbortController."
+        );
       }
 
       return utils.getSameObject(this, "signal", () => {
@@ -115,10 +131,7 @@ exports.install = (globalObject, globalNames) => {
     signal: { enumerable: true },
     [Symbol.toStringTag]: { value: "AbortController", configurable: true }
   });
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    globalObject[ctorRegistrySymbol] = Object.create(null);
-  }
-  globalObject[ctorRegistrySymbol][interfaceName] = AbortController;
+  ctorRegistry[interfaceName] = AbortController;
 
   Object.defineProperty(globalObject, interfaceName, {
     configurable: true,

@@ -14,24 +14,24 @@ exports.is = value => {
 exports.isImpl = value => {
   return utils.isObject(value) && value instanceof Impl.implementation;
 };
-exports.convert = (value, { context = "The provided value" } = {}) => {
+exports.convert = (globalObject, value, { context = "The provided value" } = {}) => {
   if (exports.is(value)) {
     return utils.implForWrapper(value);
   }
-  throw new TypeError(`${context} is not of type 'Navigator'.`);
+  throw new globalObject.TypeError(`${context} is not of type 'Navigator'.`);
 };
 
-function makeWrapper(globalObject) {
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    throw new Error("Internal error: invalid global object");
+function makeWrapper(globalObject, newTarget) {
+  let proto;
+  if (newTarget !== undefined) {
+    proto = newTarget.prototype;
   }
 
-  const ctor = globalObject[ctorRegistrySymbol]["Navigator"];
-  if (ctor === undefined) {
-    throw new Error("Internal error: constructor Navigator is not installed on the passed global object");
+  if (!utils.isObject(proto)) {
+    proto = globalObject[ctorRegistrySymbol]["Navigator"].prototype;
   }
 
-  return Object.create(ctor.prototype);
+  return Object.create(proto);
 }
 
 exports.create = (globalObject, constructorArgs, privateData) => {
@@ -62,8 +62,8 @@ exports.setup = (wrapper, globalObject, constructorArgs = [], privateData = {}) 
   return wrapper;
 };
 
-exports.new = globalObject => {
-  const wrapper = makeWrapper(globalObject);
+exports.new = (globalObject, newTarget) => {
+  const wrapper = makeWrapper(globalObject, newTarget);
 
   exports._internalSetup(wrapper, globalObject);
   Object.defineProperty(wrapper, implSymbol, {
@@ -84,15 +84,19 @@ exports.install = (globalObject, globalNames) => {
   if (!globalNames.some(globalName => exposed.has(globalName))) {
     return;
   }
+
+  const ctorRegistry = utils.initCtorRegistry(globalObject);
   class Navigator {
     constructor() {
-      throw new TypeError("Illegal constructor");
+      throw new globalObject.TypeError("Illegal constructor");
     }
 
     javaEnabled() {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'javaEnabled' called on an object that is not a valid instance of Navigator.");
+        throw new globalObject.TypeError(
+          "'javaEnabled' called on an object that is not a valid instance of Navigator."
+        );
       }
 
       return esValue[implSymbol].javaEnabled();
@@ -102,7 +106,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get appCodeName' called on an object that is not a valid instance of Navigator.");
+        throw new globalObject.TypeError(
+          "'get appCodeName' called on an object that is not a valid instance of Navigator."
+        );
       }
 
       return esValue[implSymbol]["appCodeName"];
@@ -112,7 +118,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get appName' called on an object that is not a valid instance of Navigator.");
+        throw new globalObject.TypeError(
+          "'get appName' called on an object that is not a valid instance of Navigator."
+        );
       }
 
       return esValue[implSymbol]["appName"];
@@ -122,7 +130,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get appVersion' called on an object that is not a valid instance of Navigator.");
+        throw new globalObject.TypeError(
+          "'get appVersion' called on an object that is not a valid instance of Navigator."
+        );
       }
 
       return esValue[implSymbol]["appVersion"];
@@ -132,7 +142,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get platform' called on an object that is not a valid instance of Navigator.");
+        throw new globalObject.TypeError(
+          "'get platform' called on an object that is not a valid instance of Navigator."
+        );
       }
 
       return esValue[implSymbol]["platform"];
@@ -142,7 +154,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get product' called on an object that is not a valid instance of Navigator.");
+        throw new globalObject.TypeError(
+          "'get product' called on an object that is not a valid instance of Navigator."
+        );
       }
 
       return esValue[implSymbol]["product"];
@@ -152,7 +166,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get productSub' called on an object that is not a valid instance of Navigator.");
+        throw new globalObject.TypeError(
+          "'get productSub' called on an object that is not a valid instance of Navigator."
+        );
       }
 
       return esValue[implSymbol]["productSub"];
@@ -162,7 +178,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get userAgent' called on an object that is not a valid instance of Navigator.");
+        throw new globalObject.TypeError(
+          "'get userAgent' called on an object that is not a valid instance of Navigator."
+        );
       }
 
       return esValue[implSymbol]["userAgent"];
@@ -172,7 +190,7 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get vendor' called on an object that is not a valid instance of Navigator.");
+        throw new globalObject.TypeError("'get vendor' called on an object that is not a valid instance of Navigator.");
       }
 
       return esValue[implSymbol]["vendor"];
@@ -182,7 +200,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get vendorSub' called on an object that is not a valid instance of Navigator.");
+        throw new globalObject.TypeError(
+          "'get vendorSub' called on an object that is not a valid instance of Navigator."
+        );
       }
 
       return esValue[implSymbol]["vendorSub"];
@@ -192,7 +212,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get language' called on an object that is not a valid instance of Navigator.");
+        throw new globalObject.TypeError(
+          "'get language' called on an object that is not a valid instance of Navigator."
+        );
       }
 
       return esValue[implSymbol]["language"];
@@ -202,7 +224,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get languages' called on an object that is not a valid instance of Navigator.");
+        throw new globalObject.TypeError(
+          "'get languages' called on an object that is not a valid instance of Navigator."
+        );
       }
 
       return utils.tryWrapperForImpl(esValue[implSymbol]["languages"]);
@@ -212,7 +236,7 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get onLine' called on an object that is not a valid instance of Navigator.");
+        throw new globalObject.TypeError("'get onLine' called on an object that is not a valid instance of Navigator.");
       }
 
       return esValue[implSymbol]["onLine"];
@@ -222,7 +246,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get cookieEnabled' called on an object that is not a valid instance of Navigator.");
+        throw new globalObject.TypeError(
+          "'get cookieEnabled' called on an object that is not a valid instance of Navigator."
+        );
       }
 
       return esValue[implSymbol]["cookieEnabled"];
@@ -232,7 +258,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get plugins' called on an object that is not a valid instance of Navigator.");
+        throw new globalObject.TypeError(
+          "'get plugins' called on an object that is not a valid instance of Navigator."
+        );
       }
 
       return utils.getSameObject(this, "plugins", () => {
@@ -244,7 +272,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get mimeTypes' called on an object that is not a valid instance of Navigator.");
+        throw new globalObject.TypeError(
+          "'get mimeTypes' called on an object that is not a valid instance of Navigator."
+        );
       }
 
       return utils.getSameObject(this, "mimeTypes", () => {
@@ -256,7 +286,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get hardwareConcurrency' called on an object that is not a valid instance of Navigator.");
+        throw new globalObject.TypeError(
+          "'get hardwareConcurrency' called on an object that is not a valid instance of Navigator."
+        );
       }
 
       return esValue[implSymbol]["hardwareConcurrency"];
@@ -282,10 +314,7 @@ exports.install = (globalObject, globalNames) => {
     hardwareConcurrency: { enumerable: true },
     [Symbol.toStringTag]: { value: "Navigator", configurable: true }
   });
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    globalObject[ctorRegistrySymbol] = Object.create(null);
-  }
-  globalObject[ctorRegistrySymbol][interfaceName] = Navigator;
+  ctorRegistry[interfaceName] = Navigator;
 
   Object.defineProperty(globalObject, interfaceName, {
     configurable: true,

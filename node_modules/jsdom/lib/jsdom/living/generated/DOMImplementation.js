@@ -15,24 +15,24 @@ exports.is = value => {
 exports.isImpl = value => {
   return utils.isObject(value) && value instanceof Impl.implementation;
 };
-exports.convert = (value, { context = "The provided value" } = {}) => {
+exports.convert = (globalObject, value, { context = "The provided value" } = {}) => {
   if (exports.is(value)) {
     return utils.implForWrapper(value);
   }
-  throw new TypeError(`${context} is not of type 'DOMImplementation'.`);
+  throw new globalObject.TypeError(`${context} is not of type 'DOMImplementation'.`);
 };
 
-function makeWrapper(globalObject) {
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    throw new Error("Internal error: invalid global object");
+function makeWrapper(globalObject, newTarget) {
+  let proto;
+  if (newTarget !== undefined) {
+    proto = newTarget.prototype;
   }
 
-  const ctor = globalObject[ctorRegistrySymbol]["DOMImplementation"];
-  if (ctor === undefined) {
-    throw new Error("Internal error: constructor DOMImplementation is not installed on the passed global object");
+  if (!utils.isObject(proto)) {
+    proto = globalObject[ctorRegistrySymbol]["DOMImplementation"].prototype;
   }
 
-  return Object.create(ctor.prototype);
+  return Object.create(proto);
 }
 
 exports.create = (globalObject, constructorArgs, privateData) => {
@@ -63,8 +63,8 @@ exports.setup = (wrapper, globalObject, constructorArgs = [], privateData = {}) 
   return wrapper;
 };
 
-exports.new = globalObject => {
-  const wrapper = makeWrapper(globalObject);
+exports.new = (globalObject, newTarget) => {
+  const wrapper = makeWrapper(globalObject, newTarget);
 
   exports._internalSetup(wrapper, globalObject);
   Object.defineProperty(wrapper, implSymbol, {
@@ -85,45 +85,48 @@ exports.install = (globalObject, globalNames) => {
   if (!globalNames.some(globalName => exposed.has(globalName))) {
     return;
   }
+
+  const ctorRegistry = utils.initCtorRegistry(globalObject);
   class DOMImplementation {
     constructor() {
-      throw new TypeError("Illegal constructor");
+      throw new globalObject.TypeError("Illegal constructor");
     }
 
     createDocumentType(qualifiedName, publicId, systemId) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError(
+        throw new globalObject.TypeError(
           "'createDocumentType' called on an object that is not a valid instance of DOMImplementation."
         );
       }
 
       if (arguments.length < 3) {
-        throw new TypeError(
-          "Failed to execute 'createDocumentType' on 'DOMImplementation': 3 arguments required, but only " +
-            arguments.length +
-            " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'createDocumentType' on 'DOMImplementation': 3 arguments required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
         curArg = conversions["DOMString"](curArg, {
-          context: "Failed to execute 'createDocumentType' on 'DOMImplementation': parameter 1"
+          context: "Failed to execute 'createDocumentType' on 'DOMImplementation': parameter 1",
+          globals: globalObject
         });
         args.push(curArg);
       }
       {
         let curArg = arguments[1];
         curArg = conversions["DOMString"](curArg, {
-          context: "Failed to execute 'createDocumentType' on 'DOMImplementation': parameter 2"
+          context: "Failed to execute 'createDocumentType' on 'DOMImplementation': parameter 2",
+          globals: globalObject
         });
         args.push(curArg);
       }
       {
         let curArg = arguments[2];
         curArg = conversions["DOMString"](curArg, {
-          context: "Failed to execute 'createDocumentType' on 'DOMImplementation': parameter 3"
+          context: "Failed to execute 'createDocumentType' on 'DOMImplementation': parameter 3",
+          globals: globalObject
         });
         args.push(curArg);
       }
@@ -133,14 +136,14 @@ exports.install = (globalObject, globalNames) => {
     createDocument(namespace, qualifiedName) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'createDocument' called on an object that is not a valid instance of DOMImplementation.");
+        throw new globalObject.TypeError(
+          "'createDocument' called on an object that is not a valid instance of DOMImplementation."
+        );
       }
 
       if (arguments.length < 2) {
-        throw new TypeError(
-          "Failed to execute 'createDocument' on 'DOMImplementation': 2 arguments required, but only " +
-            arguments.length +
-            " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'createDocument' on 'DOMImplementation': 2 arguments required, but only ${arguments.length} present.`
         );
       }
       const args = [];
@@ -150,7 +153,8 @@ exports.install = (globalObject, globalNames) => {
           curArg = null;
         } else {
           curArg = conversions["DOMString"](curArg, {
-            context: "Failed to execute 'createDocument' on 'DOMImplementation': parameter 1"
+            context: "Failed to execute 'createDocument' on 'DOMImplementation': parameter 1",
+            globals: globalObject
           });
         }
         args.push(curArg);
@@ -159,6 +163,7 @@ exports.install = (globalObject, globalNames) => {
         let curArg = arguments[1];
         curArg = conversions["DOMString"](curArg, {
           context: "Failed to execute 'createDocument' on 'DOMImplementation': parameter 2",
+          globals: globalObject,
           treatNullAsEmptyString: true
         });
         args.push(curArg);
@@ -169,7 +174,7 @@ exports.install = (globalObject, globalNames) => {
           if (curArg === null || curArg === undefined) {
             curArg = null;
           } else {
-            curArg = DocumentType.convert(curArg, {
+            curArg = DocumentType.convert(globalObject, curArg, {
               context: "Failed to execute 'createDocument' on 'DOMImplementation': parameter 3"
             });
           }
@@ -184,7 +189,7 @@ exports.install = (globalObject, globalNames) => {
     createHTMLDocument() {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError(
+        throw new globalObject.TypeError(
           "'createHTMLDocument' called on an object that is not a valid instance of DOMImplementation."
         );
       }
@@ -193,7 +198,8 @@ exports.install = (globalObject, globalNames) => {
         let curArg = arguments[0];
         if (curArg !== undefined) {
           curArg = conversions["DOMString"](curArg, {
-            context: "Failed to execute 'createHTMLDocument' on 'DOMImplementation': parameter 1"
+            context: "Failed to execute 'createHTMLDocument' on 'DOMImplementation': parameter 1",
+            globals: globalObject
           });
         }
         args.push(curArg);
@@ -204,7 +210,9 @@ exports.install = (globalObject, globalNames) => {
     hasFeature() {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'hasFeature' called on an object that is not a valid instance of DOMImplementation.");
+        throw new globalObject.TypeError(
+          "'hasFeature' called on an object that is not a valid instance of DOMImplementation."
+        );
       }
 
       return esValue[implSymbol].hasFeature();
@@ -217,10 +225,7 @@ exports.install = (globalObject, globalNames) => {
     hasFeature: { enumerable: true },
     [Symbol.toStringTag]: { value: "DOMImplementation", configurable: true }
   });
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    globalObject[ctorRegistrySymbol] = Object.create(null);
-  }
-  globalObject[ctorRegistrySymbol][interfaceName] = DOMImplementation;
+  ctorRegistry[interfaceName] = DOMImplementation;
 
   Object.defineProperty(globalObject, interfaceName, {
     configurable: true,

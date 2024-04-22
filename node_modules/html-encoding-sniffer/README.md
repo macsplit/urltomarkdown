@@ -6,15 +6,17 @@ This package implements the HTML Standard's [encoding sniffing algorithm](https:
 const htmlEncodingSniffer = require("html-encoding-sniffer");
 const fs = require("fs");
 
-const htmlBuffer = fs.readFileSync("./html-page.html");
-const sniffedEncoding = htmlEncodingSniffer(htmlBuffer);
+const htmlBytes = fs.readFileSync("./html-page.html");
+const sniffedEncoding = htmlEncodingSniffer(htmlBytes);
 ```
+
+The passed bytes are given as a `Uint8Array`; the Node.js `Buffer` subclass of `Uint8Array` will also work, as shown above.
 
 The returned value will be a canonical [encoding name](https://encoding.spec.whatwg.org/#names-and-labels) (not a label). You might then combine this with the [whatwg-encoding](https://github.com/jsdom/whatwg-encoding) package to decode the result:
 
 ```js
 const whatwgEncoding = require("whatwg-encoding");
-const htmlString = whatwgEncoding.decode(htmlBuffer, sniffedEncoding);
+const htmlString = whatwgEncoding.decode(htmlBytes, sniffedEncoding);
 ```
 
 ## Options
@@ -22,7 +24,7 @@ const htmlString = whatwgEncoding.decode(htmlBuffer, sniffedEncoding);
 You can pass two potential options to `htmlEncodingSniffer`:
 
 ```js
-const sniffedEncoding = htmlEncodingSniffer(htmlBuffer, {
+const sniffedEncoding = htmlEncodingSniffer(htmlBytes, {
   transportLayerEncodingLabel,
   defaultEncoding
 });

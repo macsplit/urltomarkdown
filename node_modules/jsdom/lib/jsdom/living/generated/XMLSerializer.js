@@ -15,24 +15,24 @@ exports.is = value => {
 exports.isImpl = value => {
   return utils.isObject(value) && value instanceof Impl.implementation;
 };
-exports.convert = (value, { context = "The provided value" } = {}) => {
+exports.convert = (globalObject, value, { context = "The provided value" } = {}) => {
   if (exports.is(value)) {
     return utils.implForWrapper(value);
   }
-  throw new TypeError(`${context} is not of type 'XMLSerializer'.`);
+  throw new globalObject.TypeError(`${context} is not of type 'XMLSerializer'.`);
 };
 
-function makeWrapper(globalObject) {
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    throw new Error("Internal error: invalid global object");
+function makeWrapper(globalObject, newTarget) {
+  let proto;
+  if (newTarget !== undefined) {
+    proto = newTarget.prototype;
   }
 
-  const ctor = globalObject[ctorRegistrySymbol]["XMLSerializer"];
-  if (ctor === undefined) {
-    throw new Error("Internal error: constructor XMLSerializer is not installed on the passed global object");
+  if (!utils.isObject(proto)) {
+    proto = globalObject[ctorRegistrySymbol]["XMLSerializer"].prototype;
   }
 
-  return Object.create(ctor.prototype);
+  return Object.create(proto);
 }
 
 exports.create = (globalObject, constructorArgs, privateData) => {
@@ -63,8 +63,8 @@ exports.setup = (wrapper, globalObject, constructorArgs = [], privateData = {}) 
   return wrapper;
 };
 
-exports.new = globalObject => {
-  const wrapper = makeWrapper(globalObject);
+exports.new = (globalObject, newTarget) => {
+  const wrapper = makeWrapper(globalObject, newTarget);
 
   exports._internalSetup(wrapper, globalObject);
   Object.defineProperty(wrapper, implSymbol, {
@@ -85,6 +85,8 @@ exports.install = (globalObject, globalNames) => {
   if (!globalNames.some(globalName => exposed.has(globalName))) {
     return;
   }
+
+  const ctorRegistry = utils.initCtorRegistry(globalObject);
   class XMLSerializer {
     constructor() {
       return exports.setup(Object.create(new.target.prototype), globalObject, undefined);
@@ -93,20 +95,20 @@ exports.install = (globalObject, globalNames) => {
     serializeToString(root) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'serializeToString' called on an object that is not a valid instance of XMLSerializer.");
+        throw new globalObject.TypeError(
+          "'serializeToString' called on an object that is not a valid instance of XMLSerializer."
+        );
       }
 
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to execute 'serializeToString' on 'XMLSerializer': 1 argument required, but only " +
-            arguments.length +
-            " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'serializeToString' on 'XMLSerializer': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
-        curArg = Node.convert(curArg, {
+        curArg = Node.convert(globalObject, curArg, {
           context: "Failed to execute 'serializeToString' on 'XMLSerializer': parameter 1"
         });
         args.push(curArg);
@@ -118,10 +120,7 @@ exports.install = (globalObject, globalNames) => {
     serializeToString: { enumerable: true },
     [Symbol.toStringTag]: { value: "XMLSerializer", configurable: true }
   });
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    globalObject[ctorRegistrySymbol] = Object.create(null);
-  }
-  globalObject[ctorRegistrySymbol][interfaceName] = XMLSerializer;
+  ctorRegistry[interfaceName] = XMLSerializer;
 
   Object.defineProperty(globalObject, interfaceName, {
     configurable: true,

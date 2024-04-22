@@ -3,19 +3,20 @@
 var parsers = require('../parsers.js');
 var TYPES = parsers.TYPES;
 
-var isValid = function(v) {
+var isValid = function (v) {
   if (v.toLowerCase() === 'auto') {
     return true;
   }
   var type = parsers.valueType(v);
   return (
+    type === TYPES.NULL_OR_EMPTY_STR ||
     type === TYPES.LENGTH ||
     type === TYPES.PERCENT ||
     (type === TYPES.INTEGER && (v === '0' || v === 0))
   );
 };
 
-var parser = function(v) {
+var parser = function (v) {
   var V = v.toLowerCase();
   if (V === 'auto') {
     return V;
@@ -27,18 +28,21 @@ var mySetter = parsers.implicitSetter('margin', '', isValid, parser);
 var myGlobal = parsers.implicitSetter(
   'margin',
   '',
-  function() {
+  function () {
     return true;
   },
-  function(v) {
+  function (v) {
     return v;
   }
 );
 
 module.exports.definition = {
-  set: function(v) {
+  set: function (v) {
     if (typeof v === 'number') {
       v = String(v);
+    }
+    if (v === null) {
+      v = '';
     }
     if (typeof v !== 'string') {
       return;
@@ -57,7 +61,7 @@ module.exports.definition = {
         break;
     }
   },
-  get: function() {
+  get: function () {
     return this.getPropertyValue('margin');
   },
   enumerable: true,

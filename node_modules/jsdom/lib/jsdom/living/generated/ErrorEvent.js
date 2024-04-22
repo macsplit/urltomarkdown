@@ -16,24 +16,24 @@ exports.is = value => {
 exports.isImpl = value => {
   return utils.isObject(value) && value instanceof Impl.implementation;
 };
-exports.convert = (value, { context = "The provided value" } = {}) => {
+exports.convert = (globalObject, value, { context = "The provided value" } = {}) => {
   if (exports.is(value)) {
     return utils.implForWrapper(value);
   }
-  throw new TypeError(`${context} is not of type 'ErrorEvent'.`);
+  throw new globalObject.TypeError(`${context} is not of type 'ErrorEvent'.`);
 };
 
-function makeWrapper(globalObject) {
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    throw new Error("Internal error: invalid global object");
+function makeWrapper(globalObject, newTarget) {
+  let proto;
+  if (newTarget !== undefined) {
+    proto = newTarget.prototype;
   }
 
-  const ctor = globalObject[ctorRegistrySymbol]["ErrorEvent"];
-  if (ctor === undefined) {
-    throw new Error("Internal error: constructor ErrorEvent is not installed on the passed global object");
+  if (!utils.isObject(proto)) {
+    proto = globalObject[ctorRegistrySymbol]["ErrorEvent"].prototype;
   }
 
-  return Object.create(ctor.prototype);
+  return Object.create(proto);
 }
 
 exports.create = (globalObject, constructorArgs, privateData) => {
@@ -66,8 +66,8 @@ exports.setup = (wrapper, globalObject, constructorArgs = [], privateData = {}) 
   return wrapper;
 };
 
-exports.new = globalObject => {
-  const wrapper = makeWrapper(globalObject);
+exports.new = (globalObject, newTarget) => {
+  const wrapper = makeWrapper(globalObject, newTarget);
 
   exports._internalSetup(wrapper, globalObject);
   Object.defineProperty(wrapper, implSymbol, {
@@ -89,25 +89,28 @@ exports.install = (globalObject, globalNames) => {
     return;
   }
 
-  if (globalObject.Event === undefined) {
-    throw new Error("Internal error: attempting to evaluate ErrorEvent before Event");
-  }
+  const ctorRegistry = utils.initCtorRegistry(globalObject);
   class ErrorEvent extends globalObject.Event {
     constructor(type) {
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to construct 'ErrorEvent': 1 argument required, but only " + arguments.length + " present."
+        throw new globalObject.TypeError(
+          `Failed to construct 'ErrorEvent': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
-        curArg = conversions["DOMString"](curArg, { context: "Failed to construct 'ErrorEvent': parameter 1" });
+        curArg = conversions["DOMString"](curArg, {
+          context: "Failed to construct 'ErrorEvent': parameter 1",
+          globals: globalObject
+        });
         args.push(curArg);
       }
       {
         let curArg = arguments[1];
-        curArg = ErrorEventInit.convert(curArg, { context: "Failed to construct 'ErrorEvent': parameter 2" });
+        curArg = ErrorEventInit.convert(globalObject, curArg, {
+          context: "Failed to construct 'ErrorEvent': parameter 2"
+        });
         args.push(curArg);
       }
       return exports.setup(Object.create(new.target.prototype), globalObject, args);
@@ -117,7 +120,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get message' called on an object that is not a valid instance of ErrorEvent.");
+        throw new globalObject.TypeError(
+          "'get message' called on an object that is not a valid instance of ErrorEvent."
+        );
       }
 
       return esValue[implSymbol]["message"];
@@ -127,7 +132,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get filename' called on an object that is not a valid instance of ErrorEvent.");
+        throw new globalObject.TypeError(
+          "'get filename' called on an object that is not a valid instance of ErrorEvent."
+        );
       }
 
       return esValue[implSymbol]["filename"];
@@ -137,7 +144,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get lineno' called on an object that is not a valid instance of ErrorEvent.");
+        throw new globalObject.TypeError(
+          "'get lineno' called on an object that is not a valid instance of ErrorEvent."
+        );
       }
 
       return esValue[implSymbol]["lineno"];
@@ -147,7 +156,7 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get colno' called on an object that is not a valid instance of ErrorEvent.");
+        throw new globalObject.TypeError("'get colno' called on an object that is not a valid instance of ErrorEvent.");
       }
 
       return esValue[implSymbol]["colno"];
@@ -157,7 +166,7 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get error' called on an object that is not a valid instance of ErrorEvent.");
+        throw new globalObject.TypeError("'get error' called on an object that is not a valid instance of ErrorEvent.");
       }
 
       return esValue[implSymbol]["error"];
@@ -171,10 +180,7 @@ exports.install = (globalObject, globalNames) => {
     error: { enumerable: true },
     [Symbol.toStringTag]: { value: "ErrorEvent", configurable: true }
   });
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    globalObject[ctorRegistrySymbol] = Object.create(null);
-  }
-  globalObject[ctorRegistrySymbol][interfaceName] = ErrorEvent;
+  ctorRegistry[interfaceName] = ErrorEvent;
 
   Object.defineProperty(globalObject, interfaceName, {
     configurable: true,

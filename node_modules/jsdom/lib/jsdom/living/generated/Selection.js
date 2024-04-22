@@ -18,24 +18,24 @@ exports.is = value => {
 exports.isImpl = value => {
   return utils.isObject(value) && value instanceof Impl.implementation;
 };
-exports.convert = (value, { context = "The provided value" } = {}) => {
+exports.convert = (globalObject, value, { context = "The provided value" } = {}) => {
   if (exports.is(value)) {
     return utils.implForWrapper(value);
   }
-  throw new TypeError(`${context} is not of type 'Selection'.`);
+  throw new globalObject.TypeError(`${context} is not of type 'Selection'.`);
 };
 
-function makeWrapper(globalObject) {
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    throw new Error("Internal error: invalid global object");
+function makeWrapper(globalObject, newTarget) {
+  let proto;
+  if (newTarget !== undefined) {
+    proto = newTarget.prototype;
   }
 
-  const ctor = globalObject[ctorRegistrySymbol]["Selection"];
-  if (ctor === undefined) {
-    throw new Error("Internal error: constructor Selection is not installed on the passed global object");
+  if (!utils.isObject(proto)) {
+    proto = globalObject[ctorRegistrySymbol]["Selection"].prototype;
   }
 
-  return Object.create(ctor.prototype);
+  return Object.create(proto);
 }
 
 exports.create = (globalObject, constructorArgs, privateData) => {
@@ -66,8 +66,8 @@ exports.setup = (wrapper, globalObject, constructorArgs = [], privateData = {}) 
   return wrapper;
 };
 
-exports.new = globalObject => {
-  const wrapper = makeWrapper(globalObject);
+exports.new = (globalObject, newTarget) => {
+  const wrapper = makeWrapper(globalObject, newTarget);
 
   exports._internalSetup(wrapper, globalObject);
   Object.defineProperty(wrapper, implSymbol, {
@@ -88,29 +88,30 @@ exports.install = (globalObject, globalNames) => {
   if (!globalNames.some(globalName => exposed.has(globalName))) {
     return;
   }
+
+  const ctorRegistry = utils.initCtorRegistry(globalObject);
   class Selection {
     constructor() {
-      throw new TypeError("Illegal constructor");
+      throw new globalObject.TypeError("Illegal constructor");
     }
 
     getRangeAt(index) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'getRangeAt' called on an object that is not a valid instance of Selection.");
+        throw new globalObject.TypeError("'getRangeAt' called on an object that is not a valid instance of Selection.");
       }
 
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to execute 'getRangeAt' on 'Selection': 1 argument required, but only " +
-            arguments.length +
-            " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'getRangeAt' on 'Selection': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
         curArg = conversions["unsigned long"](curArg, {
-          context: "Failed to execute 'getRangeAt' on 'Selection': parameter 1"
+          context: "Failed to execute 'getRangeAt' on 'Selection': parameter 1",
+          globals: globalObject
         });
         args.push(curArg);
       }
@@ -120,18 +121,20 @@ exports.install = (globalObject, globalNames) => {
     addRange(range) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'addRange' called on an object that is not a valid instance of Selection.");
+        throw new globalObject.TypeError("'addRange' called on an object that is not a valid instance of Selection.");
       }
 
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to execute 'addRange' on 'Selection': 1 argument required, but only " + arguments.length + " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'addRange' on 'Selection': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
-        curArg = Range.convert(curArg, { context: "Failed to execute 'addRange' on 'Selection': parameter 1" });
+        curArg = Range.convert(globalObject, curArg, {
+          context: "Failed to execute 'addRange' on 'Selection': parameter 1"
+        });
         args.push(curArg);
       }
       return esValue[implSymbol].addRange(...args);
@@ -140,20 +143,22 @@ exports.install = (globalObject, globalNames) => {
     removeRange(range) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'removeRange' called on an object that is not a valid instance of Selection.");
+        throw new globalObject.TypeError(
+          "'removeRange' called on an object that is not a valid instance of Selection."
+        );
       }
 
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to execute 'removeRange' on 'Selection': 1 argument required, but only " +
-            arguments.length +
-            " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'removeRange' on 'Selection': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
-        curArg = Range.convert(curArg, { context: "Failed to execute 'removeRange' on 'Selection': parameter 1" });
+        curArg = Range.convert(globalObject, curArg, {
+          context: "Failed to execute 'removeRange' on 'Selection': parameter 1"
+        });
         args.push(curArg);
       }
       return esValue[implSymbol].removeRange(...args);
@@ -162,7 +167,9 @@ exports.install = (globalObject, globalNames) => {
     removeAllRanges() {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'removeAllRanges' called on an object that is not a valid instance of Selection.");
+        throw new globalObject.TypeError(
+          "'removeAllRanges' called on an object that is not a valid instance of Selection."
+        );
       }
 
       return esValue[implSymbol].removeAllRanges();
@@ -171,7 +178,7 @@ exports.install = (globalObject, globalNames) => {
     empty() {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'empty' called on an object that is not a valid instance of Selection.");
+        throw new globalObject.TypeError("'empty' called on an object that is not a valid instance of Selection.");
       }
 
       return esValue[implSymbol].empty();
@@ -180,12 +187,12 @@ exports.install = (globalObject, globalNames) => {
     collapse(node) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'collapse' called on an object that is not a valid instance of Selection.");
+        throw new globalObject.TypeError("'collapse' called on an object that is not a valid instance of Selection.");
       }
 
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to execute 'collapse' on 'Selection': 1 argument required, but only " + arguments.length + " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'collapse' on 'Selection': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
@@ -194,7 +201,9 @@ exports.install = (globalObject, globalNames) => {
         if (curArg === null || curArg === undefined) {
           curArg = null;
         } else {
-          curArg = Node.convert(curArg, { context: "Failed to execute 'collapse' on 'Selection': parameter 1" });
+          curArg = Node.convert(globalObject, curArg, {
+            context: "Failed to execute 'collapse' on 'Selection': parameter 1"
+          });
         }
         args.push(curArg);
       }
@@ -202,7 +211,8 @@ exports.install = (globalObject, globalNames) => {
         let curArg = arguments[1];
         if (curArg !== undefined) {
           curArg = conversions["unsigned long"](curArg, {
-            context: "Failed to execute 'collapse' on 'Selection': parameter 2"
+            context: "Failed to execute 'collapse' on 'Selection': parameter 2",
+            globals: globalObject
           });
         } else {
           curArg = 0;
@@ -215,14 +225,14 @@ exports.install = (globalObject, globalNames) => {
     setPosition(node) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'setPosition' called on an object that is not a valid instance of Selection.");
+        throw new globalObject.TypeError(
+          "'setPosition' called on an object that is not a valid instance of Selection."
+        );
       }
 
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to execute 'setPosition' on 'Selection': 1 argument required, but only " +
-            arguments.length +
-            " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'setPosition' on 'Selection': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
@@ -231,7 +241,9 @@ exports.install = (globalObject, globalNames) => {
         if (curArg === null || curArg === undefined) {
           curArg = null;
         } else {
-          curArg = Node.convert(curArg, { context: "Failed to execute 'setPosition' on 'Selection': parameter 1" });
+          curArg = Node.convert(globalObject, curArg, {
+            context: "Failed to execute 'setPosition' on 'Selection': parameter 1"
+          });
         }
         args.push(curArg);
       }
@@ -239,7 +251,8 @@ exports.install = (globalObject, globalNames) => {
         let curArg = arguments[1];
         if (curArg !== undefined) {
           curArg = conversions["unsigned long"](curArg, {
-            context: "Failed to execute 'setPosition' on 'Selection': parameter 2"
+            context: "Failed to execute 'setPosition' on 'Selection': parameter 2",
+            globals: globalObject
           });
         } else {
           curArg = 0;
@@ -252,7 +265,9 @@ exports.install = (globalObject, globalNames) => {
     collapseToStart() {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'collapseToStart' called on an object that is not a valid instance of Selection.");
+        throw new globalObject.TypeError(
+          "'collapseToStart' called on an object that is not a valid instance of Selection."
+        );
       }
 
       return esValue[implSymbol].collapseToStart();
@@ -261,7 +276,9 @@ exports.install = (globalObject, globalNames) => {
     collapseToEnd() {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'collapseToEnd' called on an object that is not a valid instance of Selection.");
+        throw new globalObject.TypeError(
+          "'collapseToEnd' called on an object that is not a valid instance of Selection."
+        );
       }
 
       return esValue[implSymbol].collapseToEnd();
@@ -270,25 +287,28 @@ exports.install = (globalObject, globalNames) => {
     extend(node) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'extend' called on an object that is not a valid instance of Selection.");
+        throw new globalObject.TypeError("'extend' called on an object that is not a valid instance of Selection.");
       }
 
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to execute 'extend' on 'Selection': 1 argument required, but only " + arguments.length + " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'extend' on 'Selection': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
-        curArg = Node.convert(curArg, { context: "Failed to execute 'extend' on 'Selection': parameter 1" });
+        curArg = Node.convert(globalObject, curArg, {
+          context: "Failed to execute 'extend' on 'Selection': parameter 1"
+        });
         args.push(curArg);
       }
       {
         let curArg = arguments[1];
         if (curArg !== undefined) {
           curArg = conversions["unsigned long"](curArg, {
-            context: "Failed to execute 'extend' on 'Selection': parameter 2"
+            context: "Failed to execute 'extend' on 'Selection': parameter 2",
+            globals: globalObject
           });
         } else {
           curArg = 0;
@@ -301,38 +321,44 @@ exports.install = (globalObject, globalNames) => {
     setBaseAndExtent(anchorNode, anchorOffset, focusNode, focusOffset) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'setBaseAndExtent' called on an object that is not a valid instance of Selection.");
+        throw new globalObject.TypeError(
+          "'setBaseAndExtent' called on an object that is not a valid instance of Selection."
+        );
       }
 
       if (arguments.length < 4) {
-        throw new TypeError(
-          "Failed to execute 'setBaseAndExtent' on 'Selection': 4 arguments required, but only " +
-            arguments.length +
-            " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'setBaseAndExtent' on 'Selection': 4 arguments required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
-        curArg = Node.convert(curArg, { context: "Failed to execute 'setBaseAndExtent' on 'Selection': parameter 1" });
+        curArg = Node.convert(globalObject, curArg, {
+          context: "Failed to execute 'setBaseAndExtent' on 'Selection': parameter 1"
+        });
         args.push(curArg);
       }
       {
         let curArg = arguments[1];
         curArg = conversions["unsigned long"](curArg, {
-          context: "Failed to execute 'setBaseAndExtent' on 'Selection': parameter 2"
+          context: "Failed to execute 'setBaseAndExtent' on 'Selection': parameter 2",
+          globals: globalObject
         });
         args.push(curArg);
       }
       {
         let curArg = arguments[2];
-        curArg = Node.convert(curArg, { context: "Failed to execute 'setBaseAndExtent' on 'Selection': parameter 3" });
+        curArg = Node.convert(globalObject, curArg, {
+          context: "Failed to execute 'setBaseAndExtent' on 'Selection': parameter 3"
+        });
         args.push(curArg);
       }
       {
         let curArg = arguments[3];
         curArg = conversions["unsigned long"](curArg, {
-          context: "Failed to execute 'setBaseAndExtent' on 'Selection': parameter 4"
+          context: "Failed to execute 'setBaseAndExtent' on 'Selection': parameter 4",
+          globals: globalObject
         });
         args.push(curArg);
       }
@@ -342,20 +368,22 @@ exports.install = (globalObject, globalNames) => {
     selectAllChildren(node) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'selectAllChildren' called on an object that is not a valid instance of Selection.");
+        throw new globalObject.TypeError(
+          "'selectAllChildren' called on an object that is not a valid instance of Selection."
+        );
       }
 
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to execute 'selectAllChildren' on 'Selection': 1 argument required, but only " +
-            arguments.length +
-            " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'selectAllChildren' on 'Selection': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
-        curArg = Node.convert(curArg, { context: "Failed to execute 'selectAllChildren' on 'Selection': parameter 1" });
+        curArg = Node.convert(globalObject, curArg, {
+          context: "Failed to execute 'selectAllChildren' on 'Selection': parameter 1"
+        });
         args.push(curArg);
       }
       return esValue[implSymbol].selectAllChildren(...args);
@@ -364,7 +392,9 @@ exports.install = (globalObject, globalNames) => {
     deleteFromDocument() {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'deleteFromDocument' called on an object that is not a valid instance of Selection.");
+        throw new globalObject.TypeError(
+          "'deleteFromDocument' called on an object that is not a valid instance of Selection."
+        );
       }
 
       ceReactionsPreSteps_helpers_custom_elements(globalObject);
@@ -378,27 +408,30 @@ exports.install = (globalObject, globalNames) => {
     containsNode(node) {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'containsNode' called on an object that is not a valid instance of Selection.");
+        throw new globalObject.TypeError(
+          "'containsNode' called on an object that is not a valid instance of Selection."
+        );
       }
 
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to execute 'containsNode' on 'Selection': 1 argument required, but only " +
-            arguments.length +
-            " present."
+        throw new globalObject.TypeError(
+          `Failed to execute 'containsNode' on 'Selection': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
-        curArg = Node.convert(curArg, { context: "Failed to execute 'containsNode' on 'Selection': parameter 1" });
+        curArg = Node.convert(globalObject, curArg, {
+          context: "Failed to execute 'containsNode' on 'Selection': parameter 1"
+        });
         args.push(curArg);
       }
       {
         let curArg = arguments[1];
         if (curArg !== undefined) {
           curArg = conversions["boolean"](curArg, {
-            context: "Failed to execute 'containsNode' on 'Selection': parameter 2"
+            context: "Failed to execute 'containsNode' on 'Selection': parameter 2",
+            globals: globalObject
           });
         } else {
           curArg = false;
@@ -411,7 +444,7 @@ exports.install = (globalObject, globalNames) => {
     toString() {
       const esValue = this !== null && this !== undefined ? this : globalObject;
       if (!exports.is(esValue)) {
-        throw new TypeError("'toString' called on an object that is not a valid instance of Selection.");
+        throw new globalObject.TypeError("'toString' called on an object that is not a valid instance of Selection.");
       }
 
       return esValue[implSymbol].toString();
@@ -421,7 +454,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get anchorNode' called on an object that is not a valid instance of Selection.");
+        throw new globalObject.TypeError(
+          "'get anchorNode' called on an object that is not a valid instance of Selection."
+        );
       }
 
       return utils.tryWrapperForImpl(esValue[implSymbol]["anchorNode"]);
@@ -431,7 +466,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get anchorOffset' called on an object that is not a valid instance of Selection.");
+        throw new globalObject.TypeError(
+          "'get anchorOffset' called on an object that is not a valid instance of Selection."
+        );
       }
 
       return esValue[implSymbol]["anchorOffset"];
@@ -441,7 +478,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get focusNode' called on an object that is not a valid instance of Selection.");
+        throw new globalObject.TypeError(
+          "'get focusNode' called on an object that is not a valid instance of Selection."
+        );
       }
 
       return utils.tryWrapperForImpl(esValue[implSymbol]["focusNode"]);
@@ -451,7 +490,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get focusOffset' called on an object that is not a valid instance of Selection.");
+        throw new globalObject.TypeError(
+          "'get focusOffset' called on an object that is not a valid instance of Selection."
+        );
       }
 
       return esValue[implSymbol]["focusOffset"];
@@ -461,7 +502,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get isCollapsed' called on an object that is not a valid instance of Selection.");
+        throw new globalObject.TypeError(
+          "'get isCollapsed' called on an object that is not a valid instance of Selection."
+        );
       }
 
       return esValue[implSymbol]["isCollapsed"];
@@ -471,7 +514,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get rangeCount' called on an object that is not a valid instance of Selection.");
+        throw new globalObject.TypeError(
+          "'get rangeCount' called on an object that is not a valid instance of Selection."
+        );
       }
 
       return esValue[implSymbol]["rangeCount"];
@@ -481,7 +526,7 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get type' called on an object that is not a valid instance of Selection.");
+        throw new globalObject.TypeError("'get type' called on an object that is not a valid instance of Selection.");
       }
 
       return esValue[implSymbol]["type"];
@@ -512,10 +557,7 @@ exports.install = (globalObject, globalNames) => {
     type: { enumerable: true },
     [Symbol.toStringTag]: { value: "Selection", configurable: true }
   });
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    globalObject[ctorRegistrySymbol] = Object.create(null);
-  }
-  globalObject[ctorRegistrySymbol][interfaceName] = Selection;
+  ctorRegistry[interfaceName] = Selection;
 
   Object.defineProperty(globalObject, interfaceName, {
     configurable: true,

@@ -14,24 +14,24 @@ exports.is = value => {
 exports.isImpl = value => {
   return utils.isObject(value) && value instanceof Impl.implementation;
 };
-exports.convert = (value, { context = "The provided value" } = {}) => {
+exports.convert = (globalObject, value, { context = "The provided value" } = {}) => {
   if (exports.is(value)) {
     return utils.implForWrapper(value);
   }
-  throw new TypeError(`${context} is not of type 'Location'.`);
+  throw new globalObject.TypeError(`${context} is not of type 'Location'.`);
 };
 
-function makeWrapper(globalObject) {
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    throw new Error("Internal error: invalid global object");
+function makeWrapper(globalObject, newTarget) {
+  let proto;
+  if (newTarget !== undefined) {
+    proto = newTarget.prototype;
   }
 
-  const ctor = globalObject[ctorRegistrySymbol]["Location"];
-  if (ctor === undefined) {
-    throw new Error("Internal error: constructor Location is not installed on the passed global object");
+  if (!utils.isObject(proto)) {
+    proto = globalObject[ctorRegistrySymbol]["Location"].prototype;
   }
 
-  return Object.create(ctor.prototype);
+  return Object.create(proto);
 }
 
 exports.create = (globalObject, constructorArgs, privateData) => {
@@ -44,26 +44,28 @@ exports.createImpl = (globalObject, constructorArgs, privateData) => {
   return utils.implForWrapper(wrapper);
 };
 
-exports._internalSetup = (wrapper, globalObject) => {
-  Object.defineProperties(
-    wrapper,
-    Object.getOwnPropertyDescriptors({
+function getUnforgeables(globalObject) {
+  let unforgeables = unforgeablesMap.get(globalObject);
+  if (unforgeables === undefined) {
+    unforgeables = Object.create(null);
+    utils.define(unforgeables, {
       assign(url) {
         const esValue = this !== null && this !== undefined ? this : globalObject;
         if (!exports.is(esValue)) {
-          throw new TypeError("'assign' called on an object that is not a valid instance of Location.");
+          throw new globalObject.TypeError("'assign' called on an object that is not a valid instance of Location.");
         }
 
         if (arguments.length < 1) {
-          throw new TypeError(
-            "Failed to execute 'assign' on 'Location': 1 argument required, but only " + arguments.length + " present."
+          throw new globalObject.TypeError(
+            `Failed to execute 'assign' on 'Location': 1 argument required, but only ${arguments.length} present.`
           );
         }
         const args = [];
         {
           let curArg = arguments[0];
           curArg = conversions["USVString"](curArg, {
-            context: "Failed to execute 'assign' on 'Location': parameter 1"
+            context: "Failed to execute 'assign' on 'Location': parameter 1",
+            globals: globalObject
           });
           args.push(curArg);
         }
@@ -72,19 +74,20 @@ exports._internalSetup = (wrapper, globalObject) => {
       replace(url) {
         const esValue = this !== null && this !== undefined ? this : globalObject;
         if (!exports.is(esValue)) {
-          throw new TypeError("'replace' called on an object that is not a valid instance of Location.");
+          throw new globalObject.TypeError("'replace' called on an object that is not a valid instance of Location.");
         }
 
         if (arguments.length < 1) {
-          throw new TypeError(
-            "Failed to execute 'replace' on 'Location': 1 argument required, but only " + arguments.length + " present."
+          throw new globalObject.TypeError(
+            `Failed to execute 'replace' on 'Location': 1 argument required, but only ${arguments.length} present.`
           );
         }
         const args = [];
         {
           let curArg = arguments[0];
           curArg = conversions["USVString"](curArg, {
-            context: "Failed to execute 'replace' on 'Location': parameter 1"
+            context: "Failed to execute 'replace' on 'Location': parameter 1",
+            globals: globalObject
           });
           args.push(curArg);
         }
@@ -93,7 +96,7 @@ exports._internalSetup = (wrapper, globalObject) => {
       reload() {
         const esValue = this !== null && this !== undefined ? this : globalObject;
         if (!exports.is(esValue)) {
-          throw new TypeError("'reload' called on an object that is not a valid instance of Location.");
+          throw new globalObject.TypeError("'reload' called on an object that is not a valid instance of Location.");
         }
 
         return esValue[implSymbol].reload();
@@ -102,7 +105,7 @@ exports._internalSetup = (wrapper, globalObject) => {
         const esValue = this !== null && this !== undefined ? this : globalObject;
 
         if (!exports.is(esValue)) {
-          throw new TypeError("'get href' called on an object that is not a valid instance of Location.");
+          throw new globalObject.TypeError("'get href' called on an object that is not a valid instance of Location.");
         }
 
         return esValue[implSymbol]["href"];
@@ -111,11 +114,12 @@ exports._internalSetup = (wrapper, globalObject) => {
         const esValue = this !== null && this !== undefined ? this : globalObject;
 
         if (!exports.is(esValue)) {
-          throw new TypeError("'set href' called on an object that is not a valid instance of Location.");
+          throw new globalObject.TypeError("'set href' called on an object that is not a valid instance of Location.");
         }
 
         V = conversions["USVString"](V, {
-          context: "Failed to set the 'href' property on 'Location': The provided value"
+          context: "Failed to set the 'href' property on 'Location': The provided value",
+          globals: globalObject
         });
 
         esValue[implSymbol]["href"] = V;
@@ -123,7 +127,7 @@ exports._internalSetup = (wrapper, globalObject) => {
       toString() {
         const esValue = this;
         if (!exports.is(esValue)) {
-          throw new TypeError("'toString' called on an object that is not a valid instance of Location.");
+          throw new globalObject.TypeError("'toString' called on an object that is not a valid instance of Location.");
         }
 
         return esValue[implSymbol]["href"];
@@ -132,7 +136,9 @@ exports._internalSetup = (wrapper, globalObject) => {
         const esValue = this !== null && this !== undefined ? this : globalObject;
 
         if (!exports.is(esValue)) {
-          throw new TypeError("'get origin' called on an object that is not a valid instance of Location.");
+          throw new globalObject.TypeError(
+            "'get origin' called on an object that is not a valid instance of Location."
+          );
         }
 
         return esValue[implSymbol]["origin"];
@@ -141,7 +147,9 @@ exports._internalSetup = (wrapper, globalObject) => {
         const esValue = this !== null && this !== undefined ? this : globalObject;
 
         if (!exports.is(esValue)) {
-          throw new TypeError("'get protocol' called on an object that is not a valid instance of Location.");
+          throw new globalObject.TypeError(
+            "'get protocol' called on an object that is not a valid instance of Location."
+          );
         }
 
         return esValue[implSymbol]["protocol"];
@@ -150,11 +158,14 @@ exports._internalSetup = (wrapper, globalObject) => {
         const esValue = this !== null && this !== undefined ? this : globalObject;
 
         if (!exports.is(esValue)) {
-          throw new TypeError("'set protocol' called on an object that is not a valid instance of Location.");
+          throw new globalObject.TypeError(
+            "'set protocol' called on an object that is not a valid instance of Location."
+          );
         }
 
         V = conversions["USVString"](V, {
-          context: "Failed to set the 'protocol' property on 'Location': The provided value"
+          context: "Failed to set the 'protocol' property on 'Location': The provided value",
+          globals: globalObject
         });
 
         esValue[implSymbol]["protocol"] = V;
@@ -163,7 +174,7 @@ exports._internalSetup = (wrapper, globalObject) => {
         const esValue = this !== null && this !== undefined ? this : globalObject;
 
         if (!exports.is(esValue)) {
-          throw new TypeError("'get host' called on an object that is not a valid instance of Location.");
+          throw new globalObject.TypeError("'get host' called on an object that is not a valid instance of Location.");
         }
 
         return esValue[implSymbol]["host"];
@@ -172,11 +183,12 @@ exports._internalSetup = (wrapper, globalObject) => {
         const esValue = this !== null && this !== undefined ? this : globalObject;
 
         if (!exports.is(esValue)) {
-          throw new TypeError("'set host' called on an object that is not a valid instance of Location.");
+          throw new globalObject.TypeError("'set host' called on an object that is not a valid instance of Location.");
         }
 
         V = conversions["USVString"](V, {
-          context: "Failed to set the 'host' property on 'Location': The provided value"
+          context: "Failed to set the 'host' property on 'Location': The provided value",
+          globals: globalObject
         });
 
         esValue[implSymbol]["host"] = V;
@@ -185,7 +197,9 @@ exports._internalSetup = (wrapper, globalObject) => {
         const esValue = this !== null && this !== undefined ? this : globalObject;
 
         if (!exports.is(esValue)) {
-          throw new TypeError("'get hostname' called on an object that is not a valid instance of Location.");
+          throw new globalObject.TypeError(
+            "'get hostname' called on an object that is not a valid instance of Location."
+          );
         }
 
         return esValue[implSymbol]["hostname"];
@@ -194,11 +208,14 @@ exports._internalSetup = (wrapper, globalObject) => {
         const esValue = this !== null && this !== undefined ? this : globalObject;
 
         if (!exports.is(esValue)) {
-          throw new TypeError("'set hostname' called on an object that is not a valid instance of Location.");
+          throw new globalObject.TypeError(
+            "'set hostname' called on an object that is not a valid instance of Location."
+          );
         }
 
         V = conversions["USVString"](V, {
-          context: "Failed to set the 'hostname' property on 'Location': The provided value"
+          context: "Failed to set the 'hostname' property on 'Location': The provided value",
+          globals: globalObject
         });
 
         esValue[implSymbol]["hostname"] = V;
@@ -207,7 +224,7 @@ exports._internalSetup = (wrapper, globalObject) => {
         const esValue = this !== null && this !== undefined ? this : globalObject;
 
         if (!exports.is(esValue)) {
-          throw new TypeError("'get port' called on an object that is not a valid instance of Location.");
+          throw new globalObject.TypeError("'get port' called on an object that is not a valid instance of Location.");
         }
 
         return esValue[implSymbol]["port"];
@@ -216,11 +233,12 @@ exports._internalSetup = (wrapper, globalObject) => {
         const esValue = this !== null && this !== undefined ? this : globalObject;
 
         if (!exports.is(esValue)) {
-          throw new TypeError("'set port' called on an object that is not a valid instance of Location.");
+          throw new globalObject.TypeError("'set port' called on an object that is not a valid instance of Location.");
         }
 
         V = conversions["USVString"](V, {
-          context: "Failed to set the 'port' property on 'Location': The provided value"
+          context: "Failed to set the 'port' property on 'Location': The provided value",
+          globals: globalObject
         });
 
         esValue[implSymbol]["port"] = V;
@@ -229,7 +247,9 @@ exports._internalSetup = (wrapper, globalObject) => {
         const esValue = this !== null && this !== undefined ? this : globalObject;
 
         if (!exports.is(esValue)) {
-          throw new TypeError("'get pathname' called on an object that is not a valid instance of Location.");
+          throw new globalObject.TypeError(
+            "'get pathname' called on an object that is not a valid instance of Location."
+          );
         }
 
         return esValue[implSymbol]["pathname"];
@@ -238,11 +258,14 @@ exports._internalSetup = (wrapper, globalObject) => {
         const esValue = this !== null && this !== undefined ? this : globalObject;
 
         if (!exports.is(esValue)) {
-          throw new TypeError("'set pathname' called on an object that is not a valid instance of Location.");
+          throw new globalObject.TypeError(
+            "'set pathname' called on an object that is not a valid instance of Location."
+          );
         }
 
         V = conversions["USVString"](V, {
-          context: "Failed to set the 'pathname' property on 'Location': The provided value"
+          context: "Failed to set the 'pathname' property on 'Location': The provided value",
+          globals: globalObject
         });
 
         esValue[implSymbol]["pathname"] = V;
@@ -251,7 +274,9 @@ exports._internalSetup = (wrapper, globalObject) => {
         const esValue = this !== null && this !== undefined ? this : globalObject;
 
         if (!exports.is(esValue)) {
-          throw new TypeError("'get search' called on an object that is not a valid instance of Location.");
+          throw new globalObject.TypeError(
+            "'get search' called on an object that is not a valid instance of Location."
+          );
         }
 
         return esValue[implSymbol]["search"];
@@ -260,11 +285,14 @@ exports._internalSetup = (wrapper, globalObject) => {
         const esValue = this !== null && this !== undefined ? this : globalObject;
 
         if (!exports.is(esValue)) {
-          throw new TypeError("'set search' called on an object that is not a valid instance of Location.");
+          throw new globalObject.TypeError(
+            "'set search' called on an object that is not a valid instance of Location."
+          );
         }
 
         V = conversions["USVString"](V, {
-          context: "Failed to set the 'search' property on 'Location': The provided value"
+          context: "Failed to set the 'search' property on 'Location': The provided value",
+          globals: globalObject
         });
 
         esValue[implSymbol]["search"] = V;
@@ -273,7 +301,7 @@ exports._internalSetup = (wrapper, globalObject) => {
         const esValue = this !== null && this !== undefined ? this : globalObject;
 
         if (!exports.is(esValue)) {
-          throw new TypeError("'get hash' called on an object that is not a valid instance of Location.");
+          throw new globalObject.TypeError("'get hash' called on an object that is not a valid instance of Location.");
         }
 
         return esValue[implSymbol]["hash"];
@@ -282,33 +310,39 @@ exports._internalSetup = (wrapper, globalObject) => {
         const esValue = this !== null && this !== undefined ? this : globalObject;
 
         if (!exports.is(esValue)) {
-          throw new TypeError("'set hash' called on an object that is not a valid instance of Location.");
+          throw new globalObject.TypeError("'set hash' called on an object that is not a valid instance of Location.");
         }
 
         V = conversions["USVString"](V, {
-          context: "Failed to set the 'hash' property on 'Location': The provided value"
+          context: "Failed to set the 'hash' property on 'Location': The provided value",
+          globals: globalObject
         });
 
         esValue[implSymbol]["hash"] = V;
       }
-    })
-  );
+    });
+    Object.defineProperties(unforgeables, {
+      assign: { configurable: false, writable: false },
+      replace: { configurable: false, writable: false },
+      reload: { configurable: false, writable: false },
+      href: { configurable: false },
+      toString: { configurable: false, writable: false },
+      origin: { configurable: false },
+      protocol: { configurable: false },
+      host: { configurable: false },
+      hostname: { configurable: false },
+      port: { configurable: false },
+      pathname: { configurable: false },
+      search: { configurable: false },
+      hash: { configurable: false }
+    });
+    unforgeablesMap.set(globalObject, unforgeables);
+  }
+  return unforgeables;
+}
 
-  Object.defineProperties(wrapper, {
-    assign: { configurable: false, writable: false },
-    replace: { configurable: false, writable: false },
-    reload: { configurable: false, writable: false },
-    href: { configurable: false },
-    toString: { configurable: false, writable: false },
-    origin: { configurable: false },
-    protocol: { configurable: false },
-    host: { configurable: false },
-    hostname: { configurable: false },
-    port: { configurable: false },
-    pathname: { configurable: false },
-    search: { configurable: false },
-    hash: { configurable: false }
-  });
+exports._internalSetup = (wrapper, globalObject) => {
+  utils.define(wrapper, getUnforgeables(globalObject));
 };
 
 exports.setup = (wrapper, globalObject, constructorArgs = [], privateData = {}) => {
@@ -327,8 +361,8 @@ exports.setup = (wrapper, globalObject, constructorArgs = [], privateData = {}) 
   return wrapper;
 };
 
-exports.new = globalObject => {
-  const wrapper = makeWrapper(globalObject);
+exports.new = (globalObject, newTarget) => {
+  const wrapper = makeWrapper(globalObject, newTarget);
 
   exports._internalSetup(wrapper, globalObject);
   Object.defineProperty(wrapper, implSymbol, {
@@ -343,22 +377,22 @@ exports.new = globalObject => {
   return wrapper[implSymbol];
 };
 
+const unforgeablesMap = new WeakMap();
 const exposed = new Set(["Window"]);
 
 exports.install = (globalObject, globalNames) => {
   if (!globalNames.some(globalName => exposed.has(globalName))) {
     return;
   }
+
+  const ctorRegistry = utils.initCtorRegistry(globalObject);
   class Location {
     constructor() {
-      throw new TypeError("Illegal constructor");
+      throw new globalObject.TypeError("Illegal constructor");
     }
   }
   Object.defineProperties(Location.prototype, { [Symbol.toStringTag]: { value: "Location", configurable: true } });
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    globalObject[ctorRegistrySymbol] = Object.create(null);
-  }
-  globalObject[ctorRegistrySymbol][interfaceName] = Location;
+  ctorRegistry[interfaceName] = Location;
 
   Object.defineProperty(globalObject, interfaceName, {
     configurable: true,

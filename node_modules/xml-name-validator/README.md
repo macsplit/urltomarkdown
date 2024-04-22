@@ -4,31 +4,30 @@ This package simply tells you whether or not a string matches the [`Name`](http:
 
 ## Usage
 
-This package's main module's default export takes a string and will return an object of the form `{ success, error }`, where `success` is a boolean and if it is `false`, then `error` is a string containing some hint as to where the match went wrong.
+This package's main module exports two functions, `name()` and `qname()`. Both take a string and return a boolean indicating whether or not the string matches the relevant production.
 
 ```js
 "use strict":
-var xnv = require("xml-name-validator");
-var assert = require("assert");
+const xnv = require("xml-name-validator");
 
-// Will return { success: true, error: undefined }
+// Will return true
 xnv.name("x");
 xnv.name(":");
 xnv.name("a:0");
 xnv.name("a:b:c");
 
-// Will return { success: false, error: <an explanatory string> }
+// Will return false
 xnv.name("\\");
 xnv.name("'");
 xnv.name("0");
 xnv.name("a!");
 
-// Will return { success: true, error: undefined }
+// Will return true
 xnv.qname("x");
 xnv.qname("a0");
 xnv.qname("a:b");
 
-// Will return { success: false, error: <an explanatory string> }
+// Will return false
 xnv.qname(":a");
 xnv.qname(":b");
 xnv.qname("a:b:c");

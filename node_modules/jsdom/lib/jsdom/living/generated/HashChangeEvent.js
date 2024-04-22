@@ -16,24 +16,24 @@ exports.is = value => {
 exports.isImpl = value => {
   return utils.isObject(value) && value instanceof Impl.implementation;
 };
-exports.convert = (value, { context = "The provided value" } = {}) => {
+exports.convert = (globalObject, value, { context = "The provided value" } = {}) => {
   if (exports.is(value)) {
     return utils.implForWrapper(value);
   }
-  throw new TypeError(`${context} is not of type 'HashChangeEvent'.`);
+  throw new globalObject.TypeError(`${context} is not of type 'HashChangeEvent'.`);
 };
 
-function makeWrapper(globalObject) {
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    throw new Error("Internal error: invalid global object");
+function makeWrapper(globalObject, newTarget) {
+  let proto;
+  if (newTarget !== undefined) {
+    proto = newTarget.prototype;
   }
 
-  const ctor = globalObject[ctorRegistrySymbol]["HashChangeEvent"];
-  if (ctor === undefined) {
-    throw new Error("Internal error: constructor HashChangeEvent is not installed on the passed global object");
+  if (!utils.isObject(proto)) {
+    proto = globalObject[ctorRegistrySymbol]["HashChangeEvent"].prototype;
   }
 
-  return Object.create(ctor.prototype);
+  return Object.create(proto);
 }
 
 exports.create = (globalObject, constructorArgs, privateData) => {
@@ -66,8 +66,8 @@ exports.setup = (wrapper, globalObject, constructorArgs = [], privateData = {}) 
   return wrapper;
 };
 
-exports.new = globalObject => {
-  const wrapper = makeWrapper(globalObject);
+exports.new = (globalObject, newTarget) => {
+  const wrapper = makeWrapper(globalObject, newTarget);
 
   exports._internalSetup(wrapper, globalObject);
   Object.defineProperty(wrapper, implSymbol, {
@@ -89,25 +89,28 @@ exports.install = (globalObject, globalNames) => {
     return;
   }
 
-  if (globalObject.Event === undefined) {
-    throw new Error("Internal error: attempting to evaluate HashChangeEvent before Event");
-  }
+  const ctorRegistry = utils.initCtorRegistry(globalObject);
   class HashChangeEvent extends globalObject.Event {
     constructor(type) {
       if (arguments.length < 1) {
-        throw new TypeError(
-          "Failed to construct 'HashChangeEvent': 1 argument required, but only " + arguments.length + " present."
+        throw new globalObject.TypeError(
+          `Failed to construct 'HashChangeEvent': 1 argument required, but only ${arguments.length} present.`
         );
       }
       const args = [];
       {
         let curArg = arguments[0];
-        curArg = conversions["DOMString"](curArg, { context: "Failed to construct 'HashChangeEvent': parameter 1" });
+        curArg = conversions["DOMString"](curArg, {
+          context: "Failed to construct 'HashChangeEvent': parameter 1",
+          globals: globalObject
+        });
         args.push(curArg);
       }
       {
         let curArg = arguments[1];
-        curArg = HashChangeEventInit.convert(curArg, { context: "Failed to construct 'HashChangeEvent': parameter 2" });
+        curArg = HashChangeEventInit.convert(globalObject, curArg, {
+          context: "Failed to construct 'HashChangeEvent': parameter 2"
+        });
         args.push(curArg);
       }
       return exports.setup(Object.create(new.target.prototype), globalObject, args);
@@ -117,7 +120,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get oldURL' called on an object that is not a valid instance of HashChangeEvent.");
+        throw new globalObject.TypeError(
+          "'get oldURL' called on an object that is not a valid instance of HashChangeEvent."
+        );
       }
 
       return esValue[implSymbol]["oldURL"];
@@ -127,7 +132,9 @@ exports.install = (globalObject, globalNames) => {
       const esValue = this !== null && this !== undefined ? this : globalObject;
 
       if (!exports.is(esValue)) {
-        throw new TypeError("'get newURL' called on an object that is not a valid instance of HashChangeEvent.");
+        throw new globalObject.TypeError(
+          "'get newURL' called on an object that is not a valid instance of HashChangeEvent."
+        );
       }
 
       return esValue[implSymbol]["newURL"];
@@ -138,10 +145,7 @@ exports.install = (globalObject, globalNames) => {
     newURL: { enumerable: true },
     [Symbol.toStringTag]: { value: "HashChangeEvent", configurable: true }
   });
-  if (globalObject[ctorRegistrySymbol] === undefined) {
-    globalObject[ctorRegistrySymbol] = Object.create(null);
-  }
-  globalObject[ctorRegistrySymbol][interfaceName] = HashChangeEvent;
+  ctorRegistry[interfaceName] = HashChangeEvent;
 
   Object.defineProperty(globalObject, interfaceName, {
     configurable: true,
