@@ -50,6 +50,7 @@ Alternative POST request, supply url and html in POST body:
 		
 		html=%3C!doctype%20html%3E%3Chtml%20...
 
+See [API Documentation](https://macsplit.github.io/urltomarkdown_docs.html)
 
 Inspired by [Heck Yeah Markdown](http://heckyesmarkdown.com)
 
