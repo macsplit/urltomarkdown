@@ -68,10 +68,12 @@
         "summary": "Convert a web page with HTML supplied",
         "description": "Outputs a markdown version of the page.",
         "requestBody": {
+          "required": true,
           "content": {
             "application/x-www-form-urlencoded": {
               "schema": {
                 "type": "object",
+                "required": [ "html" ],
                 "properties": {
                   "url": {
                     "type": "string",
@@ -122,7 +124,7 @@
             }
           },
           "400": {
-            "description": "Could not access or convert web page."
+            "description": "Could not convert web page."
           }
         }
       }
