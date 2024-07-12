@@ -46,10 +46,10 @@ module.exports = {
 			],
 			replace: [
 				{
-					find: /\s*\[\s*!\[([^\]]+)\]\(([^\)]+)\)\s*\]\((https:\/\/medium.com\/@[^\?\)]*)\?[^\)]*\)\s*/g,
-					replacement: '![$1]($2)\n[$1]($3)\n\n'
+					find: /\s*\[\s*!\[([^\]]+)\]\(([^\)]+)\)\s*\]\(([^\?\)]*)\?[^\)]*\)\s*/g,
+					replacement: '![$1]($2)\n<$3>\n\n'
 				}
-			]
+			]			
 		},
 		{
 			domain: /(?:.*\.)?stackoverflow\.com/,
