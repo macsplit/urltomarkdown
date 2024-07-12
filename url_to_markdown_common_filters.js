@@ -42,14 +42,12 @@ module.exports = {
 				{
 					find: '(https://miro.medium.com/max/60/',
 					replacement: '(https://miro.medium.com/max/600/'
-				}
-			],
-			replace: [
+				},
 				{
 					find: /\s*\[\s*!\[([^\]]+)\]\(([^\)]+)\)\s*\]\(([^\?\)]*)\?[^\)]*\)\s*/g,
-					replacement: '![$1]($2)\n<$3>\n\n'
+					replacement: '\n![$1]($2)\n[$1]($3)\n\n'
 				}
-			]			
+			]
 		},
 		{
 			domain: /(?:.*\.)?stackoverflow\.com/,
