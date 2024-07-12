@@ -31,7 +31,7 @@ module.exports = {
 					find: /\n(.+)\n\-{32,}\n/ig,
 					replacement: (match, title) => {
 						return '\n'+title+'\n'+'-'.repeat(title.length)+'\n'
-					} 
+					}
 				}
 
 			]
@@ -43,6 +43,12 @@ module.exports = {
 					find: '(https://miro.medium.com/max/60/',
 					replacement: '(https://miro.medium.com/max/600/'
 				}
+			],
+			replace: [
+				{
+					find: /\s*\[\s*!\[([^\]]+)\]\(([^\)]+)\)\s*\]\((https:\/\/medium.com\/@[^\?\)]*)\?[^\)]*\)\s*/g,
+					replacement: '![$1]($2)\n[$1]($3)\n\n'
+				}
 			]
 		},
 		{
@@ -51,7 +57,7 @@ module.exports = {
 				/\* +Links(.|\r|\n)*Three +\|/g
 			]
 		}
-	], 
+	],
 
 	filter: function (url, data, ignore_links=false) {
 		let domain='';
@@ -60,10 +66,10 @@ module.exports = {
 			url = new URL(url);
 			if (url) {
 				base_address = url.protocol+"//"+url.hostname;
-				domain = url.hostname; 
+				domain = url.hostname;
 			}
 		}
-		
+
 		for (let i=0;i<this.list.length;i++) {
 			if (domain.match(this.list[i].domain)) {
 				if (this.list[i].remove) {
