@@ -23,7 +23,8 @@ module.exports = {
 				/\[\!\[Edit this at Wikidata\].*/g,
 				/\[\!\[Listen to this article\]\([^\)]*\)\]\([^\)]*\.(mp3|ogg|oga|flac)[^\)]*\)/g,
 				/\[This audio file\]\([^\)]*\).*/g,
-				/\!\[Spoken Wikipedia icon\]\([^\)]*\)/g
+				/\!\[Spoken Wikipedia icon\]\([^\)]*\)/g,
+				/\[.*\]\(.*Play audio.*\).*/g
 			],
 			replace: [
 				{
