@@ -1,12 +1,12 @@
 var jsReleases = require('node-releases/data/processed/envs.json')
 var agents = require('caniuse-lite/dist/unpacker/agents').agents
+var e2c = require('electron-to-chromium/versions')
 var jsEOL = require('node-releases/data/release-schedule/release-schedule.json')
 var path = require('path')
-var e2c = require('electron-to-chromium/versions')
 
 var BrowserslistError = require('./error')
-var parse = require('./parse')
-var env = require('./node') // Will load browser.js in webpack
+var env = require('./node')
+var parse = require('./parse') // Will load browser.js in webpack
 
 var YEAR = 365.259641 * 24 * 60 * 60 * 1000
 var ANDROID_EVERGREEN_FIRST = '37'
@@ -82,11 +82,11 @@ function generateFilter(sign, version) {
   version = parseFloat(version)
   if (sign === '>') {
     return function (v) {
-      return parseFloat(v) > version
+      return parseLatestFloat(v) > version
     }
   } else if (sign === '>=') {
     return function (v) {
-      return parseFloat(v) >= version
+      return parseLatestFloat(v) >= version
     }
   } else if (sign === '<') {
     return function (v) {
@@ -96,6 +96,10 @@ function generateFilter(sign, version) {
     return function (v) {
       return parseFloat(v) <= version
     }
+  }
+
+  function parseLatestFloat(v) {
+    return parseFloat(v.split('-')[1] || v)
   }
 }
 
@@ -487,6 +491,7 @@ browserslist.versionAliases = {}
 browserslist.clearCaches = env.clearCaches
 browserslist.parseConfig = env.parseConfig
 browserslist.readConfig = env.readConfig
+browserslist.findConfigFile = env.findConfigFile
 browserslist.findConfig = env.findConfig
 browserslist.loadConfig = env.loadConfig
 
@@ -902,10 +907,15 @@ var QUERIES = {
       for (var name in features) {
         var data = byName(name, context)
         // Only check desktop when latest released mobile has support
+        var iMax = data.released.length - 1
+        while (iMax >= 0) {
+          if (data.released[iMax] in features[name]) break
+          iMax--
+        }
         var checkDesktop =
           context.mobileToDesktop &&
           name in browserslist.desktopNames &&
-          isSupported(features[name][data.released.slice(-1)[0]], withPartial)
+          isSupported(features[name][data.released[iMax]], withPartial)
         data.versions.forEach(function (version) {
           var flags = features[name][version]
           if (flags === undefined && checkDesktop) {
@@ -1011,7 +1021,7 @@ var QUERIES = {
     matches: [],
     regexp: /^(firefox|ff|fx)\s+esr$/i,
     select: function () {
-      return ['firefox 115']
+      return ['firefox 115', 'firefox 128']
     }
   },
   opera_mini_all: {

@@ -5,18 +5,20 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = void 0;
 class PluginPass {
-  constructor(file, key, options) {
+  constructor(file, key, options, isAsync) {
     this._map = new Map();
     this.key = void 0;
     this.file = void 0;
     this.opts = void 0;
     this.cwd = void 0;
     this.filename = void 0;
+    this.isAsync = void 0;
     this.key = key;
     this.file = file;
     this.opts = options || {};
     this.cwd = file.opts.cwd;
     this.filename = file.opts.filename;
+    this.isAsync = isAsync;
   }
   set(key, val) {
     this._map.set(key, val);

@@ -9,6 +9,7 @@ exports.TSSatisfiesExpression = exports.TSAsExpression = TSTypeExpression;
 exports.TSBigIntKeyword = TSBigIntKeyword;
 exports.TSBooleanKeyword = TSBooleanKeyword;
 exports.TSCallSignatureDeclaration = TSCallSignatureDeclaration;
+exports.TSInterfaceHeritage = exports.TSExpressionWithTypeArguments = exports.TSClassImplements = TSClassImplements;
 exports.TSConditionalType = TSConditionalType;
 exports.TSConstructSignatureDeclaration = TSConstructSignatureDeclaration;
 exports.TSConstructorType = TSConstructorType;
@@ -17,7 +18,6 @@ exports.TSDeclareMethod = TSDeclareMethod;
 exports.TSEnumDeclaration = TSEnumDeclaration;
 exports.TSEnumMember = TSEnumMember;
 exports.TSExportAssignment = TSExportAssignment;
-exports.TSExpressionWithTypeArguments = TSExpressionWithTypeArguments;
 exports.TSExternalModuleReference = TSExternalModuleReference;
 exports.TSFunctionType = TSFunctionType;
 exports.TSImportEqualsDeclaration = TSImportEqualsDeclaration;
@@ -70,19 +70,22 @@ exports.tsPrintClassMemberModifiers = tsPrintClassMemberModifiers;
 exports.tsPrintFunctionOrConstructorType = tsPrintFunctionOrConstructorType;
 exports.tsPrintPropertyOrMethodName = tsPrintPropertyOrMethodName;
 exports.tsPrintSignatureDeclarationBase = tsPrintSignatureDeclarationBase;
-exports.tsPrintTypeLiteralOrInterfaceBody = tsPrintTypeLiteralOrInterfaceBody;
-function TSTypeAnnotation(node) {
-  this.tokenChar(58);
+function TSTypeAnnotation(node, parent) {
+  this.token((parent.type === "TSFunctionType" || parent.type === "TSConstructorType") && parent.typeAnnotation === node ? "=>" : ":");
   this.space();
   if (node.optional) this.tokenChar(63);
-  this.print(node.typeAnnotation, node);
+  this.print(node.typeAnnotation);
 }
 function TSTypeParameterInstantiation(node, parent) {
   this.tokenChar(60);
-  this.printList(node.params, node, {});
-  if (parent.type === "ArrowFunctionExpression" && node.params.length === 1) {
-    this.tokenChar(44);
+  let printTrailingSeparator = parent.type === "ArrowFunctionExpression" && node.params.length === 1;
+  if (this.tokenMap && node.start != null && node.end != null) {
+    printTrailingSeparator && (printTrailingSeparator = !!this.tokenMap.find(node, t => this.tokenMap.matchesOriginal(t, ",")));
+    printTrailingSeparator || (printTrailingSeparator = this.shouldPrintTrailingComma(">"));
   }
+  this.printList(node.params, {
+    printTrailingSeparator
+  });
   this.tokenChar(62);
 }
 function TSTypeParameter(node) {
@@ -99,13 +102,13 @@ function TSTypeParameter(node) {
     this.space();
     this.word("extends");
     this.space();
-    this.print(node.constraint, node);
+    this.print(node.constraint);
   }
   if (node.default) {
     this.space();
     this.tokenChar(61);
     this.space();
-    this.print(node.default, node);
+    this.print(node.default);
   }
 }
 function TSParameterProperty(node) {
@@ -125,26 +128,37 @@ function TSDeclareFunction(node, parent) {
     this.space();
   }
   this._functionHead(node, parent);
-  this.tokenChar(59);
+  this.semicolon();
 }
 function TSDeclareMethod(node) {
   this._classMethodHead(node);
-  this.tokenChar(59);
+  this.semicolon();
 }
 function TSQualifiedName(node) {
-  this.print(node.left, node);
+  this.print(node.left);
   this.tokenChar(46);
-  this.print(node.right, node);
+  this.print(node.right);
 }
 function TSCallSignatureDeclaration(node) {
   this.tsPrintSignatureDeclarationBase(node);
-  this.tokenChar(59);
+  maybePrintTrailingCommaOrSemicolon(this, node);
+}
+function maybePrintTrailingCommaOrSemicolon(printer, node) {
+  if (!printer.tokenMap || !node.start || !node.end) {
+    printer.semicolon();
+    return;
+  }
+  if (printer.tokenMap.endMatches(node, ",")) {
+    printer.token(",");
+  } else if (printer.tokenMap.endMatches(node, ";")) {
+    printer.semicolon();
+  }
 }
 function TSConstructSignatureDeclaration(node) {
   this.word("new");
   this.space();
   this.tsPrintSignatureDeclarationBase(node);
-  this.tokenChar(59);
+  maybePrintTrailingCommaOrSemicolon(this, node);
 }
 function TSPropertySignature(node) {
   const {
@@ -155,14 +169,14 @@ function TSPropertySignature(node) {
     this.space();
   }
   this.tsPrintPropertyOrMethodName(node);
-  this.print(node.typeAnnotation, node);
-  this.tokenChar(59);
+  this.print(node.typeAnnotation);
+  maybePrintTrailingCommaOrSemicolon(this, node);
 }
 function tsPrintPropertyOrMethodName(node) {
   if (node.computed) {
     this.tokenChar(91);
   }
-  this.print(node.key, node);
+  this.print(node.key);
   if (node.computed) {
     this.tokenChar(93);
   }
@@ -180,7 +194,7 @@ function TSMethodSignature(node) {
   }
   this.tsPrintPropertyOrMethodName(node);
   this.tsPrintSignatureDeclarationBase(node);
-  this.tokenChar(59);
+  maybePrintTrailingCommaOrSemicolon(this, node);
 }
 function TSIndexSignature(node) {
   const {
@@ -196,10 +210,9 @@ function TSIndexSignature(node) {
     this.space();
   }
   this.tokenChar(91);
-  this._parameters(node.parameters, node);
-  this.tokenChar(93);
-  this.print(node.typeAnnotation, node);
-  this.tokenChar(59);
+  this._parameters(node.parameters, "]");
+  this.print(node.typeAnnotation);
+  maybePrintTrailingCommaOrSemicolon(this, node);
 }
 function TSAnyKeyword() {
   this.word("any");
@@ -260,19 +273,16 @@ function tsPrintFunctionOrConstructorType(node) {
     typeParameters
   } = node;
   const parameters = node.parameters;
-  this.print(typeParameters, node);
+  this.print(typeParameters);
   this.tokenChar(40);
-  this._parameters(parameters, node);
-  this.tokenChar(41);
-  this.space();
-  this.token("=>");
+  this._parameters(parameters, ")");
   this.space();
   const returnType = node.typeAnnotation;
-  this.print(returnType.typeAnnotation, node);
+  this.print(returnType);
 }
 function TSTypeReference(node) {
-  this.print(node.typeName, node, true);
-  this.print(node.typeParameters, node, true);
+  this.print(node.typeName, !!node.typeParameters);
+  this.print(node.typeParameters);
 }
 function TSTypePredicate(node) {
   if (node.asserts) {
@@ -292,51 +302,41 @@ function TSTypeQuery(node) {
   this.space();
   this.print(node.exprName);
   if (node.typeParameters) {
-    this.print(node.typeParameters, node);
+    this.print(node.typeParameters);
   }
 }
 function TSTypeLiteral(node) {
-  this.tsPrintTypeLiteralOrInterfaceBody(node.members, node);
-}
-function tsPrintTypeLiteralOrInterfaceBody(members, node) {
-  tsPrintBraced(this, members, node);
-}
-function tsPrintBraced(printer, members, node) {
-  printer.token("{");
-  if (members.length) {
-    printer.indent();
-    printer.newline();
-    for (const member of members) {
-      printer.print(member, node);
-      printer.newline();
-    }
-    printer.dedent();
-  }
-  printer.rightBrace(node);
+  printBraced(this, node, () => this.printJoin(node.members, {
+    indent: true,
+    statement: true
+  }));
 }
 function TSArrayType(node) {
-  this.print(node.elementType, node, true);
-  this.token("[]");
+  this.print(node.elementType, true);
+  this.tokenChar(91);
+  this.tokenChar(93);
 }
 function TSTupleType(node) {
   this.tokenChar(91);
-  this.printList(node.elementTypes, node);
+  this.printList(node.elementTypes, {
+    printTrailingSeparator: this.shouldPrintTrailingComma("]")
+  });
   this.tokenChar(93);
 }
 function TSOptionalType(node) {
-  this.print(node.typeAnnotation, node);
+  this.print(node.typeAnnotation);
   this.tokenChar(63);
 }
 function TSRestType(node) {
   this.token("...");
-  this.print(node.typeAnnotation, node);
+  this.print(node.typeAnnotation);
 }
 function TSNamedTupleMember(node) {
-  this.print(node.label, node);
+  this.print(node.label);
   if (node.optional) this.tokenChar(63);
   this.tokenChar(58);
   this.space();
-  this.print(node.elementType, node);
+  this.print(node.elementType);
 }
 function TSUnionType(node) {
   tsPrintUnionOrIntersectionType(this, node, "|");
@@ -345,10 +345,16 @@ function TSIntersectionType(node) {
   tsPrintUnionOrIntersectionType(this, node, "&");
 }
 function tsPrintUnionOrIntersectionType(printer, node, sep) {
-  printer.printJoin(node.types, node, {
-    separator() {
+  var _printer$tokenMap;
+  let hasLeadingToken = 0;
+  if ((_printer$tokenMap = printer.tokenMap) != null && _printer$tokenMap.startMatches(node, sep)) {
+    hasLeadingToken = 1;
+    printer.token(sep);
+  }
+  printer.printJoin(node.types, {
+    separator(i) {
       this.space();
-      this.token(sep);
+      this.token(sep, null, i + hasLeadingToken);
       this.space();
     }
   });
@@ -369,24 +375,23 @@ function TSConditionalType(node) {
   this.print(node.falseType);
 }
 function TSInferType(node) {
-  this.token("infer");
-  this.space();
+  this.word("infer");
   this.print(node.typeParameter);
 }
 function TSParenthesizedType(node) {
   this.tokenChar(40);
-  this.print(node.typeAnnotation, node);
+  this.print(node.typeAnnotation);
   this.tokenChar(41);
 }
 function TSTypeOperator(node) {
   this.word(node.operator);
   this.space();
-  this.print(node.typeAnnotation, node);
+  this.print(node.typeAnnotation);
 }
 function TSIndexedAccessType(node) {
-  this.print(node.objectType, node, true);
+  this.print(node.objectType, true);
   this.tokenChar(91);
-  this.print(node.indexType, node);
+  this.print(node.indexType);
   this.tokenChar(93);
 }
 function TSMappedType(node) {
@@ -394,10 +399,10 @@ function TSMappedType(node) {
     nameType,
     optional,
     readonly,
-    typeParameter,
     typeAnnotation
   } = node;
   this.tokenChar(123);
+  const exit = this.enterDelimited();
   this.space();
   if (readonly) {
     tokenIfPlusMinus(this, readonly);
@@ -405,16 +410,20 @@ function TSMappedType(node) {
     this.space();
   }
   this.tokenChar(91);
-  this.word(typeParameter.name);
+  {
+    this.word(node.typeParameter.name);
+  }
   this.space();
   this.word("in");
   this.space();
-  this.print(typeParameter.constraint, typeParameter);
+  {
+    this.print(node.typeParameter.constraint);
+  }
   if (nameType) {
     this.space();
     this.word("as");
     this.space();
-    this.print(nameType, node);
+    this.print(nameType);
   }
   this.tokenChar(93);
   if (optional) {
@@ -424,9 +433,10 @@ function TSMappedType(node) {
   if (typeAnnotation) {
     this.tokenChar(58);
     this.space();
-    this.print(typeAnnotation, node);
+    this.print(typeAnnotation);
   }
   this.space();
+  exit();
   this.tokenChar(125);
 }
 function tokenIfPlusMinus(self, tok) {
@@ -435,11 +445,11 @@ function tokenIfPlusMinus(self, tok) {
   }
 }
 function TSLiteralType(node) {
-  this.print(node.literal, node);
+  this.print(node.literal);
 }
-function TSExpressionWithTypeArguments(node) {
-  this.print(node.expression, node);
-  this.print(node.typeParameters, node);
+function TSClassImplements(node) {
+  this.print(node.expression);
+  this.print(node.typeParameters);
 }
 function TSInterfaceDeclaration(node) {
   const {
@@ -455,19 +465,22 @@ function TSInterfaceDeclaration(node) {
   }
   this.word("interface");
   this.space();
-  this.print(id, node);
-  this.print(typeParameters, node);
+  this.print(id);
+  this.print(typeParameters);
   if (extendz != null && extendz.length) {
     this.space();
     this.word("extends");
     this.space();
-    this.printList(extendz, node);
+    this.printList(extendz);
   }
   this.space();
-  this.print(body, node);
+  this.print(body);
 }
 function TSInterfaceBody(node) {
-  this.tsPrintTypeLiteralOrInterfaceBody(node.body, node);
+  printBraced(this, node, () => this.printJoin(node.body, {
+    indent: true,
+    statement: true
+  }));
 }
 function TSTypeAliasDeclaration(node) {
   const {
@@ -482,27 +495,25 @@ function TSTypeAliasDeclaration(node) {
   }
   this.word("type");
   this.space();
-  this.print(id, node);
-  this.print(typeParameters, node);
+  this.print(id);
+  this.print(typeParameters);
   this.space();
   this.tokenChar(61);
   this.space();
-  this.print(typeAnnotation, node);
-  this.tokenChar(59);
+  this.print(typeAnnotation);
+  this.semicolon();
 }
 function TSTypeExpression(node) {
-  var _expression$trailingC;
   const {
     type,
     expression,
     typeAnnotation
   } = node;
-  const forceParens = !!((_expression$trailingC = expression.trailingComments) != null && _expression$trailingC.length);
-  this.print(expression, node, true, undefined, forceParens);
+  this.print(expression, true);
   this.space();
   this.word(type === "TSAsExpression" ? "as" : "satisfies");
   this.space();
-  this.print(typeAnnotation, node);
+  this.print(typeAnnotation);
 }
 function TSTypeAssertion(node) {
   const {
@@ -510,14 +521,14 @@ function TSTypeAssertion(node) {
     expression
   } = node;
   this.tokenChar(60);
-  this.print(typeAnnotation, node);
+  this.print(typeAnnotation);
   this.tokenChar(62);
   this.space();
-  this.print(expression, node);
+  this.print(expression);
 }
 function TSInstantiationExpression(node) {
-  this.print(node.expression, node);
-  this.print(node.typeParameters, node);
+  this.print(node.expression);
+  this.print(node.typeParameters);
 }
 function TSEnumDeclaration(node) {
   const {
@@ -536,53 +547,62 @@ function TSEnumDeclaration(node) {
   }
   this.word("enum");
   this.space();
-  this.print(id, node);
+  this.print(id);
   this.space();
-  tsPrintBraced(this, members, node);
+  printBraced(this, node, () => {
+    var _this$shouldPrintTrai;
+    return this.printList(members, {
+      indent: true,
+      statement: true,
+      printTrailingSeparator: (_this$shouldPrintTrai = this.shouldPrintTrailingComma("}")) != null ? _this$shouldPrintTrai : true
+    });
+  });
 }
 function TSEnumMember(node) {
   const {
     id,
     initializer
   } = node;
-  this.print(id, node);
+  this.print(id);
   if (initializer) {
     this.space();
     this.tokenChar(61);
     this.space();
-    this.print(initializer, node);
+    this.print(initializer);
   }
-  this.tokenChar(44);
 }
 function TSModuleDeclaration(node) {
   const {
     declare,
-    id
+    id,
+    kind
   } = node;
   if (declare) {
     this.word("declare");
     this.space();
   }
   if (!node.global) {
-    this.word(id.type === "Identifier" ? "namespace" : "module");
+    this.word(kind != null ? kind : id.type === "Identifier" ? "namespace" : "module");
     this.space();
   }
-  this.print(id, node);
+  this.print(id);
   if (!node.body) {
-    this.tokenChar(59);
+    this.semicolon();
     return;
   }
   let body = node.body;
   while (body.type === "TSModuleDeclaration") {
     this.tokenChar(46);
-    this.print(body.id, body);
+    this.print(body.id);
     body = body.body;
   }
   this.space();
-  this.print(body, node);
+  this.print(body);
 }
 function TSModuleBlock(node) {
-  tsPrintBraced(this, node.body, node);
+  printBraced(this, node, () => this.printSequence(node.body, {
+    indent: true
+  }));
 }
 function TSImportType(node) {
   const {
@@ -592,14 +612,14 @@ function TSImportType(node) {
   } = node;
   this.word("import");
   this.tokenChar(40);
-  this.print(argument, node);
+  this.print(argument);
   this.tokenChar(41);
   if (qualifier) {
     this.tokenChar(46);
-    this.print(qualifier, node);
+    this.print(qualifier);
   }
   if (typeParameters) {
-    this.print(typeParameters, node);
+    this.print(typeParameters);
   }
 }
 function TSImportEqualsDeclaration(node) {
@@ -614,20 +634,20 @@ function TSImportEqualsDeclaration(node) {
   }
   this.word("import");
   this.space();
-  this.print(id, node);
+  this.print(id);
   this.space();
   this.tokenChar(61);
   this.space();
-  this.print(moduleReference, node);
-  this.tokenChar(59);
+  this.print(moduleReference);
+  this.semicolon();
 }
 function TSExternalModuleReference(node) {
   this.token("require(");
-  this.print(node.expression, node);
+  this.print(node.expression);
   this.tokenChar(41);
 }
 function TSNonNullExpression(node) {
-  this.print(node.expression, node);
+  this.print(node.expression);
   this.tokenChar(33);
 }
 function TSExportAssignment(node) {
@@ -635,8 +655,8 @@ function TSExportAssignment(node) {
   this.space();
   this.tokenChar(61);
   this.space();
-  this.print(node.expression, node);
-  this.tokenChar(59);
+  this.print(node.expression);
+  this.semicolon();
 }
 function TSNamespaceExportDeclaration(node) {
   this.word("export");
@@ -645,45 +665,53 @@ function TSNamespaceExportDeclaration(node) {
   this.space();
   this.word("namespace");
   this.space();
-  this.print(node.id, node);
+  this.print(node.id);
+  this.semicolon();
 }
 function tsPrintSignatureDeclarationBase(node) {
   const {
     typeParameters
   } = node;
   const parameters = node.parameters;
-  this.print(typeParameters, node);
+  this.print(typeParameters);
   this.tokenChar(40);
-  this._parameters(parameters, node);
-  this.tokenChar(41);
+  this._parameters(parameters, ")");
   const returnType = node.typeAnnotation;
-  this.print(returnType, node);
+  this.print(returnType);
 }
 function tsPrintClassMemberModifiers(node) {
   const isField = node.type === "ClassAccessorProperty" || node.type === "ClassProperty";
-  if (isField && node.declare) {
-    this.word("declare");
-    this.space();
-  }
-  if (node.accessibility) {
-    this.word(node.accessibility);
-    this.space();
-  }
+  printModifiersList(this, node, [isField && node.declare && "declare", node.accessibility]);
   if (node.static) {
     this.word("static");
     this.space();
   }
-  if (node.override) {
-    this.word("override");
-    this.space();
+  printModifiersList(this, node, [node.override && "override", node.abstract && "abstract", isField && node.readonly && "readonly"]);
+}
+function printBraced(printer, node, cb) {
+  printer.token("{");
+  const exit = printer.enterDelimited();
+  cb();
+  exit();
+  printer.rightBrace(node);
+}
+function printModifiersList(printer, node, modifiers) {
+  var _printer$tokenMap2;
+  const modifiersSet = new Set();
+  for (const modifier of modifiers) {
+    if (modifier) modifiersSet.add(modifier);
   }
-  if (node.abstract) {
-    this.word("abstract");
-    this.space();
-  }
-  if (isField && node.readonly) {
-    this.word("readonly");
-    this.space();
+  (_printer$tokenMap2 = printer.tokenMap) == null || _printer$tokenMap2.find(node, tok => {
+    if (modifiersSet.has(tok.value)) {
+      printer.token(tok.value);
+      printer.space();
+      modifiersSet.delete(tok.value);
+      return modifiersSet.size === 0;
+    }
+  });
+  for (const modifier of modifiersSet) {
+    printer.word(modifier);
+    printer.space();
   }
 }
 

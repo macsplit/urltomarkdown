@@ -1,0 +1,20 @@
+2024-11-07 21:45:05 - [32minfo[39m: Reading configs from /home/lupo/work/lupomontero/psl/browserstack.yml
+2024-11-07 21:45:05 - [31merror[39m: Error: userName or accessKey is not defined
+    at new BrowserStackSetup (/home/lupo/work/lupomontero/psl/node_modules/browserstack-node-sdk/src/helpers/BrowserStackSetup.js:1:8954)
+    at run (/home/lupo/work/lupomontero/psl/node_modules/browserstack-node-sdk/src/bin/playwright/command.js:2:7261)
+    at Object.sOMBL (/home/lupo/work/lupomontero/psl/node_modules/browserstack-node-sdk/src/bin/runner.js:2:3179)
+    at captureError (/home/lupo/work/lupomontero/psl/node_modules/browserstack-node-sdk/src/bin/runner.js:2:3274)
+    at Object.mBkJv (/home/lupo/work/lupomontero/psl/node_modules/browserstack-node-sdk/src/bin/runner.js:2:10340)
+    at /home/lupo/work/lupomontero/psl/node_modules/browserstack-node-sdk/src/bin/runner.js:2:10569
+    at _.applyBuilderUpdateUsageAndParse (/home/lupo/work/lupomontero/psl/node_modules/browserstack-node-sdk/node_modules/yargs/build/index.cjs:1:7435)
+    at _.runCommand (/home/lupo/work/lupomontero/psl/node_modules/browserstack-node-sdk/node_modules/yargs/build/index.cjs:1:7078)
+    at [runYargsParserAndExecuteCommands] (/home/lupo/work/lupomontero/psl/node_modules/browserstack-node-sdk/node_modules/yargs/build/index.cjs:1:58539)
+    at te.parse (/home/lupo/work/lupomontero/psl/node_modules/browserstack-node-sdk/node_modules/yargs/build/index.cjs:1:40478)
+2024-11-07 21:45:09 - [32minfo[39m: Reading configs from /home/lupo/work/lupomontero/psl/browserstack.yml
+2024-11-07 21:45:10 - [32minfo[39m: Project and debug logs are captured by default. To disable, set disableAutoCaptureLogs: true in config.
+2024-11-07 21:45:12 - [32minfo[39m: Local binary started successfully
+2024-11-07 21:45:34 - [32minfo[39m: Visit https://observability.browserstack.com/builds/kn2ljhdkwgb8uvvweqepxnvad3aurj1nxpnvjghk to view build report, insights, and many more debugging information all at one place!
+
+2024-11-07 21:45:34 - [32minfo[39m: View build on BrowserStack dashboard: https://automate.browserstack.com/dashboard/v2/builds/5cb8d780cf7707366767a8005c17d879b2d0e624
+2024-11-07 21:45:36 - [32minfo[39m: Deleting /home/lupo/work/lupomontero/psl/playwright-browserstack-sdk.config.js
+2024-11-07 21:45:38 - [32minfo[39m: Local binary stopped

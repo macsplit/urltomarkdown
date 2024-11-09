@@ -17,7 +17,7 @@ var _index = require("../../index.js");
 var _caching = require("../caching.js");
 function makeConfigAPI(cache) {
   const env = value => cache.using(data => {
-    if (typeof value === "undefined") return data.envName;
+    if (value === undefined) return data.envName;
     if (typeof value === "function") {
       return (0, _caching.assertSimpleType)(value(data.envName));
     }

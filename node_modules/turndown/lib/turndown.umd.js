@@ -234,8 +234,9 @@
 
     replacement: function (content, node) {
       var href = node.getAttribute('href');
+      if (href) href = href.replace(/([()])/g, '\\$1');
       var title = cleanAttribute(node.getAttribute('title'));
-      if (title) title = ' "' + title + '"';
+      if (title) title = ' "' + title.replace(/"/g, '\\"') + '"';
       return '[' + content + '](' + href + title + ')'
     }
   };
@@ -585,7 +586,7 @@
     var Parser = function () {};
 
     {
-      var domino = require('domino');
+      var domino = require('@mixmark-io/domino');
       Parser.prototype.parseFromString = function (string) {
         return domino.createDocument(string)
       };

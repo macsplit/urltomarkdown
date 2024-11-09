@@ -9,6 +9,7 @@ var isValid = function (v) {
     type === TYPES.NULL_OR_EMPTY_STR ||
     type === TYPES.LENGTH ||
     type === TYPES.PERCENT ||
+    type === TYPES.CALC ||
     (type === TYPES.INTEGER && (v === '0' || v === 0))
   );
 };

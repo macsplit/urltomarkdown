@@ -1,58 +1,61 @@
 // This file is auto-generated! Do not modify it directly.
-/* eslint-disable import/no-extraneous-dependencies, @typescript-eslint/consistent-type-imports, prettier/prettier */
+/* eslint-disable @typescript-eslint/consistent-type-imports, @typescript-eslint/no-redundant-type-constituents */
 import * as _babel_types from '@babel/types';
+
+type BABEL_8_BREAKING = false;
+type IF_BABEL_7<V> = false extends BABEL_8_BREAKING ? V : never;
 
 type Plugin =
   | "asyncDoExpressions"
-  | "asyncGenerators"
-  | "bigInt"
-  | "classPrivateMethods"
-  | "classPrivateProperties"
-  | "classProperties"
-  | "classStaticBlock" // Enabled by default
-  | "decimal"
+  | IF_BABEL_7<"asyncGenerators">
+  | IF_BABEL_7<"bigInt">
+  | IF_BABEL_7<"classPrivateMethods">
+  | IF_BABEL_7<"classPrivateProperties">
+  | IF_BABEL_7<"classProperties">
+  | IF_BABEL_7<"classStaticBlock">
+  | IF_BABEL_7<"decimal">
   | "decorators-legacy"
   | "deferredImportEvaluation"
   | "decoratorAutoAccessors"
   | "destructuringPrivate"
+  | "deprecatedImportAssert"
   | "doExpressions"
-  | "dynamicImport"
+  | IF_BABEL_7<"dynamicImport">
   | "explicitResourceManagement"
   | "exportDefaultFrom"
-  | "exportNamespaceFrom" // deprecated
+  | IF_BABEL_7<"exportNamespaceFrom">
   | "flow"
   | "flowComments"
   | "functionBind"
   | "functionSent"
   | "importMeta"
   | "jsx"
-  | "logicalAssignment"
-  | "importAssertions" // deprecated
-  | "importAttributes"
-  | "importReflection"
+  | IF_BABEL_7<"jsonStrings">
+  | IF_BABEL_7<"logicalAssignment">
+  | IF_BABEL_7<"importAssertions">
+  | IF_BABEL_7<"importReflection">
   | "moduleBlocks"
-  | "moduleStringNames"
-  | "nullishCoalescingOperator"
-  | "numericSeparator"
-  | "objectRestSpread"
-  | "optionalCatchBinding"
-  | "optionalChaining"
+  | IF_BABEL_7<"moduleStringNames">
+  | IF_BABEL_7<"nullishCoalescingOperator">
+  | IF_BABEL_7<"numericSeparator">
+  | IF_BABEL_7<"objectRestSpread">
+  | IF_BABEL_7<"optionalCatchBinding">
+  | IF_BABEL_7<"optionalChaining">
   | "partialApplication"
   | "placeholders"
-  | "privateIn" // Enabled by default
-  | "regexpUnicodeSets" // Enabled by default
+  | IF_BABEL_7<"privateIn">
+  | IF_BABEL_7<"regexpUnicodeSets">
   | "sourcePhaseImports"
   | "throwExpressions"
-  | "topLevelAwait"
+  | IF_BABEL_7<"topLevelAwait">
   | "v8intrinsic"
   | ParserPluginWithOptions[0];
 
 type ParserPluginWithOptions =
   | ["decorators", DecoratorsPluginOptions]
   | ["estree", { classFeatures?: boolean }]
-  | ["importAttributes", { deprecatedAssertSyntax: boolean }]
-  // @deprecated
-  | ["moduleAttributes", { version: "may-2020" }]
+  | IF_BABEL_7<["importAttributes", { deprecatedAssertSyntax: boolean }]>
+  | IF_BABEL_7<["moduleAttributes", { version: "may-2020" }]>
   | ["optionalChainingAssign", { version: "2023-07" }]
   | ["pipelineOperator", PipelineOperatorPluginOptions]
   | ["recordAndTuple", RecordAndTuplePluginOptions]
@@ -67,7 +70,9 @@ interface DecoratorsPluginOptions {
 }
 
 interface PipelineOperatorPluginOptions {
-  proposal: "minimal" | "fsharp" | "hack" | "smart";
+  proposal: BABEL_8_BREAKING extends false
+    ? "minimal" | "fsharp" | "hack" | "smart"
+    : "fsharp" | "hack";
   topicToken?: "%" | "#" | "@@" | "^^" | "^";
 }
 
@@ -75,10 +80,14 @@ interface RecordAndTuplePluginOptions {
   syntaxType: "bar" | "hash";
 }
 
-interface FlowPluginOptions {
-  all?: boolean;
-  enums?: boolean;
-}
+type FlowPluginOptions = BABEL_8_BREAKING extends true
+  ? {
+      all?: boolean;
+      enums?: boolean;
+    }
+  : {
+      all?: boolean;
+    };
 
 interface TypeScriptPluginOptions {
   dts?: boolean;
@@ -179,6 +188,13 @@ interface ParserOptions {
    * Useful when generating code and source maps from the ASTs of multiple input files.
    */
   sourceFilename?: string;
+
+  /**
+   * By default, all source indexes start from 0.
+   * You can provide a start index to alternatively start with.
+   * Useful for integration with other source tools.
+   */
+  startIndex?: number;
 
   /**
    * By default, the first line of code parsed is treated as line 1.

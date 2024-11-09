@@ -6,6 +6,7 @@ var CSSOM = {
 	CSSGroupingRule: require("./CSSGroupingRule").CSSGroupingRule,
 	CSSConditionRule: require("./CSSConditionRule").CSSConditionRule,
 	CSSMediaRule: require("./CSSMediaRule").CSSMediaRule,
+	CSSContainerRule: require("./CSSContainerRule").CSSContainerRule,
 	CSSSupportsRule: require("./CSSSupportsRule").CSSSupportsRule,
 	CSSStyleDeclaration: require("./CSSStyleDeclaration").CSSStyleDeclaration,
 	CSSKeyframeRule: require('./CSSKeyframeRule').CSSKeyframeRule,

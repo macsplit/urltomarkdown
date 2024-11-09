@@ -8,19 +8,27 @@ const tests = {
   "json-strings": ["'\\u2028'"], // Babel 7.2.0
 
   // ECMAScript 2020
-  "bigint": ["1n"], // Babel 7.8.0
+  bigint: ["1n"], // Babel 7.8.0
   "optional-chaining": ["a?.b"], // Babel 7.9.0
   "nullish-coalescing-operator": ["a ?? b"], // Babel 7.9.0
   // import.meta is handled manually
 
-  // Stage 3
+  // ECMAScript 2021
   "numeric-separator": ["1_2"],
+  "logical-assignment-operators": ["a ||= b", "a &&= b", "a ??= c"],
+
+  // ECMAScript 2022
   "class-properties": [
     "(class { x = 1 })",
     "(class { #x = 1 })",
     "(class { #x() {} })",
   ],
-  "logical-assignment-operators": ["a ||= b", "a &&= b", "a ??= c"],
+  "private-property-in-object": ["(class { #x; m() { #x in y } })"],
+  "class-static-block": ["(class { static {} })"],
+  // top-level await is handled manually
+
+  // Stage 3
+  // import attributes is handled manually
 };
 
 const plugins = [];
@@ -53,5 +61,12 @@ if (major > 10 || (major === 10 && minor >= 4)) {
 if (major > 14 || (major === 14 && minor >= 3)) {
   plugins.push(require.resolve("@babel/plugin-syntax-top-level-await"));
 }
-
+// Similar for import attributes
+if (
+  major > 20 ||
+  (major === 20 && minor >= 10) ||
+  (major === 18 && minor >= 20)
+) {
+  plugins.push(require.resolve("@babel/plugin-syntax-import-attributes"));
+}
 module.exports = () => ({ plugins });

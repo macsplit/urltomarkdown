@@ -8,7 +8,7 @@ module.exports = {
 			],
 			replace: [
 				{
-					find: /\[([^\]]*)\]\(\/\/([^\)]*)\)/g,
+				find: /\[([^\]]*)\]\(\/\/([^\)]*)\)/g,
 				replacement: '[$1](https://$2)'
 				}
 			]
@@ -20,7 +20,10 @@ module.exports = {
 				/(?:\\\[)?\[edit\]\([^\s]+\s+"[^"]+"\)(?:\\\])?/ig,
 				/\^\s\[Jump up to[^\)]*\)/ig,
 				/\[[^\]]*\]\(#cite_ref[^\)]+\)/g,
-				/\[\!\[Edit this at Wikidata\].*/g
+				/\[\!\[Edit this at Wikidata\].*/g,
+				/\[\!\[Listen to this article\]\([^\)]*\)\]\([^\)]*\.(mp3|ogg|oga|flac)[^\)]*\)/g,
+				/\[This audio file\]\([^\)]*\).*/g,
+				/\!\[Spoken Wikipedia icon\]\([^\)]*\)/g
 			],
 			replace: [
 				{

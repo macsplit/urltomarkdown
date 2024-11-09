@@ -49,8 +49,11 @@ const OTHER_ORG_DEFAULT_RE = /^(@(?!babel$)[^/]+)$/;
 const resolvePlugin = exports.resolvePlugin = resolveStandardizedName.bind(null, "plugin");
 const resolvePreset = exports.resolvePreset = resolveStandardizedName.bind(null, "preset");
 function* loadPlugin(name, dirname) {
-  const filepath = resolvePlugin(name, dirname, yield* (0, _async.isAsync)());
-  const value = yield* requireModule("plugin", filepath);
+  const {
+    filepath,
+    loader
+  } = resolvePlugin(name, dirname, yield* (0, _async.isAsync)());
+  const value = yield* requireModule("plugin", loader, filepath);
   debug("Loaded plugin %o from %o.", name, dirname);
   return {
     filepath,
@@ -58,8 +61,11 @@ function* loadPlugin(name, dirname) {
   };
 }
 function* loadPreset(name, dirname) {
-  const filepath = resolvePreset(name, dirname, yield* (0, _async.isAsync)());
-  const value = yield* requireModule("preset", filepath);
+  const {
+    filepath,
+    loader
+  } = resolvePreset(name, dirname, yield* (0, _async.isAsync)());
+  const value = yield* requireModule("preset", loader, filepath);
   debug("Loaded preset %o from %o.", name, dirname);
   return {
     filepath,
@@ -154,7 +160,10 @@ function resolveStandardizedNameForRequire(type, name, dirname) {
   while (!res.done) {
     res = it.next(tryRequireResolve(res.value, dirname));
   }
-  return res.value;
+  return {
+    loader: "require",
+    filepath: res.value
+  };
 }
 function resolveStandardizedNameForImport(type, name, dirname) {
   const parentUrl = (0, _url().pathToFileURL)(_path().join(dirname, "./babel-virtual-resolve-base.js")).href;
@@ -163,15 +172,18 @@ function resolveStandardizedNameForImport(type, name, dirname) {
   while (!res.done) {
     res = it.next(tryImportMetaResolve(res.value, parentUrl));
   }
-  return (0, _url().fileURLToPath)(res.value);
+  return {
+    loader: "auto",
+    filepath: (0, _url().fileURLToPath)(res.value)
+  };
 }
-function resolveStandardizedName(type, name, dirname, resolveESM) {
-  if (!_moduleTypes.supportsESM || !resolveESM) {
+function resolveStandardizedName(type, name, dirname, allowAsync) {
+  if (!_moduleTypes.supportsESM || !allowAsync) {
     return resolveStandardizedNameForRequire(type, name, dirname);
   }
   try {
     const resolved = resolveStandardizedNameForImport(type, name, dirname);
-    if (!(0, _fs().existsSync)(resolved)) {
+    if (!(0, _fs().existsSync)(resolved.filepath)) {
       throw Object.assign(new Error(`Could not resolve "${name}" in file ${dirname}.`), {
         type: "MODULE_NOT_FOUND"
       });
@@ -190,7 +202,7 @@ function resolveStandardizedName(type, name, dirname, resolveESM) {
 {
   var LOADING_MODULES = new Set();
 }
-function* requireModule(type, name) {
+function* requireModule(type, loader, name) {
   {
     if (!(yield* (0, _async.isAsync)()) && LOADING_MODULES.has(name)) {
       throw new Error(`Reentrant ${type} detected trying to load "${name}". This module is not ignored ` + "and is trying to load itself while compiling itself, leading to a dependency cycle. " + 'We recommend adding it to your "ignore" list in your babelrc, or to a .babelignore.');
@@ -201,7 +213,7 @@ function* requireModule(type, name) {
       LOADING_MODULES.add(name);
     }
     {
-      return yield* (0, _moduleTypes.default)(name, `You appear to be using a native ECMAScript module ${type}, ` + "which is only supported when running Babel asynchronously.", true);
+      return yield* (0, _moduleTypes.default)(name, loader, `You appear to be using a native ECMAScript module ${type}, ` + "which is only supported when running Babel asynchronously " + "or when using the Node.js `--experimental-require-module` flag.", `You appear to be using a ${type} that contains top-level await, ` + "which is only supported when running Babel asynchronously.", true);
     }
   } catch (err) {
     err.message = `[BABEL]: ${err.message} (While processing: ${name})`;
