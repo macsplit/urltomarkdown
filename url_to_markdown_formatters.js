@@ -18,7 +18,7 @@ module.exports = {
 	},
 	format_codeblocks: function (html, replacements) {
 		const start = replacements.length;
-		const codeblocks = html.match(/(<pre[^>]*>(?:.|\n)*?<\/pre>)/gi);
+		const codeblocks = html.match(/(<pre[^>]*>(?:.|\n)*?<\/pre>)|(<code[^>]*>(?:.|\n)*?<\/code>)/gi);
 		if (codeblocks) {
 			for (let c=0;c<codeblocks.length;c++) {
 				const codeblock = codeblocks[c];
@@ -27,7 +27,9 @@ module.exports = {
 				filtered = filtered.replace(/<p>/g, "\n");
 				filtered = filtered.replace(/<\/?[^>]+(>|$)/g, "");		
 				filtered = htmlEntities.decode(filtered);
-				let markdown = "```\n"+filtered+"\n```\n";
+				let markdown = codeblock.startsWith('<pre') ? 
+					"```\n"+filtered+"\n```\n" : 
+					"`"+filtered.trim()+"`";
 				let placeholder = "urltomarkdowncodeblockplaceholder"+c+Math.random();
 				replacements[start+c] = { placeholder: placeholder, replacement: markdown};
 				html = html.replace(codeblock, "<p>"+placeholder+"</p>");
