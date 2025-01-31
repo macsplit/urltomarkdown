@@ -42,6 +42,10 @@ Optionally suppress links:
 
 	GET https://urltomarkdown.herokuapp.com/?url=https%3A%2F%2Fwww.mozilla.org%2Fen-GB%2Ffirefox%2F&links=false
 
+Optionally suppress cleaning / filtering prior to conversion (output will then tend be more verbose but may have more junk or artefacts):
+
+	GET https://urltomarkdown.herokuapp.com/?url=https%3A%2F%2Fwww.mozilla.org%2Fen-GB%2Ffirefox%2F&clean=false
+
 Alternative POST request, supply url and html in POST body:
 
 	POST https://urltomarkdown.herokuapp.com/?title=true&links=false
