@@ -183,6 +183,7 @@ exports.tSConstructSignatureDeclaration = exports.tsConstructSignatureDeclaratio
 exports.tSConstructorType = exports.tsConstructorType = tsConstructorType;
 exports.tSDeclareFunction = exports.tsDeclareFunction = tsDeclareFunction;
 exports.tSDeclareMethod = exports.tsDeclareMethod = tsDeclareMethod;
+exports.tSEnumBody = exports.tsEnumBody = tsEnumBody;
 exports.tSEnumDeclaration = exports.tsEnumDeclaration = tsEnumDeclaration;
 exports.tSEnumMember = exports.tsEnumMember = tsEnumMember;
 exports.tSExportAssignment = exports.tsExportAssignment = tsExportAssignment;
@@ -2699,6 +2700,15 @@ function tsTypeAssertion(typeAnnotation, expression) {
   const defs = NODE_FIELDS.TSTypeAssertion;
   validate(defs.typeAnnotation, node, "typeAnnotation", typeAnnotation, 1);
   validate(defs.expression, node, "expression", expression, 1);
+  return node;
+}
+function tsEnumBody(members) {
+  const node = {
+    type: "TSEnumBody",
+    members
+  };
+  const defs = NODE_FIELDS.TSEnumBody;
+  validate(defs.members, node, "members", members, 1);
   return node;
 }
 function tsEnumDeclaration(id, members) {

@@ -218,6 +218,7 @@ exports.assertTSConstructorType = assertTSConstructorType;
 exports.assertTSDeclareFunction = assertTSDeclareFunction;
 exports.assertTSDeclareMethod = assertTSDeclareMethod;
 exports.assertTSEntityName = assertTSEntityName;
+exports.assertTSEnumBody = assertTSEnumBody;
 exports.assertTSEnumDeclaration = assertTSEnumDeclaration;
 exports.assertTSEnumMember = assertTSEnumMember;
 exports.assertTSExportAssignment = assertTSExportAssignment;
@@ -1021,6 +1022,9 @@ function assertTSSatisfiesExpression(node, opts) {
 }
 function assertTSTypeAssertion(node, opts) {
   assert("TSTypeAssertion", node, opts);
+}
+function assertTSEnumBody(node, opts) {
+  assert("TSEnumBody", node, opts);
 }
 function assertTSEnumDeclaration(node, opts) {
   assert("TSEnumDeclaration", node, opts);

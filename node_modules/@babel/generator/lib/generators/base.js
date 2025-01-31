@@ -24,9 +24,7 @@ function Program(node) {
   if (directivesLen) {
     var _node$directives$trai;
     const newline = node.body.length ? 2 : 1;
-    this.printSequence(node.directives, {
-      trailingCommentsLineOffset: newline
-    });
+    this.printSequence(node.directives, undefined, newline);
     if (!((_node$directives$trai = node.directives[directivesLen - 1].trailingComments) != null && _node$directives$trai.length)) {
       this.newline(newline);
     }
@@ -41,17 +39,12 @@ function BlockStatement(node) {
   if (directivesLen) {
     var _node$directives$trai2;
     const newline = node.body.length ? 2 : 1;
-    this.printSequence(node.directives, {
-      indent: true,
-      trailingCommentsLineOffset: newline
-    });
+    this.printSequence(node.directives, true, newline);
     if (!((_node$directives$trai2 = node.directives[directivesLen - 1].trailingComments) != null && _node$directives$trai2.length)) {
       this.newline(newline);
     }
   }
-  this.printSequence(node.body, {
-    indent: true
-  });
+  this.printSequence(node.body, true);
   exit();
   this.rightBrace(node);
 }

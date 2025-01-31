@@ -1035,6 +1035,12 @@ Object.defineProperty(exports, "TSDeclareMethod", {
     return _index.tsDeclareMethod;
   }
 });
+Object.defineProperty(exports, "TSEnumBody", {
+  enumerable: true,
+  get: function () {
+    return _index.tsEnumBody;
+  }
+});
 Object.defineProperty(exports, "TSEnumDeclaration", {
   enumerable: true,
   get: function () {

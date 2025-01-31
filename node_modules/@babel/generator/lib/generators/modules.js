@@ -94,9 +94,7 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
   const occurrenceCount = hasPreviousBrace ? 1 : 0;
   this.token("{", null, occurrenceCount);
   this.space();
-  this.printList(attributes || assertions, {
-    printTrailingSeparator: this.shouldPrintTrailingComma("}")
-  });
+  this.printList(attributes || assertions, this.shouldPrintTrailingComma("}"));
   this.space();
   this.token("}", null, occurrenceCount);
 }
@@ -160,9 +158,7 @@ function ExportNamedDeclaration(node) {
       this.tokenChar(123);
       if (specifiers.length) {
         this.space();
-        this.printList(specifiers, {
-          printTrailingSeparator: this.shouldPrintTrailingComma("}")
-        });
+        this.printList(specifiers, this.shouldPrintTrailingComma("}"));
         this.space();
       }
       this.tokenChar(125);
@@ -232,9 +228,7 @@ function ImportDeclaration(node) {
     hasBrace = true;
     this.tokenChar(123);
     this.space();
-    this.printList(specifiers, {
-      printTrailingSeparator: this.shouldPrintTrailingComma("}")
-    });
+    this.printList(specifiers, this.shouldPrintTrailingComma("}"));
     this.space();
     this.tokenChar(125);
   } else if (isTypeKind && !hasSpecifiers) {

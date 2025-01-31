@@ -9,9 +9,10 @@ const apple_dev_prefix = "https://developer.apple.com";
 const stackoverflow_prefix = "https://stackoverflow.com/questions";
 
 class html_reader {
-	read_url(url, res, inline_title, ignore_links) {
+	read_url(url, res, options) {
 		JSDOM.fromURL(url).then((document)=>{
-			let markdown = processor.process_dom(url, document, res, inline_title, ignore_links);
+			const id = "";
+			let markdown = processor.process_dom(url, document, res, id, options);
 			res.send(markdown);
 		}).catch((error)=> {
 			res.status(400).send(failure_message);
@@ -20,7 +21,7 @@ class html_reader {
 }
 
 class apple_reader {
-	read_url(url, res, inline_title, ignore_links) {
+	read_url(url, res, options) {
 		let json_url = apple_dev_parser.dev_doc_url(url);
 		https.get(json_url,(apple_res) => {
 		    let body = "";
@@ -29,7 +30,7 @@ class apple_reader {
 		    });
 		    apple_res.on("end", () => {
 	            let json = JSON.parse(body);
-	            let markdown = apple_dev_parser.parse_dev_doc_json(json, inline_title, ignore_links);
+	            let markdown = apple_dev_parser.parse_dev_doc_json(json, options);
 	            res.send(markdown);
 		    });
 		});
@@ -37,10 +38,14 @@ class apple_reader {
 }
 
 class stack_reader {
-	read_url(url, res, inline_title, ignore_links) {
+	read_url(url, res, options) {
 		JSDOM.fromURL(url).then((document)=>{
-			let markdown_q = processor.process_dom(url, document, res, inline_title, ignore_links, 'question');
-			let markdown_a = processor.process_dom(url, document, res, false, ignore_links, 'answers');
+			let markdown_q = processor.process_dom(url, document, res, 'question', options );
+			let markdown_a = processor.process_dom(url, document, res, 'answers', {
+				inline_title: false,
+				ignore_links: options.ignore_links ?? false,
+				improve_readability: options.improve_readability ?? true
+			});
 			if (markdown_a.startsWith('Your Answer')) {
 				res.send(markdown_q);
 			}

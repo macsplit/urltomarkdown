@@ -53,7 +53,9 @@ CSSStyleDeclaration.prototype = {
       this.removeProperty(name);
       return;
     }
-    var isCustomProperty = name.indexOf('--') === 0;
+    var isCustomProperty =
+      name.indexOf('--') === 0 ||
+      (typeof value === 'string' && /^var\(--[-\w]+,?.*\)$/.test(value));
     if (isCustomProperty) {
       this._setProperty(name, value, priority);
       return;

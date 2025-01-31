@@ -1119,7 +1119,8 @@ declare class BabelNodeJSXOpeningElement extends BabelNode {
   name: BabelNodeJSXIdentifier | BabelNodeJSXMemberExpression | BabelNodeJSXNamespacedName;
   attributes: Array<BabelNodeJSXAttribute | BabelNodeJSXSpreadAttribute>;
   selfClosing?: boolean;
-  typeParameters?: BabelNodeTypeParameterInstantiation | BabelNodeTSTypeParameterInstantiation;
+  typeArguments?: BabelNodeTypeParameterInstantiation;
+  typeParameters?: BabelNodeTSTypeParameterInstantiation;
 }
 
 declare class BabelNodeJSXSpreadAttribute extends BabelNode {
@@ -1548,10 +1549,16 @@ declare class BabelNodeTSTypeAssertion extends BabelNode {
   expression: BabelNodeExpression;
 }
 
+declare class BabelNodeTSEnumBody extends BabelNode {
+  type: "TSEnumBody";
+  members: Array<BabelNodeTSEnumMember>;
+}
+
 declare class BabelNodeTSEnumDeclaration extends BabelNode {
   type: "TSEnumDeclaration";
   id: BabelNodeIdentifier;
   members: Array<BabelNodeTSEnumMember>;
+  body?: BabelNodeTSEnumBody;
   declare?: boolean;
   initializer?: BabelNodeExpression;
 }
@@ -1679,7 +1686,7 @@ type BabelNodeEnumBody = BabelNodeEnumBooleanBody | BabelNodeEnumNumberBody | Ba
 type BabelNodeEnumMember = BabelNodeEnumBooleanMember | BabelNodeEnumNumberMember | BabelNodeEnumStringMember | BabelNodeEnumDefaultedMember;
 type BabelNodeJSX = BabelNodeJSXAttribute | BabelNodeJSXClosingElement | BabelNodeJSXElement | BabelNodeJSXEmptyExpression | BabelNodeJSXExpressionContainer | BabelNodeJSXSpreadChild | BabelNodeJSXIdentifier | BabelNodeJSXMemberExpression | BabelNodeJSXNamespacedName | BabelNodeJSXOpeningElement | BabelNodeJSXSpreadAttribute | BabelNodeJSXText | BabelNodeJSXFragment | BabelNodeJSXOpeningFragment | BabelNodeJSXClosingFragment;
 type BabelNodeMiscellaneous = BabelNodeNoop | BabelNodePlaceholder | BabelNodeV8IntrinsicIdentifier;
-type BabelNodeTypeScript = BabelNodeTSParameterProperty | BabelNodeTSDeclareFunction | BabelNodeTSDeclareMethod | BabelNodeTSQualifiedName | BabelNodeTSCallSignatureDeclaration | BabelNodeTSConstructSignatureDeclaration | BabelNodeTSPropertySignature | BabelNodeTSMethodSignature | BabelNodeTSIndexSignature | BabelNodeTSAnyKeyword | BabelNodeTSBooleanKeyword | BabelNodeTSBigIntKeyword | BabelNodeTSIntrinsicKeyword | BabelNodeTSNeverKeyword | BabelNodeTSNullKeyword | BabelNodeTSNumberKeyword | BabelNodeTSObjectKeyword | BabelNodeTSStringKeyword | BabelNodeTSSymbolKeyword | BabelNodeTSUndefinedKeyword | BabelNodeTSUnknownKeyword | BabelNodeTSVoidKeyword | BabelNodeTSThisType | BabelNodeTSFunctionType | BabelNodeTSConstructorType | BabelNodeTSTypeReference | BabelNodeTSTypePredicate | BabelNodeTSTypeQuery | BabelNodeTSTypeLiteral | BabelNodeTSArrayType | BabelNodeTSTupleType | BabelNodeTSOptionalType | BabelNodeTSRestType | BabelNodeTSNamedTupleMember | BabelNodeTSUnionType | BabelNodeTSIntersectionType | BabelNodeTSConditionalType | BabelNodeTSInferType | BabelNodeTSParenthesizedType | BabelNodeTSTypeOperator | BabelNodeTSIndexedAccessType | BabelNodeTSMappedType | BabelNodeTSLiteralType | BabelNodeTSExpressionWithTypeArguments | BabelNodeTSInterfaceDeclaration | BabelNodeTSInterfaceBody | BabelNodeTSTypeAliasDeclaration | BabelNodeTSInstantiationExpression | BabelNodeTSAsExpression | BabelNodeTSSatisfiesExpression | BabelNodeTSTypeAssertion | BabelNodeTSEnumDeclaration | BabelNodeTSEnumMember | BabelNodeTSModuleDeclaration | BabelNodeTSModuleBlock | BabelNodeTSImportType | BabelNodeTSImportEqualsDeclaration | BabelNodeTSExternalModuleReference | BabelNodeTSNonNullExpression | BabelNodeTSExportAssignment | BabelNodeTSNamespaceExportDeclaration | BabelNodeTSTypeAnnotation | BabelNodeTSTypeParameterInstantiation | BabelNodeTSTypeParameterDeclaration | BabelNodeTSTypeParameter;
+type BabelNodeTypeScript = BabelNodeTSParameterProperty | BabelNodeTSDeclareFunction | BabelNodeTSDeclareMethod | BabelNodeTSQualifiedName | BabelNodeTSCallSignatureDeclaration | BabelNodeTSConstructSignatureDeclaration | BabelNodeTSPropertySignature | BabelNodeTSMethodSignature | BabelNodeTSIndexSignature | BabelNodeTSAnyKeyword | BabelNodeTSBooleanKeyword | BabelNodeTSBigIntKeyword | BabelNodeTSIntrinsicKeyword | BabelNodeTSNeverKeyword | BabelNodeTSNullKeyword | BabelNodeTSNumberKeyword | BabelNodeTSObjectKeyword | BabelNodeTSStringKeyword | BabelNodeTSSymbolKeyword | BabelNodeTSUndefinedKeyword | BabelNodeTSUnknownKeyword | BabelNodeTSVoidKeyword | BabelNodeTSThisType | BabelNodeTSFunctionType | BabelNodeTSConstructorType | BabelNodeTSTypeReference | BabelNodeTSTypePredicate | BabelNodeTSTypeQuery | BabelNodeTSTypeLiteral | BabelNodeTSArrayType | BabelNodeTSTupleType | BabelNodeTSOptionalType | BabelNodeTSRestType | BabelNodeTSNamedTupleMember | BabelNodeTSUnionType | BabelNodeTSIntersectionType | BabelNodeTSConditionalType | BabelNodeTSInferType | BabelNodeTSParenthesizedType | BabelNodeTSTypeOperator | BabelNodeTSIndexedAccessType | BabelNodeTSMappedType | BabelNodeTSLiteralType | BabelNodeTSExpressionWithTypeArguments | BabelNodeTSInterfaceDeclaration | BabelNodeTSInterfaceBody | BabelNodeTSTypeAliasDeclaration | BabelNodeTSInstantiationExpression | BabelNodeTSAsExpression | BabelNodeTSSatisfiesExpression | BabelNodeTSTypeAssertion | BabelNodeTSEnumBody | BabelNodeTSEnumDeclaration | BabelNodeTSEnumMember | BabelNodeTSModuleDeclaration | BabelNodeTSModuleBlock | BabelNodeTSImportType | BabelNodeTSImportEqualsDeclaration | BabelNodeTSExternalModuleReference | BabelNodeTSNonNullExpression | BabelNodeTSExportAssignment | BabelNodeTSNamespaceExportDeclaration | BabelNodeTSTypeAnnotation | BabelNodeTSTypeParameterInstantiation | BabelNodeTSTypeParameterDeclaration | BabelNodeTSTypeParameter;
 type BabelNodeTSTypeElement = BabelNodeTSCallSignatureDeclaration | BabelNodeTSConstructSignatureDeclaration | BabelNodeTSPropertySignature | BabelNodeTSMethodSignature | BabelNodeTSIndexSignature;
 type BabelNodeTSType = BabelNodeTSAnyKeyword | BabelNodeTSBooleanKeyword | BabelNodeTSBigIntKeyword | BabelNodeTSIntrinsicKeyword | BabelNodeTSNeverKeyword | BabelNodeTSNullKeyword | BabelNodeTSNumberKeyword | BabelNodeTSObjectKeyword | BabelNodeTSStringKeyword | BabelNodeTSSymbolKeyword | BabelNodeTSUndefinedKeyword | BabelNodeTSUnknownKeyword | BabelNodeTSVoidKeyword | BabelNodeTSThisType | BabelNodeTSFunctionType | BabelNodeTSConstructorType | BabelNodeTSTypeReference | BabelNodeTSTypePredicate | BabelNodeTSTypeQuery | BabelNodeTSTypeLiteral | BabelNodeTSArrayType | BabelNodeTSTupleType | BabelNodeTSOptionalType | BabelNodeTSRestType | BabelNodeTSUnionType | BabelNodeTSIntersectionType | BabelNodeTSConditionalType | BabelNodeTSInferType | BabelNodeTSParenthesizedType | BabelNodeTSTypeOperator | BabelNodeTSIndexedAccessType | BabelNodeTSMappedType | BabelNodeTSLiteralType | BabelNodeTSExpressionWithTypeArguments | BabelNodeTSImportType;
 type BabelNodeTSBaseType = BabelNodeTSAnyKeyword | BabelNodeTSBooleanKeyword | BabelNodeTSBigIntKeyword | BabelNodeTSIntrinsicKeyword | BabelNodeTSNeverKeyword | BabelNodeTSNullKeyword | BabelNodeTSNumberKeyword | BabelNodeTSObjectKeyword | BabelNodeTSStringKeyword | BabelNodeTSSymbolKeyword | BabelNodeTSUndefinedKeyword | BabelNodeTSUnknownKeyword | BabelNodeTSVoidKeyword | BabelNodeTSThisType | BabelNodeTSLiteralType;
@@ -1924,6 +1931,7 @@ declare module "@babel/types" {
   declare export function tsAsExpression(expression: BabelNodeExpression, typeAnnotation: BabelNodeTSType): BabelNodeTSAsExpression;
   declare export function tsSatisfiesExpression(expression: BabelNodeExpression, typeAnnotation: BabelNodeTSType): BabelNodeTSSatisfiesExpression;
   declare export function tsTypeAssertion(typeAnnotation: BabelNodeTSType, expression: BabelNodeExpression): BabelNodeTSTypeAssertion;
+  declare export function tsEnumBody(members: Array<BabelNodeTSEnumMember>): BabelNodeTSEnumBody;
   declare export function tsEnumDeclaration(id: BabelNodeIdentifier, members: Array<BabelNodeTSEnumMember>): BabelNodeTSEnumDeclaration;
   declare export function tsEnumMember(id: BabelNodeIdentifier | BabelNodeStringLiteral, initializer?: BabelNodeExpression): BabelNodeTSEnumMember;
   declare export function tsModuleDeclaration(id: BabelNodeIdentifier | BabelNodeStringLiteral, body: BabelNodeTSModuleBlock | BabelNodeTSModuleDeclaration): BabelNodeTSModuleDeclaration;
@@ -2410,6 +2418,8 @@ declare module "@babel/types" {
   declare export function assertTSSatisfiesExpression(node: ?Object, opts?: ?Object): void
   declare export function isTSTypeAssertion(node: ?Object, opts?: ?Object): boolean %checks (node instanceof BabelNodeTSTypeAssertion)
   declare export function assertTSTypeAssertion(node: ?Object, opts?: ?Object): void
+  declare export function isTSEnumBody(node: ?Object, opts?: ?Object): boolean %checks (node instanceof BabelNodeTSEnumBody)
+  declare export function assertTSEnumBody(node: ?Object, opts?: ?Object): void
   declare export function isTSEnumDeclaration(node: ?Object, opts?: ?Object): boolean %checks (node instanceof BabelNodeTSEnumDeclaration)
   declare export function assertTSEnumDeclaration(node: ?Object, opts?: ?Object): void
   declare export function isTSEnumMember(node: ?Object, opts?: ?Object): boolean %checks (node instanceof BabelNodeTSEnumMember)

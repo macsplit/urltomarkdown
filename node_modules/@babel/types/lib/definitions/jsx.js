@@ -95,9 +95,9 @@ defineType("JSXNamespacedName", {
 });
 defineType("JSXOpeningElement", {
   builder: ["name", "attributes", "selfClosing"],
-  visitor: ["name", "attributes"],
+  visitor: ["name", "typeParameters", "typeArguments", "attributes"],
   aliases: ["Immutable"],
-  fields: {
+  fields: Object.assign({
     name: {
       validate: (0, _utils.assertNodeType)("JSXIdentifier", "JSXMemberExpression", "JSXNamespacedName")
     },
@@ -105,11 +105,16 @@ defineType("JSXOpeningElement", {
       default: false
     },
     attributes: (0, _utils.validateArrayOfType)("JSXAttribute", "JSXSpreadAttribute"),
-    typeParameters: {
-      validate: (0, _utils.assertNodeType)("TypeParameterInstantiation", "TSTypeParameterInstantiation"),
+    typeArguments: {
+      validate: (0, _utils.assertNodeType)("TypeParameterInstantiation"),
       optional: true
     }
-  }
+  }, {
+    typeParameters: {
+      validate: (0, _utils.assertNodeType)("TSTypeParameterInstantiation"),
+      optional: true
+    }
+  })
 });
 defineType("JSXSpreadAttribute", {
   visitor: ["argument"],

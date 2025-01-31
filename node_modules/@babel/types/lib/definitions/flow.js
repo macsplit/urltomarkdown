@@ -53,7 +53,8 @@ defineType("ClassImplements", {
 });
 defineInterfaceishType("DeclareClass");
 defineType("DeclareFunction", {
-  visitor: ["id"],
+  builder: ["id"],
+  visitor: ["id", "predicate"],
   aliases: ["FlowDeclaration", "Statement", "Declaration"],
   fields: {
     id: (0, _utils.validateType)("Identifier"),
@@ -133,7 +134,8 @@ defineType("ExistsTypeAnnotation", {
   aliases: ["FlowType"]
 });
 defineType("FunctionTypeAnnotation", {
-  visitor: ["typeParameters", "params", "rest", "returnType"],
+  builder: ["typeParameters", "params", "rest", "returnType"],
+  visitor: ["typeParameters", "this", "params", "rest", "returnType"],
   aliases: ["FlowType"],
   fields: {
     typeParameters: (0, _utils.validateOptionalType)("TypeParameterDeclaration"),
@@ -442,7 +444,8 @@ defineType("EnumSymbolBody", {
 });
 defineType("EnumBooleanMember", {
   aliases: ["EnumMember"],
-  visitor: ["id"],
+  builder: ["id"],
+  visitor: ["id", "init"],
   fields: {
     id: (0, _utils.validateType)("Identifier"),
     init: (0, _utils.validateType)("BooleanLiteral")

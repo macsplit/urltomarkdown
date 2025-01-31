@@ -206,11 +206,8 @@ function SwitchStatement(node) {
   this.tokenChar(41);
   this.space();
   this.tokenChar(123);
-  this.printSequence(node.cases, {
-    indent: true,
-    addNewlines(leading, cas) {
-      if (!leading && node.cases[node.cases.length - 1] === cas) return -1;
-    }
+  this.printSequence(node.cases, true, undefined, function addNewlines(leading, cas) {
+    if (!leading && node.cases[node.cases.length - 1] === cas) return -1;
   });
   this.rightBrace(node);
 }
@@ -226,9 +223,7 @@ function SwitchCase(node) {
   }
   if (node.consequent.length) {
     this.newline();
-    this.printSequence(node.consequent, {
-      indent: true
-    });
+    this.printSequence(node.consequent, true);
   }
 }
 function DebuggerStatement() {
@@ -259,13 +254,10 @@ function VariableDeclaration(node, parent) {
       }
     }
   }
-  this.printList(node.declarations, {
-    separator: hasInits ? function (occurrenceCount) {
-      this.token(",", false, occurrenceCount);
-      this.newline();
-    } : undefined,
-    indent: node.declarations.length > 1 ? true : false
-  });
+  this.printList(node.declarations, undefined, undefined, node.declarations.length > 1, hasInits ? function (occurrenceCount) {
+    this.token(",", false, occurrenceCount);
+    this.newline();
+  } : undefined);
   if (isFor(parent)) {
     if (isForStatement(parent)) {
       if (parent.init === node) return;

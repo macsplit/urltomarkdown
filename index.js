@@ -28,26 +28,42 @@ function send_headers(res) {
  	res.header("Content-Type", 'text/markdown');
 }
 
-function read_url(url, res, inline_title, ignore_links) {
+function read_url(url, res, options) {
 		reader = readers.reader_for_url(url);
 		send_headers(res);
-		reader.read_url(url, res, inline_title, ignore_links);	
+		reader.read_url(url, res, options);
 }
 
-app.get('/', (req, res) => {
-	const url = req.query.url;
-	const title = req.query.title;
-	const links = req.query.links;
+function get_options(query) {
+	const title = query.title;
+	const links = query.links;
+	const clean = query.clean;
+
 	let inline_title = false;
 	let ignore_links = false;
+	let improve_readability = true;
+
 	if (title) {
 		inline_title = (title === 'true');
 	}
 	if (links) {
 		ignore_links = (links === 'false');
 	}
+	if (clean) {
+		improve_readability = (clean !== 'false');
+	}
+	return {
+		inline_title: inline_title,
+		ignore_links: ignore_links,
+		improve_readability: improve_readability
+	};
+}
+
+app.get('/', (req, res) => {
+	const url = req.query.url;
+	const options = get_options(req.query);
 	if (url && validURL(url)) {
-		read_url(url, res, inline_title, ignore_links);		
+		read_url(url, res, options);		
 	} else {
 		res.status(400).send("Please specify a valid url query parameter");
 	}
@@ -56,26 +72,19 @@ app.get('/', (req, res) => {
 app.post('/', function(req, res) {
 	const html = req.body.html;
 	const url = req.body.url;
-	const links = req.query.links;
-	const title = req.query.title;
-	let ignore_links = false;
-	let inline_title = false;
-	if (title) {
-		inline_title = (title === 'true');
-	}
-	if (links) {
-		ignore_links = (links === 'false');
-	}
+	const options = get_options(req.query);
+	const id = '';
 	if (readers.ignore_post(url)) {
-		read_url(url, res, inline_title, ignore_links);
+		read_url(url, res, options);
 		return;
 	}
 	if (!html) {
 		res.status(400).send("Please provide a POST parameter called html");
 	} else {	  	
 		try {
-			let document = new JSDOM(html);
-			let markdown = processor.process_dom(url, document, res, inline_title, ignore_links);
+			let document = new JSDOM(html);			
+			let markdown = processor.process_dom(url, document, res, id, options);
+			console.log(document.window.document.documentElement.outerHTML);
 			send_headers(res);
 			res.send(markdown);
 		 } catch (error) {

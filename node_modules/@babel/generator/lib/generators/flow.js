@@ -417,9 +417,7 @@ function InterfaceTypeAnnotation(node) {
   this.print(node.body);
 }
 function IntersectionTypeAnnotation(node) {
-  this.printJoin(node.types, {
-    separator: andSeparator
-  });
+  this.printJoin(node.types, undefined, undefined, andSeparator);
 }
 function MixedTypeAnnotation() {
   this.word("mixed");
@@ -473,7 +471,7 @@ function TypeAnnotation(node, parent) {
 }
 function TypeParameterInstantiation(node) {
   this.tokenChar(60);
-  this.printList(node.params, {});
+  this.printList(node.params);
   this.tokenChar(62);
 }
 function TypeParameter(node) {
@@ -519,17 +517,12 @@ function ObjectTypeAnnotation(node) {
   if (props.length) {
     this.newline();
     this.space();
-    this.printJoin(props, {
-      addNewlines(leading) {
-        if (leading && !props[0]) return 1;
-      },
-      indent: true,
-      statement: true,
-      iterator: () => {
-        if (props.length !== 1 || node.inexact) {
-          this.tokenChar(44);
-          this.space();
-        }
+    this.printJoin(props, true, true, undefined, undefined, function addNewlines(leading) {
+      if (leading && !props[0]) return 1;
+    }, () => {
+      if (props.length !== 1 || node.inexact) {
+        this.tokenChar(44);
+        this.space();
       }
     });
     this.space();
@@ -630,9 +623,7 @@ function orSeparator(occurrenceCount) {
   this.space();
 }
 function UnionTypeAnnotation(node) {
-  this.printJoin(node.types, {
-    separator: orSeparator
-  });
+  this.printJoin(node.types, undefined, undefined, orSeparator);
 }
 function TypeCastExpression(node) {
   this.tokenChar(40);

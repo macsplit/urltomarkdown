@@ -61,12 +61,7 @@ function ClassBody(node) {
     const separator = classBodyEmptySemicolonsPrinter(this, node);
     separator == null || separator(-1);
     const exit = this.enterDelimited();
-    this.printJoin(node.body, {
-      statement: true,
-      indent: true,
-      separator,
-      printTrailingSeparator: true
-    });
+    this.printJoin(node.body, true, true, separator, true);
     exit();
     if (!this.endsWith(10)) this.newline();
     this.rightBrace(node);
@@ -206,9 +201,7 @@ function StaticBlock(node) {
     this.tokenChar(125);
   } else {
     this.newline();
-    this.printSequence(node.body, {
-      indent: true
-    });
+    this.printSequence(node.body, true);
     this.rightBrace(node);
   }
 }

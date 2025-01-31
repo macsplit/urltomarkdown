@@ -136,7 +136,7 @@ defineType("TSTypeReference", {
   visitor: ["typeName", "typeParameters"],
   fields: {
     typeName: (0, _utils.validateType)("TSEntityName"),
-    typeParameters: (0, _utils.validateOptionalType)("TSTypeParameterInstantiation")
+    ["typeParameters"]: (0, _utils.validateOptionalType)("TSTypeParameterInstantiation")
   }
 });
 defineType("TSTypePredicate", {
@@ -154,7 +154,7 @@ defineType("TSTypeQuery", {
   visitor: ["exprName", "typeParameters"],
   fields: {
     exprName: (0, _utils.validateType)("TSEntityName", "TSImportType"),
-    typeParameters: (0, _utils.validateOptionalType)("TSTypeParameterInstantiation")
+    ["typeParameters"]: (0, _utils.validateOptionalType)("TSTypeParameterInstantiation")
   }
 });
 defineType("TSTypeLiteral", {
@@ -289,16 +289,15 @@ defineType("TSLiteralType", {
     }
   }
 });
-const expressionWithTypeArguments = {
-  aliases: ["TSType"],
-  visitor: ["expression", "typeParameters"],
-  fields: {
-    expression: (0, _utils.validateType)("TSEntityName"),
-    typeParameters: (0, _utils.validateOptionalType)("TSTypeParameterInstantiation")
-  }
-};
 {
-  defineType("TSExpressionWithTypeArguments", expressionWithTypeArguments);
+  defineType("TSExpressionWithTypeArguments", {
+    aliases: ["TSType"],
+    visitor: ["expression", "typeParameters"],
+    fields: {
+      expression: (0, _utils.validateType)("TSEntityName"),
+      typeParameters: (0, _utils.validateOptionalType)("TSTypeParameterInstantiation")
+    }
+  });
 }
 defineType("TSInterfaceDeclaration", {
   aliases: ["Statement", "Declaration"],
@@ -332,7 +331,7 @@ defineType("TSInstantiationExpression", {
   visitor: ["expression", "typeParameters"],
   fields: {
     expression: (0, _utils.validateType)("Expression"),
-    typeParameters: (0, _utils.validateOptionalType)("TSTypeParameterInstantiation")
+    ["typeParameters"]: (0, _utils.validateOptionalType)("TSTypeParameterInstantiation")
   }
 });
 const TSTypeExpression = {
@@ -353,17 +352,26 @@ defineType("TSTypeAssertion", {
     expression: (0, _utils.validateType)("Expression")
   }
 });
-defineType("TSEnumDeclaration", {
-  aliases: ["Statement", "Declaration"],
-  visitor: ["id", "members"],
+defineType("TSEnumBody", {
+  visitor: ["members"],
   fields: {
-    declare: (0, _utils.validateOptional)(bool),
-    const: (0, _utils.validateOptional)(bool),
-    id: (0, _utils.validateType)("Identifier"),
-    members: (0, _utils.validateArrayOfType)("TSEnumMember"),
-    initializer: (0, _utils.validateOptionalType)("Expression")
+    members: (0, _utils.validateArrayOfType)("TSEnumMember")
   }
 });
+{
+  defineType("TSEnumDeclaration", {
+    aliases: ["Statement", "Declaration"],
+    visitor: ["id", "members"],
+    fields: {
+      declare: (0, _utils.validateOptional)(bool),
+      const: (0, _utils.validateOptional)(bool),
+      id: (0, _utils.validateType)("Identifier"),
+      members: (0, _utils.validateArrayOfType)("TSEnumMember"),
+      initializer: (0, _utils.validateOptionalType)("Expression"),
+      body: (0, _utils.validateOptionalType)("TSEnumBody")
+    }
+  });
+}
 defineType("TSEnumMember", {
   visitor: ["id", "initializer"],
   fields: {
@@ -374,15 +382,17 @@ defineType("TSEnumMember", {
 defineType("TSModuleDeclaration", {
   aliases: ["Statement", "Declaration"],
   visitor: ["id", "body"],
-  fields: {
+  fields: Object.assign({
     kind: {
       validate: (0, _utils.assertOneOf)("global", "module", "namespace")
     },
-    declare: (0, _utils.validateOptional)(bool),
-    global: (0, _utils.validateOptional)(bool),
+    declare: (0, _utils.validateOptional)(bool)
+  }, {
+    global: (0, _utils.validateOptional)(bool)
+  }, {
     id: (0, _utils.validateType)("Identifier", "StringLiteral"),
     body: (0, _utils.validateType)("TSModuleBlock", "TSModuleDeclaration")
-  }
+  })
 });
 defineType("TSModuleBlock", {
   aliases: ["Scopable", "Block", "BlockParent", "FunctionParent"],
@@ -393,11 +403,12 @@ defineType("TSModuleBlock", {
 });
 defineType("TSImportType", {
   aliases: ["TSType"],
-  visitor: ["argument", "qualifier", "typeParameters"],
+  builder: ["argument", "qualifier", "typeParameters"],
+  visitor: ["argument", "options", "qualifier", "typeParameters"],
   fields: {
     argument: (0, _utils.validateType)("StringLiteral"),
     qualifier: (0, _utils.validateOptionalType)("TSEntityName"),
-    typeParameters: (0, _utils.validateOptionalType)("TSTypeParameterInstantiation"),
+    ["typeParameters"]: (0, _utils.validateOptionalType)("TSTypeParameterInstantiation"),
     options: {
       validate: (0, _utils.assertNodeType)("Expression"),
       optional: true

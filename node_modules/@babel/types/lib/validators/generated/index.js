@@ -218,6 +218,7 @@ exports.isTSConstructorType = isTSConstructorType;
 exports.isTSDeclareFunction = isTSDeclareFunction;
 exports.isTSDeclareMethod = isTSDeclareMethod;
 exports.isTSEntityName = isTSEntityName;
+exports.isTSEnumBody = isTSEnumBody;
 exports.isTSEnumDeclaration = isTSEnumDeclaration;
 exports.isTSEnumMember = isTSEnumMember;
 exports.isTSExportAssignment = isTSExportAssignment;
@@ -1489,6 +1490,11 @@ function isTSTypeAssertion(node, opts) {
   if (node.type !== "TSTypeAssertion") return false;
   return opts == null || (0, _shallowEqual.default)(node, opts);
 }
+function isTSEnumBody(node, opts) {
+  if (!node) return false;
+  if (node.type !== "TSEnumBody") return false;
+  return opts == null || (0, _shallowEqual.default)(node, opts);
+}
 function isTSEnumDeclaration(node, opts) {
   if (!node) return false;
   if (node.type !== "TSEnumDeclaration") return false;
@@ -2618,6 +2624,7 @@ function isTypeScript(node, opts) {
     case "TSAsExpression":
     case "TSSatisfiesExpression":
     case "TSTypeAssertion":
+    case "TSEnumBody":
     case "TSEnumDeclaration":
     case "TSEnumMember":
     case "TSModuleDeclaration":

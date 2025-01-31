@@ -1,6 +1,6 @@
 {
   "name": "browserslist",
-  "version": "4.24.2",
+  "version": "4.24.4",
   "description": "Share target browsers between different front-end tools, like Autoprefixer, Stylelint and babel-env-preset",
   "keywords": [
     "caniuse",
@@ -25,9 +25,9 @@
   "license": "MIT",
   "repository": "browserslist/browserslist",
   "dependencies": {
-    "caniuse-lite": "^1.0.30001669",
-    "electron-to-chromium": "^1.5.41",
-    "node-releases": "^2.0.18",
+    "caniuse-lite": "^1.0.30001688",
+    "electron-to-chromium": "^1.5.73",
+    "node-releases": "^2.0.19",
     "update-browserslist-db": "^1.1.1"
   },
   "engines": {

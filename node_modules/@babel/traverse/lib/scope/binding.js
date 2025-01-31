@@ -68,10 +68,10 @@ function isDeclaredInLoop(path) {
   for (let {
     parentPath,
     key
-  } = path; parentPath; ({
+  } = path; parentPath; {
     parentPath,
     key
-  } = parentPath)) {
+  } = parentPath) {
     if (parentPath.isFunctionParent()) return false;
     if (parentPath.isWhile() || parentPath.isForXStatement() || parentPath.isForStatement() && key === "body") {
       return true;

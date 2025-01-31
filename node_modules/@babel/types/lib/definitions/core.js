@@ -126,19 +126,23 @@ defineType("CallExpression", {
     callee: {
       validate: (0, _utils.assertNodeType)("Expression", "Super", "V8IntrinsicIdentifier")
     },
-    arguments: (0, _utils.validateArrayOfType)("Expression", "SpreadElement", "ArgumentPlaceholder")
-  }, !process.env.BABEL_TYPES_8_BREAKING ? {
-    optional: {
-      validate: (0, _utils.assertValueType)("boolean"),
-      optional: true
-    }
-  } : {}, {
+    arguments: (0, _utils.validateArrayOfType)("Expression", "SpreadElement", "ArgumentPlaceholder"),
     typeArguments: {
       validate: (0, _utils.assertNodeType)("TypeParameterInstantiation"),
+      optional: true
+    }
+  }, {
+    optional: {
+      validate: (0, _utils.assertValueType)("boolean"),
       optional: true
     },
     typeParameters: {
       validate: (0, _utils.assertNodeType)("TSTypeParameterInstantiation"),
+      optional: true
+    }
+  }, process.env.BABEL_TYPES_8_BREAKING ? {} : {
+    optional: {
+      validate: (0, _utils.assertValueType)("boolean"),
       optional: true
     }
   })
@@ -302,7 +306,7 @@ const functionDeclarationCommon = () => Object.assign({}, functionCommon(), {
 exports.functionDeclarationCommon = functionDeclarationCommon;
 defineType("FunctionDeclaration", {
   builder: ["id", "params", "body", "generator", "async"],
-  visitor: ["id", "typeParameters", "params", "returnType", "body"],
+  visitor: ["id", "typeParameters", "params", "predicate", "returnType", "body"],
   fields: Object.assign({}, functionDeclarationCommon(), functionTypeAnnotationCommon(), {
     body: {
       validate: (0, _utils.assertNodeType)("BlockStatement")
@@ -880,7 +884,7 @@ defineType("ArrayPattern", {
 });
 defineType("ArrowFunctionExpression", {
   builder: ["params", "body", "async"],
-  visitor: ["typeParameters", "params", "returnType", "body"],
+  visitor: ["typeParameters", "params", "predicate", "returnType", "body"],
   aliases: ["Scopable", "Function", "BlockParent", "FunctionParent", "Expression", "Pureish"],
   fields: Object.assign({}, functionCommon(), functionTypeAnnotationCommon(), {
     expression: {
@@ -921,7 +925,7 @@ defineType("ClassExpression", {
       optional: true,
       validate: (0, _utils.assertNodeType)("Expression")
     },
-    superTypeParameters: {
+    ["superTypeParameters"]: {
       validate: (0, _utils.assertNodeType)("TypeParameterInstantiation", "TSTypeParameterInstantiation"),
       optional: true
     },
@@ -958,7 +962,7 @@ defineType("ClassDeclaration", {
       optional: true,
       validate: (0, _utils.assertNodeType)("Expression")
     },
-    superTypeParameters: {
+    ["superTypeParameters"]: {
       validate: (0, _utils.assertNodeType)("TypeParameterInstantiation", "TSTypeParameterInstantiation"),
       optional: true
     },
@@ -1311,7 +1315,7 @@ defineType("TaggedTemplateExpression", {
     quasi: {
       validate: (0, _utils.assertNodeType)("TemplateLiteral")
     },
-    typeParameters: {
+    ["typeParameters"]: {
       validate: (0, _utils.assertNodeType)("TypeParameterInstantiation", "TSTypeParameterInstantiation"),
       optional: true
     }
@@ -1457,7 +1461,7 @@ defineType("OptionalCallExpression", {
   visitor: ["callee", "arguments", "typeParameters", "typeArguments"],
   builder: ["callee", "arguments", "optional"],
   aliases: ["Expression"],
-  fields: {
+  fields: Object.assign({
     callee: {
       validate: (0, _utils.assertNodeType)("Expression")
     },
@@ -1468,15 +1472,16 @@ defineType("OptionalCallExpression", {
     typeArguments: {
       validate: (0, _utils.assertNodeType)("TypeParameterInstantiation"),
       optional: true
-    },
+    }
+  }, {
     typeParameters: {
       validate: (0, _utils.assertNodeType)("TSTypeParameterInstantiation"),
       optional: true
     }
-  }
+  })
 });
 defineType("ClassProperty", {
-  visitor: ["decorators", "key", "typeAnnotation", "value"],
+  visitor: ["decorators", "variance", "key", "typeAnnotation", "value"],
   builder: ["key", "value", "typeAnnotation", "decorators", "computed", "static"],
   aliases: ["Property"],
   fields: Object.assign({}, classMethodOrPropertyCommon(), {
@@ -1556,7 +1561,7 @@ defineType("ClassAccessorProperty", {
   })
 });
 defineType("ClassPrivateProperty", {
-  visitor: ["decorators", "key", "typeAnnotation", "value"],
+  visitor: ["decorators", "variance", "key", "typeAnnotation", "value"],
   builder: ["key", "value", "decorators", "static"],
   aliases: ["Property", "Private"],
   fields: {
