@@ -40,6 +40,14 @@
             "schema": {
               "type": "boolean"
             }
+          },
+            {
+            "in": "query",
+            "name": "clean",
+            "description": "Whether to clean before conversion. This parameter expects the values \"true\" or \"false\" only.",
+            "schema": {
+              "type": "boolean"
+            }
           }
         ],
         "responses": {
@@ -101,6 +109,14 @@
             "in": "query",
             "name": "links",
             "description": "Whether to mark up links. This parameter expects the values \"true\" or \"false\" only.",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "clean",
+            "description": "Whether to clean before conversion. This parameter expects the values \"true\" or \"false\" only.",
             "schema": {
               "type": "boolean"
             }
