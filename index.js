@@ -1,5 +1,6 @@
 const readers = require('./url_to_markdown_readers.js');
 const processor = require('./url_to_markdown_processor.js');
+const filters = require('./url_to_markdown_common_filters.js');
 const validURL = require('@7c/validurl');
 const express = require('express');
 const rateLimit = require('express-rate-limit');
@@ -82,6 +83,7 @@ app.post('/', function(req, res) {
 		res.status(400).send("Please provide a POST parameter called html");
 	} else {	  	
 		try {
+			html = filters.strip_style_blocks(html);	
 			let document = new JSDOM(html);			
 			let markdown = processor.process_dom(url, document, res, id, options);
 			console.log(document.window.document.documentElement.outerHTML);

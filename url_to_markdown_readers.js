@@ -1,5 +1,6 @@
 const apple_dev_parser = require('./url_to_markdown_apple_dev_docs.js');
 const processor = require('./url_to_markdown_processor.js');
+const filters = require('./url_to_markdown_common_filters.js');
 const JSDOM = require('jsdom').JSDOM;
 const https = require('https');
 
@@ -10,13 +11,23 @@ const stackoverflow_prefix = "https://stackoverflow.com/questions";
 
 class html_reader {
 	read_url(url, res, options) {
-		JSDOM.fromURL(url).then((document)=>{
-			const id = "";
-			let markdown = processor.process_dom(url, document, res, id, options);
-			res.send(markdown);
-		}).catch((error)=> {
+		try {
+			https.get(url,(get_res) => {
+				let html = "";
+				get_res.on("data", (chunk) => {
+		        	html += chunk;
+		    	});
+		    	get_res.on("end", () => {
+					html = filters.strip_style_blocks(html);
+					const document = new JSDOM(html);
+					const id = "";
+					let markdown = processor.process_dom(url, document, res, id, options);
+					res.send(markdown);
+		    	});				
+			});
+		} catch(error) {
 			res.status(400).send(failure_message);
-		});
+		};
 	}
 }
 

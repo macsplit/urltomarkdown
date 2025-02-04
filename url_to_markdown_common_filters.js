@@ -60,7 +60,9 @@ module.exports = {
 			]
 		}
 	],
-
+	strip_style_blocks(html) {
+  		return html.replace(/<style[\s\S]*?<\/style>/g, "");
+	},
 	filter: function (url, data, ignore_links=false) {
 		let domain='';
 		let base_address='';
