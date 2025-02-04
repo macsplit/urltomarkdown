@@ -44,13 +44,13 @@ function get_options(query) {
 	let ignore_links = false;
 	let improve_readability = true;
 
-	if (title) {
+	if (title !== undefined) {
 		inline_title = (title === 'true');
 	}
-	if (links) {
+	if (links !== undefined) {
 		ignore_links = (links === 'false');
 	}
-	if (clean) {
+	if (clean !== undefined) {
 		improve_readability = (clean !== 'false');
 	}
 	return {
@@ -71,7 +71,7 @@ app.get('/', (req, res) => {
 });
 
 app.post('/', function(req, res) {
-	const html = req.body.html;
+	let html = req.body.html;
 	const url = req.body.url;
 	const options = get_options(req.query);
 	const id = '';
@@ -85,12 +85,11 @@ app.post('/', function(req, res) {
 		try {
 			html = filters.strip_style_blocks(html);	
 			let document = new JSDOM(html);			
-			let markdown = processor.process_dom(url, document, res, id, options);
-			console.log(document.window.document.documentElement.outerHTML);
+			let markdown = processor.process_dom(url, document, res, id, options);			
 			send_headers(res);
 			res.send(markdown);
 		 } catch (error) {
-		 res.status(400).send("Could not parse that document");
+		 	res.status(400).send("Could not parse that document");
 		}
 	}
 
