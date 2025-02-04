@@ -12,7 +12,7 @@ const stackoverflow_prefix = "https://stackoverflow.com/questions";
 class html_reader {
 	read_url(url, res, options) {
 		try {
-			https.get(url,(get_res) => {
+			https.get(url, (get_res) => {
 				let html = "";
 				get_res.on("data", (chunk) => {
 		        	html += chunk;

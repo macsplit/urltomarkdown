@@ -83,8 +83,8 @@ app.post('/', function(req, res) {
 		res.status(400).send("Please provide a POST parameter called html");
 	} else {	  	
 		try {
-			html = filters.strip_style_blocks(html);	
-			let document = new JSDOM(html);			
+			html = filters.strip_style_blocks(html);
+			let document = new JSDOM(html);		
 			let markdown = processor.process_dom(url, document, res, id, options);			
 			send_headers(res);
 			res.send(markdown);

@@ -20,9 +20,8 @@ module.exports = {
 		let readable;
 		if (improve_readability) {
 			let reader = new Readability(document.window.document);
-			readable = reader.parse().content;	
-			console.log('cleaned');
-		} else {
+			readable = reader.parse().content;
+		} else {			
 			readable = document.window.document.documentElement.outerHTML;
 		}
 		let replacements = [];
