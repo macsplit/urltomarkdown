@@ -9,63 +9,64 @@ const failure_message  = "Sorry, could not fetch and convert that URL";
 const apple_dev_prefix = "https://developer.apple.com";
 const stackoverflow_prefix = "https://stackoverflow.com/questions";
 
+function fetch_url (url, success) {
+	https.get(url, (res) => {
+	    let result = "";
+	    res.on("data", (chunk) => {
+	        result += chunk;
+	    });
+	    res.on("end", () => {
+	    	success(result);
+	    });
+	});
+}
+
 class html_reader {
 	read_url(url, res, options) {
 		try {
-			https.get(url, (get_res) => {
-				let html = "";
-				get_res.on("data", (chunk) => {
-		        	html += chunk;
-		    	});
-		    	get_res.on("end", () => {
-					html = filters.strip_style_blocks(html);
-					const document = new JSDOM(html);
-					const id = "";
-					let markdown = processor.process_dom(url, document, res, id, options);
-					res.send(markdown);
-		    	});				
+			fetch_url(url, (html) => {				
+				html = filters.strip_style_and_script_blocks(html);
+				const document = new JSDOM(html);
+				const id = "";
+				let markdown = processor.process_dom(url, document, res, id, options);
+				res.send(markdown);
 			});
 		} catch(error) {
 			res.status(400).send(failure_message);
-		};
+		}
 	}
 }
 
 class apple_reader {
 	read_url(url, res, options) {
 		let json_url = apple_dev_parser.dev_doc_url(url);
-		https.get(json_url,(apple_res) => {
-		    let body = "";
-		    apple_res.on("data", (chunk) => {
-		        body += chunk;
-		    });
-		    apple_res.on("end", () => {
-	            let json = JSON.parse(body);
-	            let markdown = apple_dev_parser.parse_dev_doc_json(json, options);
-	            res.send(markdown);
-		    });
+		fetch_url.get(json_url, (body) => {	
+            let json = JSON.parse(body);
+            let markdown = apple_dev_parser.parse_dev_doc_json(json, options);
+            res.send(markdown);
 		});
 	}
 }
 
 class stack_reader {
 	read_url(url, res, options) {
-		JSDOM.fromURL(url).then((document)=>{
-			let markdown_q = processor.process_dom(url, document, res, 'question', options );
-			let markdown_a = processor.process_dom(url, document, res, 'answers', {
-				inline_title: false,
-				ignore_links: options.ignore_links ?? false,
-				improve_readability: options.improve_readability ?? true
+		try {
+			fetch_url(url, (html) => {
+				html = filters.strip_style_and_script_blocks(html);
+				const document = new JSDOM(html);	
+				let markdown_q = processor.process_dom(url, document, res, 'question', options );
+				options.inline_title = false;
+				let markdown_a = processor.process_dom(url, document, res, 'answers', options );
+				if (markdown_a.startsWith('Your Answer')) {
+					res.send(markdown_q);
+				}
+				else {
+					res.send(markdown_q + "\n\n## Answer\n"+ markdown_a);
+				}
 			});
-			if (markdown_a.startsWith('Your Answer')) {
-				res.send(markdown_q);
-			}
-			else {
-				res.send(markdown_q + "\n\n## Answer\n"+ markdown_a);
-			}
-		}).catch((error)=> {
+		} catch(error) {
 			res.status(400).send(failure_message);
-		});
+		}
 	}
 }
 

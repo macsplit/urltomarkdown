@@ -9,12 +9,12 @@ test('filter', () => {
 });
 
 const test_html_with_styleblock = 
-	"<html><body><style>p { font-weight: bold; }</style><p>Bold?</p></body></html>";
+	"<html><head><script>var url = window.location;</script></head><body><style>p { font-weight: bold; }</style><p>Bold?</p></body></html>";
 
 const expected_html =
-	"<html><body><p>Bold?</p></body></html>";
+	"<html><head></head><body><p>Bold?</p></body></html>";
 
-test('strip style block', () => {
-	let output_html = filters.strip_style_blocks(test_html_with_styleblock);
+test('strip style and script blocks', () => {
+	let output_html = filters.strip_style_and_script_blocks(test_html_with_styleblock);
 	expect(output_html).toBe(expected_html);
 })

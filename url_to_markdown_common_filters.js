@@ -2,14 +2,22 @@ module.exports = {
 
 	list: [
 		{
-			domain: /.*/,
+			domain: /.*/, /* apply global filters to all domains */
 			remove: [
 				/\[¶\]\(#[^\s]+\s+"[^"]+"\)/g
 			],
 			replace: [
-				{
-				find: /\[([^\]]*)\]\(\/\/([^\)]*)\)/g,
-				replacement: '[$1](https://$2)'
+				{	/* unwanted spacing in links */
+					find: /\[[\n\s]*([^\]\n]*)[\n\s]*\]\(([^\)]*)\)/g,
+					replacement: '[$1]($2)'
+				},
+				{	/* links stuck together */
+					find: /\)\[/g,
+					replacement: ')\n['
+				},
+				{	/* missing uri scheme */
+					find: /\[([^\]]*)\]\(\/\/([^\)]*)\)/g,
+					replacement: '[$1](https://$2)'
 				}
 			]
 		},
@@ -60,8 +68,9 @@ module.exports = {
 			]
 		}
 	],
-	strip_style_blocks(html) {
-  		return html.replace(/<style[\s\S]*?<\/style>/g, "");
+	strip_style_and_script_blocks(html) {
+  		html = html.replace(/<style[\s\S]*?<\/style>/g, "");
+  		return html.replace(/<script[\s\S]*?<\/script>/g, "");
 	},
 	filter: function (url, data, ignore_links=false) {
 		let domain='';
