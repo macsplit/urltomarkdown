@@ -15,6 +15,8 @@ const rateLimiter = rateLimit({
 	headers: true
 });
 
+app.set('trust proxy', 1);
+
 app.use(rateLimiter);
 
 app.use(express.urlencoded({
