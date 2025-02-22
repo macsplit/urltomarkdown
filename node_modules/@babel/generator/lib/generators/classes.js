@@ -159,11 +159,14 @@ function ClassAccessorProperty(node) {
 }
 function ClassPrivateProperty(node) {
   this.printJoin(node.decorators);
-  if (node.static) {
-    this.word("static");
-    this.space();
-  }
+  this.tsPrintClassMemberModifiers(node);
   this.print(node.key);
+  if (node.optional) {
+    this.tokenChar(63);
+  }
+  if (node.definite) {
+    this.tokenChar(33);
+  }
   this.print(node.typeAnnotation);
   if (node.value) {
     this.space();
