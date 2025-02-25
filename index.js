@@ -3,10 +3,14 @@ const processor = require('./url_to_markdown_processor.js');
 const filters = require('./url_to_markdown_common_filters.js');
 const validURL = require('@7c/validurl');
 const express = require('express');
-const rateLimit = require('express-rate-limit');
+// const rateLimit = require('express-rate-limit');
 const JSDOM = require('jsdom').JSDOM;
 const port = process.env.PORT;
 const app = express();
+
+/*
+
+// handled upstream by proxy
 
 const rateLimiter = rateLimit({
 	windowMs: 30 * 1000,
@@ -15,9 +19,11 @@ const rateLimiter = rateLimit({
 	headers: true
 });
 
+*/
+
 app.set('trust proxy', 1);
 
-app.use(rateLimiter);
+// app.use(rateLimiter);
 
 app.use(express.urlencoded({
   extended: true,
@@ -66,7 +72,7 @@ app.get('/', (req, res) => {
 	const url = req.query.url;
 	const options = get_options(req.query);
 	if (url && validURL(url)) {
-		read_url(url, res, options);		
+		read_url(url, res, options);
 	} else {
 		res.status(400).send("Please specify a valid url query parameter");
 	}
@@ -83,11 +89,11 @@ app.post('/', function(req, res) {
 	}
 	if (!html) {
 		res.status(400).send("Please provide a POST parameter called html");
-	} else {	  	
+	} else {
 		try {
 			html = filters.strip_style_and_script_blocks(html);
-			let document = new JSDOM(html);		
-			let markdown = processor.process_dom(url, document, res, id, options);			
+			let document = new JSDOM(html);
+			let markdown = processor.process_dom(url, document, res, id, options);
 			send_headers(res);
 			res.send(markdown);
 		 } catch (error) {
@@ -97,5 +103,5 @@ app.post('/', function(req, res) {
 
 });
 
-app.listen(port, () => {	
+app.listen(port, () => {
 })

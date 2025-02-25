@@ -17,11 +17,15 @@ module.exports = {
 			let el = document.window.document.querySelector("#"+id);
 			if (el) document = new JSDOM('<!DOCTYPE html>'+ el.innerHTML);			
 		}
-		let readable;
+		let readable = null;
 		if (improve_readability) {
 			let reader = new Readability(document.window.document);
-			readable = reader.parse().content;
-		} else {			
+			readable_obj = reader.parse();
+			if (readable_obj) {
+				readable = readable_obj.content;
+			}
+		}
+		if (!readable) {
 			readable = document.window.document.documentElement.outerHTML;
 		}
 		let replacements = [];
