@@ -32,7 +32,7 @@ function fetch_url (url, success, failure) {
 		    	if (!timedOut && res.statusCode >= 200 && res.statusCode < 300) {
 		    		resolve(result);
 		    	} else {
-		    		reject();
+		    		reject(res.statusCode);
 		    	}
 		    });
 		});
@@ -52,7 +52,7 @@ function fetch_url (url, success, failure) {
 
 	});
 
-	fetch.then( (response) => success(response) ).catch( () => failure() );
+	fetch.then( (response) => success(response) ).catch( (code) => failure(code) );
 }
 
 class html_reader {
@@ -64,8 +64,12 @@ class html_reader {
 				const id = "";
 				let markdown = processor.process_dom(url, document, res, id, options);
 				res.send(markdown);
-			}, () => {
-				res.status(504).send(failure_message);
+			}, (code) => {
+				if (code && Number.isInteger(code)) {
+					res.status(502).send(failure_message + " as the website you are trying to convert returned status code " + code);
+				} else {
+					res.status(504).send(failure_message);
+				}
 			});
 		} catch(error) {
 			res.status(400).send(failure_message);
