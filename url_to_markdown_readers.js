@@ -9,16 +9,50 @@ const failure_message  = "Sorry, could not fetch and convert that URL";
 const apple_dev_prefix = "https://developer.apple.com";
 const stackoverflow_prefix = "https://stackoverflow.com/questions";
 
-function fetch_url (url, success) {
-	https.get(url, (res) => {
-	    let result = "";
-	    res.on("data", (chunk) => {
-	        result += chunk;
+const timeoutMs = 15 * 1000;
+
+function fetch_url (url, success, failure) {
+
+	let fetch = new Promise((resolve, reject) => {
+
+		let timedOut = false;
+
+		const timeout = setTimeout(() => {
+			timedOut = true;
+		}, timeoutMs);		
+
+		const req = https.get(url, (res) => {
+			clearTimeout(timeout);
+
+		    let result = "";
+		    res.on("data", (chunk) => {
+		        result += chunk;
+		    });
+		    res.on("end", () => {
+		    	if (!timedOut && res.statusCode >= 200 && res.statusCode < 300) {
+		    		resolve(result);
+		    	} else {
+		    		reject();
+		    	}
+		    });
+		});
+
+		req.on('error', (err) => {
+			clearTimeout(timeout);      
+			reject();
 	    });
-	    res.on("end", () => {
-	    	success(result);
+
+		req.on('timeout', () => {
+			clearTimeout(timeout);
+			req.destroy();
+			reject();
 	    });
+
+	    req.setTimeout(timeoutMs); 
+
 	});
+
+	fetch.then( (response) => success(response) ).catch( () => failure() );
 }
 
 class html_reader {
@@ -30,6 +64,8 @@ class html_reader {
 				const id = "";
 				let markdown = processor.process_dom(url, document, res, id, options);
 				res.send(markdown);
+			}, () => {
+				res.status(504).send(failure_message);
 			});
 		} catch(error) {
 			res.status(400).send(failure_message);
@@ -44,6 +80,8 @@ class apple_reader {
             let json = JSON.parse(body);
             let markdown = apple_dev_parser.parse_dev_doc_json(json, options);
             res.send(markdown);
+		}, () => {
+			res.status(504).send(failure_message);
 		});
 	}
 }
@@ -63,6 +101,8 @@ class stack_reader {
 				else {
 					res.send(markdown_q + "\n\n## Answer\n"+ markdown_a);
 				}
+			}, () => {
+				res.status(504).send(failure_message);
 			});
 		} catch(error) {
 			res.status(400).send(failure_message);
