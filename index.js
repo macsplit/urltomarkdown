@@ -3,7 +3,7 @@ const processor = require('./url_to_markdown_processor.js');
 const filters = require('./url_to_markdown_common_filters.js');
 const validURL = require('@7c/validurl');
 const express = require('express');
-// const rateLimit = require('express-rate-limit');
+const rateLimit = require('express-rate-limit');
 const JSDOM = require('jsdom').JSDOM;
 const port = process.env.PORT;
 const app = express();
@@ -24,11 +24,9 @@ const rateLimiter = rateLimit({
 	headers: true
 });
 
-*/
-
 app.set('trust proxy', 1);
 
-// app.use(rateLimiter);
+app.use(rateLimiter);
 
 app.use(express.urlencoded({
   extended: true,
