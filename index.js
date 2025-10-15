@@ -13,8 +13,6 @@ if(!port) {
 	process.exit(1);
 }
 
-/*
-
 // handled upstream by proxy
 
 const rateLimiter = rateLimit({
