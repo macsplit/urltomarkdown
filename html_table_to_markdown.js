@@ -1,5 +1,5 @@
-const htmlEntities = require('html-entities');
-const justify = require('justify-text');
+const htmlEntities = require("html-entities");
+const justify = require("justify-text");
 
 module.exports = {
 	max_width: 96,
@@ -22,7 +22,14 @@ module.exports = {
 
 		// collect data
 		let rows = table.match(/(<tr[^>]*>(?:.|\n)*?<\/tr>)/gi);
-		let n_rows = rows.length;
+
+
+		// is this a proper table?
+		let n_rows = rows?.length ?? 0;
+		if (n_rows < 2) {
+			return "";
+		}
+
 		for (let r=0;r<n_rows;r++) {
 			let item_cols = [];
 			let cols = rows[r].match(/<t[h|d][^>]*>(?:.|\n)*?<\/t[h|d]>/gi);
@@ -31,9 +38,7 @@ module.exports = {
 			items.push(item_cols);
 		}
 
-		// is this a proper table?
-		if (n_rows < 2)
-			return "";
+
 
 		// find number of columns
 		let n_cols=0;
@@ -46,7 +51,7 @@ module.exports = {
 		// normalise columns
 		for (let r=0;r<n_rows;r++) {
 			for (let c=0;c<n_cols;c++) {
-				if (typeof items[r][c] === 'undefined') {
+				if (typeof items[r][c] === "undefined") {
 					items[r].push("");
 				}
 			}
@@ -138,4 +143,4 @@ module.exports = {
 		return result;
 	}
 
-}
+};

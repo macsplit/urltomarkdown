@@ -8,6 +8,15 @@ const JSDOM = require('jsdom').JSDOM;
 const port = process.env.PORT;
 const app = express();
 
+if(!port) {
+	console.error("Please specify a port in the PORT environment variable");
+	process.exit(1);
+}
+
+/*
+
+// handled upstream by proxy
+
 const rateLimiter = rateLimit({
 	windowMs: 30 * 1000,
 	max: 5,
@@ -32,7 +41,7 @@ function send_headers(res) {
 }
 
 function read_url(url, res, options) {
-		reader = readers.reader_for_url(url);
+		let reader = readers.reader_for_url(url);
 		send_headers(res);
 		reader.read_url(url, res, options);
 }
