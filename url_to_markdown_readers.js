@@ -5,6 +5,7 @@ const JSDOM = require('jsdom').JSDOM;
 const https = require('https');
 
 const failure_message  = "Sorry, could not fetch and convert that URL";
+const service_user_agent = "Urltomarkdown/1.0";
 
 const apple_dev_prefix = "https://developer.apple.com";
 const stackoverflow_prefix = "https://stackoverflow.com/questions";
@@ -19,9 +20,13 @@ function fetch_url (url, success, failure) {
 
 		const timeout = setTimeout(() => {
 			timedOut = true;
-		}, timeoutMs);		
+		}, timeoutMs);
 
-		const req = https.get(url, (res) => {
+		const req = https.get(url, {
+			headers: {
+				'User-Agent': service_user_agent
+			}
+		}, (res) => {
 			clearTimeout(timeout);
 
 		    let result = "";
@@ -38,7 +43,7 @@ function fetch_url (url, success, failure) {
 		});
 
 		req.on('error', (err) => {
-			clearTimeout(timeout);      
+			clearTimeout(timeout);
 			reject();
 	    });
 
@@ -48,7 +53,7 @@ function fetch_url (url, success, failure) {
 			reject();
 	    });
 
-	    req.setTimeout(timeoutMs); 
+	    req.setTimeout(timeoutMs);
 
 	});
 
@@ -58,7 +63,7 @@ function fetch_url (url, success, failure) {
 class html_reader {
 	read_url(url, res, options) {
 		try {
-			fetch_url(url, (html) => {				
+			fetch_url(url, (html) => {
 				html = filters.strip_style_and_script_blocks(html);
 				const document = new JSDOM(html);
 				const id = "";
@@ -80,7 +85,7 @@ class html_reader {
 class apple_reader {
 	read_url(url, res, options) {
 		let json_url = apple_dev_parser.dev_doc_url(url);
-		fetch_url.get(json_url, (body) => {	
+		fetch_url.get(json_url, (body) => {
             let json = JSON.parse(body);
             let markdown = apple_dev_parser.parse_dev_doc_json(json, options);
             res.send(markdown);
@@ -95,7 +100,7 @@ class stack_reader {
 		try {
 			fetch_url(url, (html) => {
 				html = filters.strip_style_and_script_blocks(html);
-				const document = new JSDOM(html);	
+				const document = new JSDOM(html);
 				let markdown_q = processor.process_dom(url, document, res, 'question', options );
 				options.inline_title = false;
 				let markdown_a = processor.process_dom(url, document, res, 'answers', options );
@@ -121,7 +126,7 @@ module.exports = {
 	reader_for_url: function (url) {
 		if (url.startsWith(apple_dev_prefix)) {
 			return new apple_reader;
-		} else if (url.startsWith(stackoverflow_prefix)) {		
+		} else if (url.startsWith(stackoverflow_prefix)) {
 			return new stack_reader;
 		} else {
 			return new html_reader;
