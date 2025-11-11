@@ -9,17 +9,38 @@
 	<link rel="icon" type="image/png" href="apple-touch-icon-md.png" />
 	<script   src="https://code.jquery.com/jquery-3.6.0.min.js"   integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4="   crossorigin="anonymous"></script>
 	<script>
+		function blockedMessage(url) { return ([
+			"Access to the content at " + url + " has been blocked by the source website's security policies, which actively prohibit automated access.",
+			"To respect their server resources and our ethical policy of non-circumvention, we cannot fetch or reprocess this content for you.",
+			"",
+			"You can still use the open source ToMarkdown browser extensions, which run directly inside your browser and are not subject to the same restriction:",
+			"",
+			" - [For Firefox](https://addons.mozilla.org/en-GB/firefox/addon/tomarkdown/)",
+			" - [For Safari (iOS/macOS)](https://apps.apple.com/us/app/tomarkdown/id1619533216)"
+		].join("\n")) };
+
 		function getmarkdown() {
-			url = $("#url").val();
-			title = $("#title").is(":checked");
-			links = !$("#links").is(":checked");
-			clean = $("#clean").is(":checked");
-			$.get( 
-"https://urltomarkdown.herokuapp.com?url="+encodeURIComponent(url)+"&title="+title+"&links="+links+"&clean="+clean,
-				(data)=> {
+			const url = $("#url").val();
+			const title = $("#title").is(":checked");
+			const links = !$("#links").is(":checked");
+			const clean = $("#clean").is(":checked");
+
+			$.ajax({
+				url: "https://urltomarkdown.herokuapp.com",
+				data: { url, title, links, clean },
+				method: "GET",
+				success: function (data) {
 					$("#text").val(data);
+				},
+				error: function (jqXHR, textStatus, errorThrown) {
+					const responseText = (jqXHR.responseText || "").trim();
+					if (jqXHR.status === 502 && responseText.endsWith("403")) {
+						$("#text").val(blockedMessage(url));
+					} else {
+						$("#text").val("Unable to fetch the requested page (" + jqXHR.status + " " + errorThrown + "). Please try again later.");
+					}
 				}
-			);
+			});
 		}
 	</script>
 	<style>
@@ -70,4 +91,3 @@
 	</div>
     </body>
 </html>
-
