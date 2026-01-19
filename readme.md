@@ -109,3 +109,6 @@ request.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
 html=document.documentElement.innerHTML;
 request.send("html="+encodeURIComponent(html)+"&url="+encodeURIComponent(window.location.href));
 ```
+
+---
+[Buy me a coffee](https://buymeacoffee.com/macsplit)
