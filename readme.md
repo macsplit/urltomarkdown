@@ -111,4 +111,4 @@ request.send("html="+encodeURIComponent(html)+"&url="+encodeURIComponent(window.
 ```
 
 ---
-[Buy me a coffee](https://buymeacoffee.com/macsplit)
+[☕ buy me a coffee](https://buymeacoffee.com/macsplit)
