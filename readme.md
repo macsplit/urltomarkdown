@@ -60,6 +60,14 @@ Inspired by [Heck Yeah Markdown](http://heckyesmarkdown.com)
 
 ## Also of interest:
 
+### MCP Server
+
+[urltomarkdown-mcp](https://github.com/SapienEx-AI/urltomarkdown-mcp) wraps this project as an [MCP](https://modelcontextprotocol.io) server, allowing AI assistants like Claude, Cursor, and others to fetch and convert web pages to Markdown directly. Install via npx:
+
+```
+npx -y urltomarkdown-mcp
+```
+
 ### Front-end
 
 The website [urltomarkdown.com](https://urltomarkdown.com) provides a web interface for using the web service running on Heroku.
